@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>富立提 fleetivity｜報修申請</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:#f0f4f8;min-height:100vh;padding:20px 16px 40px;}
+
+.container{max-width:600px;margin:0 auto;}
+
+/* Header */
+.header{text-align:center;margin-bottom:24px;}
+.logo-area{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.logo-title{font-size:20px;font-weight:700;color:#1a1d27;margin-bottom:4px;}
+.logo-sub{font-size:13px;color:#64748b;}
+.notice{background:#fff8e6;border:1px solid #fbbf24;border-radius:12px;padding:12px 16px;font-size:13px;color:#92400e;line-height:1.6;}
+.notice strong{color:#b45309;}
+
+/* Form Card */
+.form-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-top:16px;}
+.form-title{font-size:15px;font-weight:700;color:#1a1d27;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #f0f4f8;display:flex;align-items:center;gap:8px;}
+
+.form-group{margin-bottom:18px;}
+label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;}
+.required{color:#ef4444;margin-left:2px;}
+.optional{font-size:11px;color:#9ca3af;font-weight:400;margin-left:4px;}
+
+input[type=text],input[type=tel],textarea,select{
+  width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;
+  font-size:14px;font-family:'Noto Sans TC',sans-serif;color:#1a1d27;
+  background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;appearance:none;
+}
+input[type=text]:focus,input[type=tel]:focus,textarea:focus,select:focus{
+  border-color:#5b8cff;box-shadow:0 0 0 3px rgba(91,140,255,.12);
+}
+input[type=text].error,input[type=tel].error,textarea.error{
+  border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.1);
+}
+textarea{resize:vertical;min-height:100px;line-height:1.6;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+
+.hint{font-size:11px;color:#9ca3af;margin-top:4px;}
+.error-msg{font-size:11px;color:#ef4444;margin-top:4px;display:none;}
+
+.divider{border:none;border-top:1px solid #f0f4f8;margin:20px 0;}
+
+/* Submit */
+.submit-btn{
+  width:100%;padding:15px;background:linear-gradient(135deg,#5b8cff,#7c6cff);
+  color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;
+  font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 14px rgba(91,140,255,.4);
+}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(91,140,255,.45);}
+.submit-btn:active{transform:translateY(0);}
+.submit-btn:disabled{background:#9ca3af;box-shadow:none;cursor:not-allowed;transform:none;}
+
+/* Success */
+.success-card{display:none;background:#fff;border-radius:16px;padding:40px 24px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-top:16px;}
+.success-icon{font-size:56px;margin-bottom:16px;}
+.success-title{font-size:18px;font-weight:700;color:#1a1d27;margin-bottom:8px;}
+.success-sub{font-size:13px;color:#64748b;line-height:1.7;margin-bottom:20px;}
+.success-id{background:#f0f4f8;border-radius:8px;padding:10px 16px;font-size:12px;color:#374151;font-family:monospace;margin-bottom:20px;}
+.new-btn{padding:12px 28px;background:#f0f4f8;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:'Noto Sans TC',sans-serif;color:#374151;cursor:pointer;}
+.new-btn:hover{background:#e5e7eb;}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:20px;color:#64748b;font-size:14px;}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid #e5e7eb;border-top-color:#5b8cff;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.step-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#5b8cff;color:#fff;border-radius:50%;font-size:11px;font-weight:700;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-title">⚡ 富立提 fleetivity</div>
+      <div class="logo-sub">車輛管理系統｜報修申請</div>
+    </div>
+    <div class="notice">
+      📸 <strong>照片／影片</strong>請直接在 LINE 官方帳號傳送，填完此表單後再傳即可。<br>
+      客服人員收到後將盡快與您聯繫安排維修。
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" id="formCard">
+    <div class="form-title"><span class="step-badge">📋</span> 報修資料填寫</div>
+
+    <div class="form-group">
+      <label>1. 公司名稱<span class="required">*</span></label>
+      <input type="text" id="company" placeholder="請填寫公司全名">
+      <div class="error-msg" id="err-company">請填寫公司名稱</div>
+    </div>
+
+    <div class="form-group">
+      <label>2. 站所名稱或車輛所在縣市<span class="required">*</span></label>
+      <input type="text" id="location" placeholder="例：台北所、新竹縣、林口">
+      <div class="error-msg" id="err-location">請填寫站所名稱或縣市</div>
+    </div>
+
+    <div class="form-group">
+      <label>3. 車號<span class="required">*</span></label>
+      <input type="text" id="plate" placeholder="例：ABC-1234">
+      <div class="error-msg" id="err-plate">請填寫車號</div>
+    </div>
+
+    <div class="form-group">
+      <label>4. 聯絡人姓名及電話<span class="required">*</span></label>
+      <input type="text" id="contact" placeholder="例：王小明 0912-345-678">
+      <div class="error-msg" id="err-contact">請填寫聯絡人姓名及電話</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>5. 故障問題說明<span class="required">*</span></label>
+      <textarea id="description" placeholder="請詳細描述故障狀況，例如：行車記錄器螢幕不會亮、GPS 定位異常…"></textarea>
+      <div class="error-msg" id="err-description">請說明故障問題</div>
+    </div>
+
+    <div class="form-group">
+      <label>6. 備註／補充說明<span class="optional">選填</span></label>
+      <textarea id="remark" placeholder="例：照片已於LINE提供、其他補充說明…" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>7. 該車休息可供維修時間<span class="optional">選填</span></label>
+      <input type="text" id="availableTime" placeholder="例：每日 18:00 後、週末全天">
+      <div class="hint">請填寫方便安排技師到場的時間</div>
+    </div>
+
+    <div class="loading" id="loading"><span class="spinner"></span>送出中，請稍候…</div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">送出報修申請</button>
+  </div>
+
+  <!-- Success -->
+  <div class="success-card" id="successCard">
+    <div class="success-icon">✅</div>
+    <div class="success-title">報修申請已送出！</div>
+    <div class="success-sub">
+      感謝您的回報，客服人員將盡快與您聯繫。<br>
+      如需提供照片或影片，請於 LINE 官方帳號傳送。
+    </div>
+    <div class="success-id" id="successId"></div>
+    <button class="new-btn" onclick="resetForm()">再填一筆報修</button>
+  </div>
+</div>
+
+<script>
+const SUPA_URL='https://cbnrcwujxgopuglngdlb.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibnJjd3VqeGdvcHVnbG5nZGxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODE4MzEsImV4cCI6MjA5Mzg1NzgzMX0.UrFJLrIRlgImqt4KhXlwxETA0-umhNBL_8J0nif8iuE';
+
+function genId(){
+  const now=new Date();
+  const d=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const t=String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0')+String(now.getSeconds()).padStart(2,'0');
+  return `FORM-${d}-${t}`;
+}
+
+function val(id){return document.getElementById(id).value.trim();}
+
+function showErr(id,show){
+  const el=document.getElementById('err-'+id);
+  const input=document.getElementById(id);
+  if(el){el.style.display=show?'block':'none';}
+  if(input){input.classList.toggle('error',show);}
+}
+
+function validate(){
+  const fields=['company','location','plate','contact','description'];
+  let ok=true;
+  fields.forEach(f=>{
+    const empty=!val(f);
+    showErr(f,empty);
+    if(empty)ok=false;
+  });
+  return ok;
+}
+
+async function submitForm(){
+  if(!validate()) return;
+
+  const btn=document.getElementById('submitBtn');
+  const loading=document.getElementById('loading');
+  btn.disabled=true;
+  loading.style.display='block';
+
+  const now=new Date();
+  const localIso=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  const id=genId();
+
+  const company=val('company');
+  const location=val('location');
+  const plate=val('plate');
+  const contact=val('contact');
+  const description=val('description');
+  const remark=val('remark');
+  const availableTime=val('availableTime');
+
+  const fullDesc=`【報修申請】
+公司名稱：${company}
+站所／縣市：${location}
+車號：${plate}
+聯絡人：${contact}
+故障說明：${description}${remark?'\n備註：'+remark:''}${availableTime?'\n可維修時間：'+availableTime:''}`;
+
+  const record={
+    id,
+    date:localIso,
+    channel:'表單',
+    company,
+    plate,
+    product:'',
+    category:'',
+    subcategory:'',
+    description:fullDesc,
+    status:'客服處理中',
+    dispatch_date:null,
+    handler:null,
+    result:null,
+    close_date:null,
+    warranty:null,
+  };
+
+  try{
+    const res=await fetch(SUPA_URL+'/rest/v1/cases',{
+      method:'POST',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify(record)
+    });
+
+    if(!res.ok){
+      const err=await res.text();
+      throw new Error(err);
+    }
+
+    // 成功
+    document.getElementById('formCard').style.display='none';
+    document.getElementById('successCard').style.display='block';
+    document.getElementById('successId').textContent='案件編號：'+id+'　｜　送出時間：'+now.toLocaleString('zh-TW',{hour12:false});
+
+  }catch(e){
+    alert('送出失敗，請稍後再試或直接於LINE回報。\n錯誤：'+e.message);
+    btn.disabled=false;
+  }
+
+  loading.style.display='none';
+}
+
+function resetForm(){
+  ['company','location','plate','contact','description','remark','availableTime'].forEach(id=>{
+    document.getElementById(id).value='';
+    showErr(id,false);
+  });
+  document.getElementById('successCard').style.display='none';
+  document.getElementById('formCard').style.display='block';
+  document.getElementById('submitBtn').disabled=false;
+}
+</script>
+</body>
+</html>
