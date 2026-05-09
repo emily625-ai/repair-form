@@ -130,6 +130,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="topbar-tabs">
       <button class="tab-btn active" onclick="switchView('records',this)">📋 案件列表</button>
       <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
+      <button class="tab-btn" onclick="switchView('actlog',this)">🕐 操作記錄</button>
     </div>
   </div>
 
@@ -194,6 +195,23 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="analytics" id="analyticsContent"></div>
   </div>
 </div>
+
+  <!-- ACTIVITY LOG VIEW -->
+  <div class="view" id="view-actlog">
+    <div class="toolbar" style="justify-content:space-between">
+      <div style="font-size:13px;color:var(--text2)">最近 200 筆操作記錄</div>
+      <button class="btn btn-outline btn-sm" onclick="loadActivityLog()">🔄 重新整理</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr>
+          <th>時間</th><th>操作</th><th>案件編號</th><th>操作人員</th><th>說明</th>
+        </tr></thead>
+        <tbody id="actlogBody"></tbody>
+      </table>
+      <div id="actlogEmpty" class="es" style="display:none">尚無操作記錄</div>
+    </div>
+  </div>
 
 <!-- Form Modal -->
 <div class="modal-overlay" id="formModal">
@@ -327,6 +345,7 @@ function switchView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   btn.classList.add('active');
   if(v==='analytics') renderAnalytics();
+  if(v==='actlog') loadActivityLog();
 }
 
 function updateSub(){
@@ -531,6 +550,43 @@ function openEdit(idx){
   document.getElementById('formModal').classList.add('open');
 }
 
+async function logActivity(caseId, action, detail){
+  try{
+    const now=new Date();
+    const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+    await sbFetch('activity_log',{method:'POST',body:JSON.stringify({
+      case_id:caseId,
+      action,
+      changed_by:currentUser||'未知',
+      changed_at:local,
+      detail
+    })});
+  }catch(e){console.log('Log error:',e);}
+}
+
+async function loadActivityLog(){
+  const tbody=document.getElementById('actlogBody');
+  const empty=document.getElementById('actlogEmpty');
+  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">載入中...</td></tr>';
+  try{
+    const rows=await sbFetch('activity_log?order=changed_at.desc&limit=200');
+    if(!rows.length){tbody.innerHTML='';empty.style.display='';return;}
+    empty.style.display='none';
+    const actionColors={'新增':'34D399','編輯':'5B8CFF','刪除':'F87171'};
+    tbody.innerHTML=rows.map(r=>{
+      const color=actionColors[r.action]||'94A3B8';
+      const dt=r.changed_at?new Date(r.changed_at).toLocaleString('zh-TW',{hour12:false}).replace(/\//g,'-'):'—';
+      return`<tr>
+        <td style="font-size:11px;color:var(--text2);white-space:nowrap">${dt}</td>
+        <td><span class="badge" style="background:rgba(${color==='34D399'?'52,211,153':color==='5B8CFF'?'91,140,255':'248,113,113'},.15);color:#${color}">${r.action}</span></td>
+        <td><span class="mono">${r.case_id||'—'}</span></td>
+        <td style="font-size:12px">${r.changed_by||'—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${r.detail||'—'}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px">載入失敗</td></tr>';}
+}
+
 async function deleteRecord(idx){
   const r=filtered[idx];
   if(!confirm(`確定要刪除此案件？\n\n${r.id}\n${r.company} - ${r.subcategory}\n\n此操作無法復原！`)) return;
@@ -538,6 +594,7 @@ async function deleteRecord(idx){
   try{
     await sbFetch('cases?id=eq.'+encodeURIComponent(r.id),{method:'DELETE'});
     showToast('🗑️ 案件已刪除');
+    await logActivity(r.id,'刪除',`${r.company} - ${r.subcategory}`);
     await loadRecords();
   }catch(e){showToast('刪除失敗：'+e.message,'var(--red)');}
   setLoading(false);
@@ -657,7 +714,32 @@ function isDispatchOverdue(r){
   return (new Date()-new Date(r.dispatchDate))>7*864e5;
 }
 
-function exportWeeklyReport(){
+async function exportWeeklyReport(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  if(!from||!to){alert('請先選擇報表期間');return;}
+  const recs=getRptRecords();
+  if(!recs.length){alert('此期間無資料');return;}
+  showToast('⏳ 產生週報中，請稍候…','var(--accent)');
+  try{
+    const res=await fetch('https://report-api-ehs7.onrender.com/weekly-report',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({records:recs,from,to})
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`週報_${from}_${to}.xlsx`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('✅ 週報已下載');
+  }catch(e){
+    showToast('下載失敗：'+e.message,'var(--red)');
+  }
+}
+
+function exportWeeklyReport_old(){
   const from=document.getElementById('rptFrom').value;
   const to=document.getElementById('rptTo').value;
   const recs=getRptRecords();
@@ -736,7 +818,32 @@ function exportWeeklyReport(){
   showToast('✅ 週報已下載');
 }
 
-function exportMonthlyReport(){
+async function exportMonthlyReport(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  if(!from||!to){alert('請先選擇報表期間再下載月報');return;}
+  const recs=getRptRecords();
+  if(!recs.length){alert('此期間無資料');return;}
+  showToast('⏳ 產生月報中，請稍候…','var(--accent)');
+  try{
+    const res=await fetch('https://report-api-ehs7.onrender.com/monthly-report',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({records:recs,from,to})
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`月報_${from}_${to}.xlsx`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('✅ 月報已下載');
+  }catch(e){
+    showToast('下載失敗：'+e.message,'var(--red)');
+  }
+}
+
+function exportMonthlyReport_old(){
   const from=document.getElementById('rptFrom').value;
   const to=document.getElementById('rptTo').value;
   if(!from||!to){alert('請先選擇報表期間再下載月報');return;}
