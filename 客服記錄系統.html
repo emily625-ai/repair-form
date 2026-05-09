@@ -315,7 +315,14 @@ const SUBMAP={
 };
 
 let records=[],filtered=[],editIdx=null,page=1,showOverdue=false;
-// PER defined above
+let PER=50;
+
+function changePerPage(){
+  PER=parseInt(document.getElementById('perPageSelect').value);
+  page=1;
+  renderTable();
+}
+
 
 function setLoading(on){
   let el=document.getElementById('loadingBar');
