@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客服案件管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2d3250;--accent:#5b8cff;--accent2:#7c6cff;--green:#34d399;--yellow:#fbbf24;--red:#f87171;--orange:#fb923c;--purple:#a78bfa;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{display:flex;flex-direction:column;height:100vh;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:14px;height:58px;flex-shrink:0;}
+.topbar-logo{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
+.topbar-tabs{display:flex;gap:2px;margin-left:auto;}
+.tab-btn{padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;font-weight:500;}
+.tab-btn.active{background:var(--accent);color:#fff;}
+.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
+.view{display:none;flex:1;overflow:hidden;}
+.view.active{display:flex;flex-direction:column;}
+.toolbar{padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.toolbar-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.search-box{flex:1;min-width:160px;position:relative;}
+.search-box input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px 7px 32px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s;}
+.search-box input:focus{border-color:var(--accent);}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
+select,input[type=date],input[type=datetime-local]{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;cursor:pointer;}
+select:focus,input[type=date]:focus,input[type=datetime-local]:focus{border-color:var(--accent);}
+.fl{font-size:11px;color:var(--text3);white-space:nowrap;}
+.overdue-toggle{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s;}
+.overdue-toggle.active{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.1);}
+.btn{padding:7px 14px;border-radius:8px;border:none;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600;transition:all .2s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-green{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:var(--green);}
+.btn-green:hover{background:rgba(52,211,153,.25);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.table-container{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead{position:sticky;top:0;z-index:10;}
+th{background:var(--surface2);color:var(--text2);font-weight:600;padding:9px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10px;letter-spacing:.5px;text-transform:uppercase;}
+td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(34,38,58,.5);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
+.badge-結案{background:rgba(52,211,153,.15);color:var(--green);}
+.badge-轉派技師{background:rgba(251,191,36,.12);color:var(--yellow);}
+.badge-轉派工程師{background:rgba(167,139,250,.12);color:var(--purple);}
+.badge-客服處理中{background:rgba(91,140,255,.15);color:var(--accent);}
+.badge-待客戶寄回{background:rgba(248,113,113,.12);color:var(--red);}
+.badge-保固內{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);}
+.badge-保固外{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);}
+.overdue-row td{background:rgba(251,146,60,.04)!important;}
+.overdue-row td:first-child{border-left:3px solid var(--orange);}
+.row-actions{display:flex;gap:4px;}
+.pagination{padding:9px 18px;display:flex;gap:5px;align-items:center;background:var(--surface);border-top:1px solid var(--border);}
+.pi{font-size:10px;color:var(--text3);margin-right:auto;}
+.page-btn{padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;}
+.page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.page-btn:disabled{opacity:.3;cursor:not-allowed;}
+.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:92%;max-width:760px;max-height:92vh;overflow-y:auto;}
+.mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1;}
+.mt{font-size:14px;font-weight:700;}
+.mc{background:none;border:none;color:var(--text2);font-size:17px;cursor:pointer;padding:3px 7px;border-radius:6px;}
+.mc:hover{background:var(--surface2);}
+.mb{padding:18px 20px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.fgr{display:flex;flex-direction:column;gap:4px;}
+.fgr.full{grid-column:1/-1;}
+.flb{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.fi{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;width:100%;}
+.fi:focus{border-color:var(--accent);}
+textarea.fi{resize:vertical;min-height:68px;}
+.mf{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.di{background:var(--bg);padding:9px 11px;border-radius:8px;}
+.dl{font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;}
+.dv{font-size:12px;color:var(--text);font-weight:500;}
+.dst{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;margin-top:14px;}
+.dd{background:var(--bg);padding:11px;border-radius:8px;font-size:12px;line-height:1.7;color:var(--text2);white-space:pre-wrap;}
+.pt{background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.22);padding:9px 13px;border-radius:8px;display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.ptv{font-size:18px;font-weight:700;color:var(--accent);}
+.ptl{font-size:10px;color:var(--text3);}
+.analytics-toolbar{padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;flex-shrink:0;}
+.at-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.at-right{display:flex;gap:8px;}
+.analytics{flex:1;overflow-y:auto;padding:20px;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px;}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.slb{font-size:10px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.sv{font-size:28px;font-weight:700;line-height:1;}
+.ss{font-size:10px;color:var(--text3);margin-top:4px;}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.cc.wide{grid-column:1/-1;}
+.ct{font-size:11px;font-weight:600;margin-bottom:12px;color:var(--text2);}
+.bc{display:flex;flex-direction:column;gap:8px;}
+.br{display:flex;align-items:center;gap:7px;}
+.bla{font-size:10px;color:var(--text2);width:115px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bt{flex:1;height:19px;background:var(--bg);border-radius:4px;overflow:hidden;}
+.bf{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:600;color:rgba(255,255,255,.9);}
+.dw{display:flex;gap:18px;align-items:center;}
+.leg{display:flex;flex-direction:column;gap:6px;flex:1;}
+.li{display:flex;align-items:center;gap:6px;font-size:10px;}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.occ{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.rpt-section-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;padding-left:2px;}
+.occ td{padding:9px 12px;border-bottom:1px solid var(--border);}
+.occ tr:last-child td{border-bottom:none;}
+.occ tr:hover td{background:rgba(34,38,58,.5);}
+.och{padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text2);}
+.ocr{display:flex;align-items:center;gap:9px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:11px;}
+.ocr:last-child{border-bottom:none;}
+.oci{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);width:120px;flex-shrink:0;}
+.highlight{background:rgba(91,140,255,.3);border-radius:2px;}
+.es{padding:50px;text-align:center;color:var(--text3);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-logo">⚡ 售服案件系統</div>
+    <div style="font-size:11px;color:var(--text3)">共 <span id="totalCount">0</span> 筆</div>
+    <div class="topbar-tabs">
+      <button class="tab-btn active" onclick="switchView('records',this)">📋 案件列表</button>
+      <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
+    </div>
+  </div>
+
+  <div class="view active" id="view-records">
+    <div class="toolbar">
+      <div class="toolbar-row">
+        <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
+        <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>轉派技師</option><option>轉派工程師</option><option>客服處理中</option><option>待客戶寄回</option></select>
+        <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
+        <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
+        <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
+        <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select>
+        <button class="overdue-toggle" id="overdueBtn" onclick="toggleOverdue()">🔴 超過7天未結案</button>
+        <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
+        <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
+      </div>
+      <div class="toolbar-row">
+        <span class="fl">進線日期時間：</span>
+        <input type="date" id="filterDateFrom" onchange="applyFilters()">
+        <span class="fl">～</span>
+        <input type="date" id="filterDateTo" onchange="applyFilters()">
+        <span id="filterResultInfo" style="font-size:11px;color:var(--text3);margin-left:4px"></span>
+      </div>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr>
+          <th>編號</th><th>進線日期時間</th><th>管道</th><th>公司名稱</th><th>車牌</th>
+          <th>問題大類</th><th>問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>操作</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="es" style="display:none">沒有符合條件的記錄</div>
+    </div>
+    <div class="pagination">
+      <div class="pi" id="pageInfo"></div>
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← 上頁</button>
+      <div id="pageNums" style="display:flex;gap:3px"></div>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)">下頁 →</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-analytics">
+    <div class="analytics-toolbar">
+      <div class="at-left">
+        <span class="fl">報表期間：</span>
+        <input type="date" id="rptFrom" onchange="renderAnalytics()">
+        <span class="fl">～</span>
+        <input type="date" id="rptTo" onchange="renderAnalytics()">
+        <button class="btn btn-outline btn-sm" onclick="setThisWeek()">本週</button>
+        <button class="btn btn-outline btn-sm" onclick="setLastWeek()">上週</button>
+        <button class="btn btn-outline btn-sm" onclick="setThisMonth()">本月</button>
+        <button class="btn btn-outline btn-sm" onclick="setLastMonth()">上月</button>
+        <button class="btn btn-outline btn-sm" onclick="clearRptRange()">全部</button>
+      </div>
+      <div class="at-right">
+        <button class="btn btn-green btn-sm" onclick="exportWeeklyReport()">⬇ 下載週報</button>
+        <button class="btn btn-primary btn-sm" onclick="exportMonthlyReport()">⬇ 下載月報</button>
+      </div>
+    </div>
+    <div class="analytics" id="analyticsContent"></div>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="formTitle">新增案件</div><button class="mc" onclick="closeForm()">✕</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fgr"><div class="flb">進線日期時間 *</div><input type="datetime-local" id="fDate" class="fi" step="1"></div>
+        <div class="fgr"><div class="flb">進線管道</div>
+          <select id="fChannel" class="fi"><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select></div>
+        <div class="fgr"><div class="flb">公司名稱 *</div>
+          <select id="fCompany" class="fi">
+            <option value="">-- 選擇客戶 --</option>
+            <option>ISUZU</option><option>一之軒</option><option>亞洲物流</option><option>全日</option><option>八方</option>
+            <option>凱擘</option><option>勝泰運輸</option><option>又成(宏祥利)</option><option>嘉一香</option><option>大榮</option>
+            <option>新瑞宅配</option><option>新竹物流</option><option>春源鋼鐵</option><option>杏泰食品</option><option>東亞</option>
+            <option>柏霖營造</option><option>桂冠</option><option>樂清</option><option>福誼</option><option>莊頭交通</option>
+            <option>野村</option><option>金村</option><option>隆豪</option><option>順豐</option>
+            <option value="__new__">＋ 輸入新客戶</option>
+          </select></div>
+        <div class="fgr" id="fCompanyNewGroup" style="display:none"><div class="flb">新客戶名稱</div><input type="text" id="fCompanyNew" class="fi" placeholder="輸入新客戶名稱"></div>
+        <div class="fgr"><div class="flb">車牌</div><input type="text" id="fPlate" class="fi" placeholder="選填"></div>
+        <div class="fgr"><div class="flb">產品別</div>
+          <select id="fProduct" class="fi"><option value="">-- 選擇 --</option>
+            <option>FMS-GPS(系統平台)</option><option>FMS-GPS(硬體)</option>
+            <option>FMS-DMVR(純行車視野)</option><option>FMS-DMVR(不回傳主機硬體)</option>
+            <option>FMS-冷鏈(系統平台)</option><option>FMS-冷鏈(硬體)</option><option>FMS-雷達</option>
+          </select></div>
+        <div class="fgr"><div class="flb">問題大類 *</div>
+          <select id="fCategory" class="fi" onchange="updateSub()">
+            <option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option>
+            <option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option>
+          </select></div>
+        <div class="fgr"><div class="flb">問題次分類</div><select id="fSubcategory" class="fi"></select></div>
+        <div class="fgr"><div class="flb">處理狀態</div>
+          <select id="fStatus" class="fi"><option>客服處理中</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
+        <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
+        <div class="fgr"><div class="flb">負責處理人員</div>
+          <select id="fHandler" class="fi"><option value="">-- 選擇 --</option>
+            <option>Alan</option><option>Alex</option><option>Emily</option><option>RD</option><option>大Eddie</option>
+            <option>客戶</option><option>彭向謙</option><option>彭子豪</option><option>楊明憲</option><option>港仔</option>
+            <option>王睿揚</option><option>陳世豪</option><option>黃世緯</option><option>黃泊鑫</option>
+          </select></div>
+        <div class="fgr"><div class="flb">保固狀態</div>
+          <select id="fWarranty" class="fi"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
+        <div class="fgr"><div class="flb">結案日期時間</div><input type="datetime-local" id="fCloseDate" class="fi" step="1"></div>
+        <div class="fgr full"><div class="flb">問題詳細描述</div><textarea id="fDescription" class="fi" rows="3" placeholder="客戶問題描述…"></textarea></div>
+        <div class="fgr full"><div class="flb">最終處理結果</div><textarea id="fResult" class="fi" rows="2" placeholder="處理結果…"></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeForm()">取消</button><button class="btn btn-primary" onclick="saveRecord()">儲存</button></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="mh"><div><div class="mt" id="dId"></div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="dMeta"></div></div><button class="mc" onclick="closeDetail()">✕</button></div>
+    <div class="mb" id="dBody"></div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeDetail()">關閉</button><button class="btn btn-primary" id="dEditBtn">編輯此案件</button></div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL='https://cbnrcwujxgopuglngdlb.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibnJjd3VqeGdvcHVnbG5nZGxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODE4MzEsImV4cCI6MjA5Mzg1NzgzMX0.UrFJLrIRlgImqt4KhXlwxETA0-umhNBL_8J0nif8iuE';
+
+async function sbFetch(path,opt={}){
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opt.headers||{})},
+    ...opt
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  const txt=await res.text();
+  return txt?JSON.parse(txt):[];
+}
+
+function toRow(r){return{id:r.id,date:r.date||null,channel:r.channel||null,company:r.company||null,plate:r.plate||null,product:r.product||null,category:r.category||null,subcategory:r.subcategory||null,description:r.description||null,status:r.status||null,dispatch_date:r.dispatchDate||null,handler:r.handler||null,result:r.result||null,close_date:r.closeDate||null,warranty:r.warranty||null};}
+function fromRow(r){return{id:r.id,date:r.date||'',channel:r.channel||'',company:r.company||'',plate:r.plate||'',product:r.product||'',category:r.category||'',subcategory:r.subcategory||'',description:r.description||'',status:r.status||'',dispatchDate:r.dispatch_date||'',handler:r.handler||'',result:r.result||'',closeDate:r.close_date||'',warranty:r.warranty||''};}
+
+const SUBMAP={
+  '平台系統':['帳號密碼問題','定位異常','定位時間延遲','工作天數與實際不符','APP無法登入','登入失敗','網頁速度慢','畫面顯示處理中/Loading','歷史影像資料無法下載','API異常','查無報表資料','溫度異常','平台操作問題','權限問題','資料提供','其他'],
+  'MDVR':['鏡頭霧化、黑屏、藍屏、模糊不清','螢幕不會亮、黑屏、藍屏','螢幕顯示4分隔問題','DVR無法錄影','DVR錄影無影像檔','接頭問題','購料','報價單','其他'],
+  'GPS設備':['定位異常','GPS離線','新安裝','拆機','移機','溫度異常','其他'],
+  '行車視野':['螢幕不會亮、黑屏、藍屏','鏡頭霧化、黑屏、藍屏、模糊不清','鏡頭脫落','後鏡頭+無法錄影','DVR無法錄影','報價單','其他'],
+  '雷達設備':['燈盒問題','左右雷達','報價單','匯款單據','其他'],
+  '帳務問題':['發票問題','匯款單據','其他'],
+  '冷鏈':['溫度異常','GPS離線','其他'],
+  '溫度n/a':['感溫線(含頭)故障','溫度異常','其他'],
+  '其他':['其他','轉接線','資料提供']
+};
+
+let records=[],filtered=[],editIdx=null,page=1,showOverdue=false;
+const PER=50;
+
+function setLoading(on){
+  let el=document.getElementById('loadingBar');
+  if(!el){el=document.createElement('div');el.id='loadingBar';el.style.cssText='position:fixed;top:0;left:0;width:100%;height:3px;background:var(--accent);z-index:999;transition:opacity .3s';document.body.appendChild(el);}
+  el.style.opacity=on?'1':'0';
+}
+
+function showToast(msg,color='var(--green)'){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;`;
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+
+async function loadRecords(){
+  setLoading(true);
+  try{
+    const rows=await sbFetch('cases?order=date.desc&limit=1000');
+    records=rows.map(fromRow).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    document.getElementById('totalCount').textContent=records.length;
+    applyFilters();
+  }catch(e){showToast('載入失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+
+window.onload=()=>{
+  updateSub();
+  document.getElementById('fCompany').addEventListener('change',function(){
+    document.getElementById('fCompanyNewGroup').style.display=this.value==='__new__'?'':'none';
+  });
+  loadRecords();
+};
+
+function switchView(v,btn){
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  btn.classList.add('active');
+  if(v==='analytics') renderAnalytics();
+}
+
+function updateSub(){
+  const cat=document.getElementById('fCategory').value;
+  const sel=document.getElementById('fSubcategory');
+  const cur=sel.value;
+  const opts=SUBMAP[cat]||['其他'];
+  sel.innerHTML=opts.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
+}
+
+function toggleOverdue(){
+  showOverdue=!showOverdue;
+  document.getElementById('overdueBtn').classList.toggle('active',showOverdue);
+  applyFilters();
+}
+
+function isOverdue(r){
+  if(r.status==='結案') return false;
+  if(!r.date) return false;
+  return (new Date()-new Date(r.date))>7*864e5;
+}
+
+function applyFilters(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const fs=document.getElementById('filterStatus').value;
+  const fc=document.getElementById('filterCategory').value;
+  const fw=document.getElementById('filterWarranty').value;
+  const fh=document.getElementById('filterHandler').value;
+  const fch=document.getElementById('filterChannel').value;
+  const ff=document.getElementById('filterDateFrom').value;
+  const ft=document.getElementById('filterDateTo').value;
+  filtered=records.filter(r=>{
+    if(fs&&r.status!==fs)return false;
+    if(fc&&r.category!==fc)return false;
+    if(fw){const w=r.warranty||'';if(fw==='保固內'&&w!=='保固內'&&w!=='保內')return false;if(fw==='保固外'&&w!=='保固外')return false;}
+    if(fh&&r.handler!==fh)return false;
+    if(fch&&r.channel!==fch)return false;
+    if(ff&&r.date&&r.date.slice(0,10)<ff)return false;
+    if(ft&&r.date&&r.date.slice(0,10)>ft)return false;
+    if(showOverdue&&!isOverdue(r))return false;
+    if(q){const h=[r.id,r.company,r.plate,r.category,r.subcategory,r.description,r.handler,r.result,r.channel].join(' ').toLowerCase();if(!h.includes(q))return false;}
+    return true;
+  });
+  page=1;
+  document.getElementById('filterResultInfo').textContent=filtered.length!==records.length?`篩選結果：${filtered.length} 筆`:'';
+  renderTable();
+}
+
+function clearFilters(){
+  ['searchInput'].forEach(id=>document.getElementById(id).value='');
+  ['filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
+  ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
+  showOverdue=false;
+  document.getElementById('overdueBtn').classList.remove('active');
+  document.getElementById('filterResultInfo').textContent='';
+  applyFilters();
+}
+
+function fdt(dt){
+  if(!dt)return'—';
+  const d=new Date(dt);if(isNaN(d))return dt;
+  return d.toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\//g,'-');
+}
+
+function calcDur(s,e){
+  if(!s||!e)return null;
+  const ms=new Date(e)-new Date(s);
+  if(ms<=0)return null;
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+  if(h>=24){const d=Math.floor(h/24),rh=h%24;return rh>0?`${d}天${rh}小時`:`${d}天`;}
+  return h>0?`${h}小時${m}分`:`${m}分鐘`;
+}
+
+function hl(t,q){
+  if(!t||!q)return t||'';
+  return String(t).replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<span class="highlight">${m}</span>`);
+}
+
+function renderTable(){
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyState');
+  const total=filtered.length;
+  const tPages=Math.max(1,Math.ceil(total/PER));
+  const start=(page-1)*PER;
+  const pd=filtered.slice(start,start+PER);
+  if(!total){tbody.innerHTML='';empty.style.display='';}
+  else{empty.style.display='none';}
+  const q=document.getElementById('searchInput').value;
+  tbody.innerHTML=pd.map((r,i)=>{
+    const dur=calcDur(r.date,r.closeDate);
+    const ov=isOverdue(r);
+    const wB=r.warranty?`<span class="badge badge-${r.warranty}">${r.warranty}</span>`:'<span style="color:var(--text3);font-size:10px">—</span>';
+    const dC=dur?`<span style="font-size:10px;color:${dur.includes('天')&&parseInt(dur)>7?'var(--orange)':'var(--green)'}">${dur}</span>`:(r.status==='結案'?'<span style="font-size:10px;color:var(--text3)">—</span>':'<span style="font-size:10px;color:var(--text3)">進行中</span>');
+    return`<tr class="${ov?'overdue-row':''}">
+      <td><span class="mono">${hl(r.id,q)}</span>${ov?'<span style="font-size:9px;color:var(--orange);margin-left:3px">⚠逾7天</span>':''}</td>
+      <td style="font-size:10px;color:var(--text2);white-space:nowrap">${fdt(r.date)}</td>
+      <td style="font-size:10px;color:var(--text3)">${r.channel||'—'}</td>
+      <td><strong style="font-size:12px">${hl(r.company,q)}</strong></td>
+      <td style="font-size:10px;color:var(--text2)">${hl(r.plate,q)||'—'}</td>
+      <td style="font-size:11px">${hl(r.category,q)}</td>
+      <td style="font-size:10px;color:var(--text2)">${hl(r.subcategory,q)}</td>
+      <td><span class="badge badge-${r.status}">${r.status}</span></td>
+      <td style="font-size:11px">${hl(r.handler,q)||'—'}</td>
+      <td>${dC}</td>
+      <td>${wB}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-outline btn-sm" onclick="showDetail(${start+i})">詳情</button>
+        <button class="btn btn-outline btn-sm" onclick="openEdit(${start+i})">編輯</button>
+        <button class="btn btn-sm" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red)" onclick="deleteRecord(${start+i})">刪除</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pageInfo').textContent=`顯示 ${Math.min(start+1,total)}–${Math.min(start+PER,total)} / 共 ${total} 筆`;
+  document.getElementById('prevBtn').disabled=page<=1;
+  document.getElementById('nextBtn').disabled=page>=tPages;
+  const pn=document.getElementById('pageNums');pn.innerHTML='';
+  let sp=Math.max(1,page-2),ep=Math.min(tPages,sp+4);
+  for(let p2=sp;p2<=ep;p2++){const b=document.createElement('button');b.className='page-btn'+(p2===page?' active':'');b.textContent=p2;b.onclick=()=>{page=p2;renderTable();};pn.appendChild(b);}
+}
+function changePage(d){page+=d;renderTable();}
+
+function showDetail(idx){
+  const r=filtered[idx];
+  const dur=calcDur(r.date,r.closeDate);
+  document.getElementById('dId').textContent=r.id;
+  document.getElementById('dMeta').textContent=`進線：${fdt(r.date)}　管道：${r.channel||'—'}`;
+  document.getElementById('dBody').innerHTML=`
+    ${dur?`<div class="pt"><div><div class="ptv">${dur}</div><div class="ptl">處理時間（進線 → 結案）</div></div></div>`:''}
+    <div class="dst">客戶資訊</div>
+    <div class="dg">
+      <div class="di"><div class="dl">公司名稱</div><div class="dv">${r.company||'—'}</div></div>
+      <div class="di"><div class="dl">車牌號碼</div><div class="dv">${r.plate||'—'}</div></div>
+      <div class="di"><div class="dl">產品別</div><div class="dv">${r.product||'—'}</div></div>
+    </div>
+    <div class="dst">問題資訊</div>
+    <div class="dg">
+      <div class="di"><div class="dl">問題大類</div><div class="dv">${r.category||'—'}</div></div>
+      <div class="di"><div class="dl">問題次分類</div><div class="dv">${r.subcategory||'—'}</div></div>
+      <div class="di"><div class="dl">保固狀態</div><div class="dv">${r.warranty||'—'}</div></div>
+    </div>
+    <div class="dst">問題詳細描述</div>
+    <div class="dd">${(r.description||'（無描述）').replace(/</g,'&lt;')}</div>
+    <div class="dst">處理資訊</div>
+    <div class="dg">
+      <div class="di"><div class="dl">處理狀態</div><div class="dv"><span class="badge badge-${r.status}">${r.status}</span></div></div>
+      <div class="di"><div class="dl">負責處理人員</div><div class="dv">${r.handler||'—'}</div></div>
+      <div class="di"><div class="dl">派工日期時間</div><div class="dv" style="font-size:11px">${fdt(r.dispatchDate)}</div></div>
+      <div class="di"><div class="dl">結案日期時間</div><div class="dv" style="font-size:11px">${fdt(r.closeDate)}</div></div>
+      <div class="di" style="grid-column:1/-1"><div class="dl">最終處理結果</div><div class="dv">${r.result||'—'}</div></div>
+    </div>`;
+  document.getElementById('dEditBtn').onclick=()=>{closeDetail();openEdit(idx);};
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetail(){document.getElementById('detailModal').classList.remove('open');}
+
+function openNewForm(){
+  editIdx=null;
+  document.getElementById('formTitle').textContent='新增案件';
+  const now=new Date();now.setSeconds(0,0);
+  const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  document.getElementById('fDate').value=local;
+  document.getElementById('fChannel').value='官方LINE';
+  document.getElementById('fCompany').value='';
+  document.getElementById('fCompanyNew').value='';
+  document.getElementById('fCompanyNewGroup').style.display='none';
+  document.getElementById('fPlate').value='';
+  document.getElementById('fProduct').value='';
+  document.getElementById('fCategory').value='平台系統';
+  updateSub();
+  document.getElementById('fStatus').value='客服處理中';
+  document.getElementById('fDispatchDate').value='';
+  document.getElementById('fHandler').value='';
+  document.getElementById('fWarranty').value='';
+  document.getElementById('fCloseDate').value='';
+  document.getElementById('fDescription').value='';
+  document.getElementById('fResult').value='';
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openEdit(idx){
+  const r=filtered[idx];
+  editIdx=r.id;
+  document.getElementById('formTitle').textContent='編輯案件 '+r.id;
+  document.getElementById('fDate').value=r.date?r.date.slice(0,19):'';
+  document.getElementById('fChannel').value=r.channel||'官方LINE';
+  const cs=document.getElementById('fCompany');
+  const op=[...cs.options].find(o=>o.value===r.company);
+  if(op){cs.value=r.company;document.getElementById('fCompanyNewGroup').style.display='none';}
+  else{cs.value='__new__';document.getElementById('fCompanyNew').value=r.company;document.getElementById('fCompanyNewGroup').style.display='';}
+  document.getElementById('fPlate').value=r.plate;
+  document.getElementById('fProduct').value=r.product;
+  document.getElementById('fCategory').value=r.category;
+  updateSub();
+  document.getElementById('fSubcategory').value=r.subcategory;
+  document.getElementById('fStatus').value=r.status;
+  document.getElementById('fDispatchDate').value=r.dispatchDate?r.dispatchDate.slice(0,19):'';
+  document.getElementById('fHandler').value=r.handler;
+  document.getElementById('fWarranty').value=r.warranty;
+  document.getElementById('fCloseDate').value=r.closeDate?r.closeDate.slice(0,19):'';
+  document.getElementById('fDescription').value=r.description;
+  document.getElementById('fResult').value=r.result;
+  document.getElementById('formModal').classList.add('open');
+}
+
+async function deleteRecord(idx){
+  const r=filtered[idx];
+  if(!confirm(`確定要刪除此案件？\n\n${r.id}\n${r.company} - ${r.subcategory}\n\n此操作無法復原！`)) return;
+  setLoading(true);
+  try{
+    await sbFetch('cases?id=eq.'+encodeURIComponent(r.id),{method:'DELETE'});
+    showToast('🗑️ 案件已刪除');
+    await loadRecords();
+  }catch(e){showToast('刪除失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+function closeForm(){document.getElementById('formModal').classList.remove('open');}
+
+async function saveRecord(){
+  const dt=document.getElementById('fDate').value;
+  let company=document.getElementById('fCompany').value;
+  if(company==='__new__')company=document.getElementById('fCompanyNew').value.trim();
+  if(!dt||!company){alert('請填寫進線日期時間與公司名稱');return;}
+  const rec={
+    id:editIdx!==null?editIdx:genId(dt),
+    date:dt,channel:document.getElementById('fChannel').value,
+    company,plate:document.getElementById('fPlate').value.trim(),
+    product:document.getElementById('fProduct').value,
+    category:document.getElementById('fCategory').value,
+    subcategory:document.getElementById('fSubcategory').value,
+    status:document.getElementById('fStatus').value,
+    dispatchDate:document.getElementById('fDispatchDate').value,
+    handler:document.getElementById('fHandler').value,
+    warranty:document.getElementById('fWarranty').value,
+    closeDate:document.getElementById('fCloseDate').value,
+    description:document.getElementById('fDescription').value.trim(),
+    result:document.getElementById('fResult').value.trim(),
+  };
+  setLoading(true);
+  try{
+    if(editIdx!==null){
+      await sbFetch(`cases?id=eq.${encodeURIComponent(rec.id)}`,{method:'PATCH',body:JSON.stringify(toRow(rec))});
+      showToast('✅ 案件已更新');
+    } else {
+      await sbFetch('cases',{method:'POST',body:JSON.stringify(toRow(rec))});
+      showToast('✅ 案件已新增');
+    }
+    closeForm();
+    await loadRecords();
+  }catch(e){showToast('儲存失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+
+function genId(dt){
+  const d=dt.slice(0,10).replace(/-/g,'');
+  const n=records.filter(r=>r.id.startsWith(d)).length;
+  return`${d}-${String(n+1).padStart(3,'0')}`;
+}
+
+function exportExcel(){
+  const data=filtered.map(r=>({'編號':r.id,'進線日期時間':r.date,'進線管道':r.channel,'公司名稱':r.company,'車牌':r.plate,'產品別':r.product,'問題大類':r.category,'問題次分類':r.subcategory,'問題詳細描述':r.description,'處理狀態':r.status,'派工日期時間':r.dispatchDate,'負責處理人員':r.handler,'最終處理結果':r.result,'結案日期時間':r.closeDate,'處理時間':calcDur(r.date,r.closeDate)||'','保固狀態':r.warranty}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'售服記錄');
+  XLSX.writeFile(wb,`客服案件記錄_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function getWeekLabel(date){
+  const d=new Date(date);
+  const mon=new Date(d);mon.setDate(d.getDate()-d.getDay()+1);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return mon.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+'～'+sun.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
+}
+
+function setThisWeek(){
+  const now=new Date();
+  const mon=new Date(now);mon.setDate(now.getDate()-now.getDay()+1);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  document.getElementById('rptFrom').value=mon.toISOString().slice(0,10);
+  document.getElementById('rptTo').value=sun.toISOString().slice(0,10);
+  renderAnalytics();
+}
+function setLastWeek(){
+  const now=new Date();
+  const mon=new Date(now);mon.setDate(now.getDate()-now.getDay()-6);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  document.getElementById('rptFrom').value=mon.toISOString().slice(0,10);
+  document.getElementById('rptTo').value=sun.toISOString().slice(0,10);
+  renderAnalytics();
+}
+function setThisMonth(){
+  const now=new Date();
+  const first=new Date(now.getFullYear(),now.getMonth(),1);
+  const last=new Date(now.getFullYear(),now.getMonth()+1,0);
+  document.getElementById('rptFrom').value=first.toISOString().slice(0,10);
+  document.getElementById('rptTo').value=last.toISOString().slice(0,10);
+  renderAnalytics();
+}
+function setLastMonth(){
+  const now=new Date();
+  const first=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const last=new Date(now.getFullYear(),now.getMonth(),0);
+  document.getElementById('rptFrom').value=first.toISOString().slice(0,10);
+  document.getElementById('rptTo').value=last.toISOString().slice(0,10);
+  renderAnalytics();
+}
+function clearRptRange(){
+  document.getElementById('rptFrom').value='';
+  document.getElementById('rptTo').value='';
+  renderAnalytics();
+}
+
+function getRptRecords(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  if(!from&&!to) return records;
+  return records.filter(r=>{
+    const d=r.date?r.date.slice(0,10):'';
+    if(from&&d<from) return false;
+    if(to&&d>to) return false;
+    return true;
+  });
+}
+
+function isDispatchOverdue(r){
+  if(r.status==='結案') return false;
+  if(!r.dispatchDate) return false;
+  if(r.handler==='客戶') return false;
+  return (new Date()-new Date(r.dispatchDate))>7*864e5;
+}
+
+function exportWeeklyReport(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  const recs=getRptRecords();
+  const total=recs.length;
+  const closed=recs.filter(r=>r.status==='結案').length;
+  const open=total-closed;
+  // 逾期：全部資料中派工超7天未結案，排除客戶
+  const od=records.filter(r=>isDispatchOverdue(r));
+  const label=from&&to?`${from}_${to}`:new Date().toISOString().slice(0,10);
+  const wb=XLSX.utils.book_new();
+
+  // 封面
+  const cover=[
+    ['售服案件週報'],
+    [`報告期間：${from||'—'} ～ ${to||'—'}`],
+    [],
+    ['進線總件數','已結案','未結案','派工逾7天未結案'],
+    [total,closed,open,od.length],
+    [],
+    ['負責人員','件數'],
+  ];
+  const handlerC={};
+  recs.forEach(r=>{if(r.handler)handlerC[r.handler]=(handlerC[r.handler]||0)+1;});
+  Object.entries(handlerC).sort((a,b)=>b[1]-a[1]).forEach(([h,c])=>cover.push([h,c]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cover),'封面摘要');
+
+  // ① 進線管道
+  const chC={};
+  recs.forEach(r=>{chC[r.channel||'未知']=(chC[r.channel||'未知']||0)+1;});
+  const s1=[['進線管道','件數','佔比']];
+  Object.entries(chC).sort((a,b)=>b[1]-a[1]).forEach(([ch,cnt])=>{
+    s1.push([ch,cnt,total?((cnt/total)*100).toFixed(1)+'%':'0%']);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1),'① 進線管道分析');
+
+  // ② 問題分類
+  const catMap={};
+  recs.forEach(r=>{
+    const k=r.category||'其他';
+    if(!catMap[k])catMap[k]={total:0,subs:{}};
+    catMap[k].total++;
+    const s=r.subcategory||'其他';
+    catMap[k].subs[s]=(catMap[k].subs[s]||0)+1;
+  });
+  const s2=[['問題大類','總件數','主要次分類（件數）']];
+  Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total).forEach(([cat,v])=>{
+    const top=Object.entries(v.subs).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([s,n])=>`${s}(${n})`).join('、');
+    s2.push([cat,v.total,top]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s2),'② 問題分類統計');
+
+  // ③ 處理狀態（未結案優先）
+  const statusGroups={};
+  recs.forEach(r=>{const k=r.status||'未知';if(!statusGroups[k])statusGroups[k]=[];statusGroups[k].push(r);});
+  const s3=[['處理狀態','件數','處理人員','重點說明（未結案優先）']];
+  Object.entries(statusGroups).sort((a,b)=>b[1].length-a[1].length).forEach(([st,rows])=>{
+    const handlers=[...new Set(rows.map(r=>r.handler).filter(Boolean))].join('、');
+    const unresolved=rows.filter(r=>r.status!=='結案');
+    const resolved=rows.filter(r=>r.status==='結案');
+    const priority=[...unresolved,...resolved].slice(0,3);
+    const notes=priority.map(r=>`[${r.company}] ${r.subcategory}`+(r.result?` → ${r.result}`:r.status!=='結案'?' ⚠未結':'')).join('\n');
+    s3.push([st,rows.length,handlers,notes]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'③ 處理狀態總覽');
+
+  // ④ 派工逾7天未結案
+  const s4=[['編號','進線日期','派工日期','公司名稱','問題次分類','處理狀態','負責人員','派工已逾天數']];
+  od.forEach(r=>{
+    const days=Math.floor((new Date()-new Date(r.dispatchDate))/864e5);
+    s4.push([r.id,r.date?r.date.slice(0,10):'',r.dispatchDate?r.dispatchDate.slice(0,10):'',r.company,r.subcategory,r.status,r.handler,days+'天']);
+  });
+  if(!od.length) s4.push(['✅ 無派工超過7天未結案']);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s4),'④ 逾7天未結案');
+
+  XLSX.writeFile(wb,`週報_${label}.xlsx`);
+  showToast('✅ 週報已下載');
+}
+
+function exportMonthlyReport(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  if(!from||!to){alert('請先選擇報表期間再下載月報');return;}
+  const recs=getRptRecords();
+  const total=recs.length;
+  const closed=recs.filter(r=>r.status==='結案').length;
+  const open=total-closed;
+  const closeRate=total>0?((closed/total)*100).toFixed(1)+'%':'0%';
+  const od=records.filter(r=>isDispatchOverdue(r));
+  const durs=recs.filter(r=>r.status==='結案'&&r.date&&r.closeDate).map(r=>new Date(r.closeDate)-new Date(r.date)).filter(ms=>ms>0);
+  const avgMs=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:0;
+  const avgH=Math.round(avgMs/3600000);
+  const avgStr=avgH>=24?`${Math.floor(avgH/24)}天${avgH%24}小時`:`${avgH}小時`;
+  const label=`${from}_${to}`;
+  const wb=XLSX.utils.book_new();
+
+  // 封面
+  const cover=[
+    ['售服案件月報'],
+    [`報告期間：${from} ～ ${to}`],
+    [],
+    ['進線總件數','已結案','未結案','結案率','平均處理時間','派工逾7天未結案'],
+    [total,closed,open,closeRate,avgStr,od.length],
+    [],
+    ['本月人員負責件數'],
+    ['負責人員','件數'],
+  ];
+  const handlerC={};
+  recs.forEach(r=>{if(r.handler)handlerC[r.handler]=(handlerC[r.handler]||0)+1;});
+  Object.entries(handlerC).sort((a,b)=>b[1]-a[1]).forEach(([h,c])=>cover.push([h,c]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cover),'封面摘要');
+
+  // ① 進線管道
+  const chC={};
+  recs.forEach(r=>{chC[r.channel||'未知']=(chC[r.channel||'未知']||0)+1;});
+  const s1=[['進線管道','件數','佔比']];
+  Object.entries(chC).sort((a,b)=>b[1]-a[1]).forEach(([ch,cnt])=>{
+    s1.push([ch,cnt,total?((cnt/total)*100).toFixed(1)+'%':'0%']);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1),'① 進線管道分析');
+
+  // ② 案件類別（產品別4大類）
+  const prodMap={'FMS-GPS':0,'FMS-DMVR':0,'FMS-冷鏈':0,'FMS-雷達':0,'其他':0};
+  recs.forEach(r=>{
+    const p=r.product||'';
+    if(p.includes('GPS'))prodMap['FMS-GPS']++;
+    else if(p.includes('DMVR'))prodMap['FMS-DMVR']++;
+    else if(p.includes('冷鏈'))prodMap['FMS-冷鏈']++;
+    else if(p.includes('雷達'))prodMap['FMS-雷達']++;
+    else prodMap['其他']++;
+  });
+  const s2=[['產品類別','件數','佔比']];
+  Object.entries(prodMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).forEach(([p,cnt])=>{
+    s2.push([p,cnt,total?((cnt/total)*100).toFixed(1)+'%':'0%']);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s2),'② 案件類別分析');
+
+  // ③ 客戶進線排行 TOP5
+  const compC={};
+  recs.forEach(r=>{if(r.company)compC[r.company]=(compC[r.company]||0)+1;});
+  const s3=[['排名','客戶名稱','件數']];
+  Object.entries(compC).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([c,n],i)=>s3.push([i+1,c,n]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'③ 客戶進線排行TOP5');
+
+  // ④ 派工逾7天未結案
+  const s4=[['編號','進線日期','派工日期','公司名稱','問題次分類','處理狀態','負責人員','派工已逾天數']];
+  od.forEach(r=>{
+    const days=Math.floor((new Date()-new Date(r.dispatchDate))/864e5);
+    s4.push([r.id,r.date?r.date.slice(0,10):'',r.dispatchDate?r.dispatchDate.slice(0,10):'',r.company,r.subcategory,r.status,r.handler,days+'天']);
+  });
+  if(!od.length) s4.push(['✅ 無派工超過7天未結案']);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s4),'④ 逾7天未結案');
+
+  // ⑤ 問題分類
+  const catMap={};
+  recs.forEach(r=>{
+    const k=r.category||'其他';
+    if(!catMap[k])catMap[k]={total:0,subs:{}};
+    catMap[k].total++;
+    const s=r.subcategory||'其他';
+    catMap[k].subs[s]=(catMap[k].subs[s]||0)+1;
+  });
+  const s5=[['問題大類','總件數','主要次分類（件數）']];
+  Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total).forEach(([cat,v])=>{
+    const top=Object.entries(v.subs).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([s,n])=>`${s}(${n})`).join('、');
+    s5.push([cat,v.total,top]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s5),'⑤ 問題分類統計');
+
+  // ⑥ 處理狀態
+  const statusGroups={};
+  recs.forEach(r=>{const k=r.status||'未知';if(!statusGroups[k])statusGroups[k]=[];statusGroups[k].push(r);});
+  const s6=[['處理狀態','件數','處理人員','重點說明']];
+  Object.entries(statusGroups).sort((a,b)=>b[1].length-a[1].length).forEach(([st,rows])=>{
+    const handlers=[...new Set(rows.map(r=>r.handler).filter(Boolean))].join('、');
+    const unresolved=rows.filter(r=>r.status!=='結案');
+    const resolved=rows.filter(r=>r.status==='結案');
+    const priority=[...unresolved,...resolved].slice(0,3);
+    const notes=priority.map(r=>`[${r.company}] ${r.subcategory}`+(r.result?` → ${r.result}`:r.status!=='結案'?' ⚠未結':'')).join('\n');
+    s6.push([st,rows.length,handlers,notes]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s6),'⑥ 處理狀態總覽');
+
+  // 明細
+  const s7=[['編號','進線日期時間','進線管道','公司名稱','車牌','產品別','問題大類','問題次分類','處理狀態','負責人員','結案日期時間','處理時間','保固']];
+  recs.forEach(r=>s7.push([r.id,r.date,r.channel,r.company,r.plate,r.product,r.category,r.subcategory,r.status,r.handler,r.closeDate,calcDur(r.date,r.closeDate)||'',r.warranty]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s7),'明細');
+
+  XLSX.writeFile(wb,`月報_${label}.xlsx`);
+  showToast('✅ 月報已下載');
+}
+
+function renderAnalytics(){
+  const recs=getRptRecords();
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  const total=recs.length;
+  const closed=recs.filter(r=>r.status==='結案').length;
+  const open=recs.filter(r=>r.status!=='結案').length;
+  const overdue=recs.filter(r=>isOverdue(r)).length;
+  const sC={},cC={},coC={},hC={},chC={};
+  recs.forEach(r=>{
+    sC[r.status]=(sC[r.status]||0)+1;
+    if(r.category)cC[r.category]=(cC[r.category]||0)+1;
+    if(r.company)coC[r.company]=(coC[r.company]||0)+1;
+    if(r.handler)hC[r.handler]=(hC[r.handler]||0)+1;
+    chC[r.channel||'未知']=(chC[r.channel||'未知']||0)+1;
+  });
+  const durs=recs.filter(r=>r.status==='結案'&&r.date&&r.closeDate).map(r=>new Date(r.closeDate)-new Date(r.date)).filter(ms=>ms>0);
+  const avgMs=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:0;
+  const avgH=Math.round(avgMs/3600000);
+  const avgD=avgH>=24?`${Math.floor(avgH/24)}天${avgH%24}小時`:`${avgH}小時`;
+  const BC=['#5b8cff','#7c6cff','#34d399','#fbbf24','#f87171','#fb923c','#a78bfa','#38bdf8','#f472b6'];
+
+  function barC(data,title,colors){
+    const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const max=sorted[0]?.[1]||1;
+    return '<div class="cc"><div class="ct">'+title+'</div><div class="bc">'+sorted.map(([l,c],i)=>'<div class="br"><div class="bla" title="'+l+'">'+l+'</div><div class="bt"><div class="bf" style="width:'+(c/max*100).toFixed(1)+'%;background:'+colors[i%colors.length]+'">'+c+'</div></div></div>').join('')+'</div></div>';
+  }
+
+  function donutC(data,title){
+    const ent=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const tot=ent.reduce((s,[,v])=>s+v,0);
+    const colors=['#5b8cff','#34d399','#fbbf24','#f87171','#a78bfa'];
+    const r=50,cx=60,cy=60,circ=2*Math.PI*r;
+    let off=0;
+    const slices=ent.map(([,val],i)=>{const p=val/tot,d=p*circ,g=circ-d;const s='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+colors[i]+'" stroke-width="18" stroke-dasharray="'+d+' '+g+'" stroke-dashoffset="'+(-off*circ)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';off+=p;return s;}).join('');
+    const leg=ent.map(([l,v],i)=>'<div class="li"><div class="ld" style="background:'+colors[i]+'"></div><span style="color:var(--text2);flex:1">'+l+'</span><span style="font-weight:600">'+v+'</span></div>').join('');
+    return '<div class="cc"><div class="ct">'+title+'</div><div class="dw"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="18"/>'+slices+'<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700">'+tot+'</text></svg><div class="leg">'+leg+'</div></div></div>';
+  }
+
+  const periodLabel=from&&to?(from+' ～ '+to):'全部記錄';
+
+  // Status table
+  const statusGroups={};
+  recs.forEach(r=>{const k=r.status||'未知';if(!statusGroups[k])statusGroups[k]=[];statusGroups[k].push(r);});
+  const statusTableRows=Object.entries(statusGroups).sort((a,b)=>b[1].length-a[1].length).map(([st,rows])=>{
+    const handlers=[...new Set(rows.map(r=>r.handler).filter(Boolean))].join('、');
+    const notes=rows.slice(0,2).map(r=>'<div style="font-size:10px;color:var(--text2);margin-bottom:2px">・['+r.company+'] '+r.subcategory+(r.result?'<span style="color:var(--green)"> →'+r.result+'</span>':'')+'</div>').join('');
+    return '<tr><td><span class="badge badge-'+st+'">'+st+'</span></td><td style="font-weight:700;text-align:center">'+rows.length+'</td><td style="font-size:11px">'+(handlers||'—')+'</td><td>'+notes+'</td></tr>';
+  }).join('');
+
+  // Channel bar
+  const chMax=Math.max(...Object.values(chC),1);
+  const chBars=Object.entries(chC).sort((a,b)=>b[1]-a[1]).map(([ch,cnt],i)=>'<div class="br"><div class="bla">'+ch+'</div><div class="bt"><div class="bf" style="width:'+(cnt/chMax*100).toFixed(1)+'%;background:'+BC[i%BC.length]+'">'+cnt+'</div></div></div>').join('');
+
+  // Category table
+  const catMap={};
+  recs.forEach(r=>{const k=r.category||'其他';if(!catMap[k])catMap[k]={total:0,closed:0,subs:{}};catMap[k].total++;if(r.status==='結案')catMap[k].closed++;const s=r.subcategory||'其他';catMap[k].subs[s]=(catMap[k].subs[s]||0)+1;});
+  const catTableRows=Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total).map(([cat,v])=>{
+    const topSubs=Object.entries(v.subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,n])=>s+'('+n+')').join('、');
+    const rate=((v.closed/v.total)*100).toFixed(0);
+    const rateColor=rate>=80?'var(--green)':rate>=50?'var(--yellow)':'var(--red)';
+    return '<tr><td style="font-weight:600">'+cat+'</td><td style="text-align:center;font-weight:700">'+v.total+'</td><td style="text-align:center;color:var(--green)">'+v.closed+'</td><td style="text-align:center"><span style="color:'+rateColor+'">'+rate+'%</span></td><td style="font-size:10px;color:var(--text2)">'+topSubs+'</td></tr>';
+  }).join('');
+
+  // Overdue table
+  const overdueList=recs.filter(r=>isOverdue(r));
+  const overdueRows=overdueList.map(r=>{
+    const days=Math.floor((new Date()-new Date(r.date))/864e5);
+    return '<tr><td><span class="mono" style="font-size:10px">'+r.id+'</span></td><td>'+r.company+'</td><td style="font-size:11px;color:var(--text2)">'+r.subcategory+'</td><td><span class="badge badge-'+r.status+'">'+r.status+'</span></td><td style="font-size:11px">'+(r.handler||'—')+'</td><td style="color:var(--orange);font-weight:700">'+days+'天</td></tr>';
+  }).join('');
+
+  const el=document.getElementById('analyticsContent');
+  el.innerHTML=
+    '<div style="padding:4px 0 14px;font-size:12px;color:var(--text3)">📅 報表期間：<strong style="color:var(--text)">'+periodLabel+'</strong>　共 <strong style="color:var(--accent)">'+total+'</strong> 筆</div>'+
+    '<div class="sg">'+
+      '<div class="sc"><div class="slb">總案件數</div><div class="sv" style="color:var(--accent)">'+total+'</div><div class="ss">期間記錄</div></div>'+
+      '<div class="sc"><div class="slb">已結案</div><div class="sv" style="color:var(--green)">'+closed+'</div><div class="ss">結案率 '+(total>0?((closed/total)*100).toFixed(1):0)+'%</div></div>'+
+      '<div class="sc"><div class="slb">未結案</div><div class="sv" style="color:var(--yellow)">'+open+'</div><div class="ss">逾7天 <span style="color:var(--orange);font-weight:700">'+overdue+'</span> 筆</div></div>'+
+      '<div class="sc"><div class="slb">平均處理時間</div><div class="sv" style="color:var(--purple);font-size:20px">'+avgD+'</div><div class="ss">已結案案件</div></div>'+
+    '</div>'+
+    '<div class="cg">'+donutC(sC,'📊 處理狀態分佈')+barC(cC,'🏷️ 問題大類排行',BC)+'</div>'+
+    '<div style="margin-bottom:14px">'+
+      '<div class="rpt-section-title">① 處理狀態 × 處理人員 × 重點說明</div>'+
+      '<div class="occ"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2);text-transform:uppercase">狀態</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">件數</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">處理人員</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">重點說明</th></tr></thead>'+
+        '<tbody>'+statusTableRows+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
+    '<div class="cg" style="margin-bottom:14px">'+
+      '<div class="cc"><div class="ct">② 進線來源</div><div class="bc">'+chBars+'</div></div>'+
+      barC(hC,'👤 人員負責案件數',BC)+
+    '</div>'+
+    '<div style="margin-bottom:14px">'+
+      '<div class="rpt-section-title">③ 問題分類統計</div>'+
+      '<div class="occ"><table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">問題大類</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">總件數</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">已結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案率</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">主要次分類</th></tr></thead>'+
+        '<tbody>'+catTableRows+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
+    '<div style="margin-bottom:14px">'+
+      '<div class="rpt-section-title">④ 超過7天未結案（'+overdueList.length+' 筆）</div>'+
+      '<div class="occ">'+
+        (overdueRows?
+          '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;font-size:10px;color:var(--text2)">編號</th><th style="padding:9px 12px;font-size:10px;color:var(--text2)">公司</th><th style="padding:9px 12px;font-size:10px;color:var(--text2)">問題</th><th style="padding:9px 12px;font-size:10px;color:var(--text2)">狀態</th><th style="padding:9px 12px;font-size:10px;color:var(--text2)">負責人</th><th style="padding:9px 12px;font-size:10px;color:var(--text2)">已逾</th></tr></thead><tbody>'+overdueRows+'</tbody></table>':
+          '<div style="padding:20px;text-align:center;color:var(--green);font-size:13px">✅ 本期無逾期未結案</div>')+
+      '</div>'+
+    '</div>';
+}
+
+['formModal','detailModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget)document.getElementById(id).classList.remove('open');});
+});
+
+</script>
+</body>
+</html>
