@@ -6,6 +6,10 @@
 <title>客服案件管理系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/zh-tw.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2d3250;--accent:#5b8cff;--accent2:#7c6cff;--green:#34d399;--yellow:#fbbf24;--red:#f87171;--orange:#fb923c;--purple:#a78bfa;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -144,6 +148,12 @@ textarea.fi{resize:vertical;min-height:68px;}
         <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
         <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select>
         <button class="overdue-toggle" id="overdueBtn" onclick="toggleOverdue()">🔴 超過7天未結案</button>
+        <select id="perPageSelect" onchange="changePerPage()" style="width:90px">
+          <option value="25">25筆/頁</option>
+          <option value="50" selected>50筆/頁</option>
+          <option value="100">100筆/頁</option>
+          <option value="9999">全部</option>
+        </select>
         <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
         <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
         <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
@@ -305,7 +315,7 @@ const SUBMAP={
 };
 
 let records=[],filtered=[],editIdx=null,page=1,showOverdue=false;
-const PER=50;
+// PER defined above
 
 function setLoading(on){
   let el=document.getElementById('loadingBar');
