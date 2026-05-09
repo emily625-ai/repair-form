@@ -657,31 +657,40 @@ function getWeekLabel(date){
   return mon.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+'～'+sun.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
 }
 
-function getWeekSat(offset){
-  // 取得最近的週六（offset=0本週六，offset=-7上週六）
+function getLastCompletedSat(){
+  // 取得最近已完成週期的週六（週六到週五為一週）
+  // 今天若是週六，代表新週剛開始，本週是上週六到昨天（週五）
+  // 今天若是週日到週五，本週六是上一個週六
   const now=new Date();
   const day=now.getDay(); // 0=日,1=一...6=六
-  // 距離上一個週六的天數
-  const diffToLastSat = day===6 ? 0 : day+1;
+  let diffToSat;
+  if(day===6){
+    // 今天週六，本週從上週六開始（7天前）
+    diffToSat=7;
+  } else {
+    // 週日(0)差1天、週一(1)差2天...週五(5)差6天
+    diffToSat=day+1;
+  }
   const sat=new Date(now);
-  sat.setDate(now.getDate()-diffToLastSat+offset);
+  sat.setDate(now.getDate()-diffToSat);
   sat.setHours(0,0,0,0);
   return sat;
 }
 function setThisWeek(){
-  // 本週 = 上週六 ～ 本週五
-  const sat=getWeekSat(0); // 上週六
-  const fri=new Date(sat);fri.setDate(sat.getDate()+6); // 本週五
+  // 本週 = 最近已完成週的週六 ～ 週五
+  const sat=getLastCompletedSat();
+  const fri=new Date(sat);fri.setDate(sat.getDate()+6);
   document.getElementById('rptFrom').value=sat.toISOString().slice(0,10);
   document.getElementById('rptTo').value=fri.toISOString().slice(0,10);
   renderAnalytics();
 }
 function setLastWeek(){
-  // 上週 = 上上週六 ～ 上週五
-  const sat=getWeekSat(-7); // 上上週六
-  const fri=new Date(sat);fri.setDate(sat.getDate()+6); // 上週五
-  document.getElementById('rptFrom').value=sat.toISOString().slice(0,10);
-  document.getElementById('rptTo').value=fri.toISOString().slice(0,10);
+  // 上週 = 本週再往前7天
+  const sat=getLastCompletedSat();
+  const prevSat=new Date(sat);prevSat.setDate(sat.getDate()-7);
+  const prevFri=new Date(prevSat);prevFri.setDate(prevSat.getDate()+6);
+  document.getElementById('rptFrom').value=prevSat.toISOString().slice(0,10);
+  document.getElementById('rptTo').value=prevFri.toISOString().slice(0,10);
   renderAnalytics();
 }
 function setThisMonth(){
