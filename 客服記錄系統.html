@@ -384,7 +384,9 @@ textarea.fi{resize:vertical;min-height:68px;}
             <option>王睿揚</option><option>陳世豪</option><option>黃世緯</option><option>黃泊鑫</option>
           </select></div>
         <div class="fgr"><div class="flb">保固狀態</div>
-          <select id="fWarranty" class="fi"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
+          <select id="fWarranty" class="fi" onchange="if(this.value==='保固外')document.getElementById('fInvoice').value='待開立'"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
+        <div class="fgr"><div class="flb">發票狀態</div>
+          <select id="fInvoice" class="fi"><option value="">未填</option><option>待開立</option><option>已開立</option><option>免開立</option></select></div>
         <div class="fgr"><div class="flb">結案日期時間</div><input type="datetime-local" id="fCloseDate" class="fi" step="1"></div>
         <div class="fgr full"><div class="flb">問題詳細描述</div><textarea id="fDescription" class="fi" rows="3" placeholder="客戶問題描述…"></textarea></div>
         <div class="fgr full"><div class="flb">最終處理結果</div><textarea id="fResult" class="fi" rows="2" placeholder="處理結果…"></textarea></div>
