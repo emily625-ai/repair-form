@@ -187,6 +187,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         </select>
         <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
         <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+        <button class="btn btn-outline btn-sm" onclick="openQuickForm()">⚡ 快速新增</button>
         <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
       </div>
       <div class="toolbar-row">
@@ -1185,6 +1186,7 @@ function applyQuickResult(){
   document.getElementById('fDispatchDate').value='';
   document.getElementById('fHandler').value='';
   document.getElementById('fWarranty').value='';
+  document.getElementById('fInvoice').value='';
   document.getElementById('fCloseDate').value='';
   // 描述包含聯絡資訊
   let desc = quickParsed.description||'';
