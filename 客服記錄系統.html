@@ -125,11 +125,11 @@ textarea.fi{resize:vertical;min-height:68px;}
 .highlight{background:rgba(91,140,255,.3);border-radius:2px;}
 .es{padding:50px;text-align:center;color:var(--text3);font-size:13px;}
 
-
 </style>
 </head>
 <body>
 
+</div>
 <div class="app">
   <div class="topbar">
     <div class="topbar-logo">⚡ 售服案件系統</div>
@@ -457,13 +457,8 @@ async function loadRecords(){
     const rows=await sbFetch('cases?order=date.desc&limit=1000');
     records=rows.map(fromRow).sort((a,b)=>new Date(b.date)-new Date(a.date));
     document.getElementById('totalCount').textContent=records.length;
-    renderDailyTodo();
     applyFilters();
-  }catch(e){
-    showToast('載入失敗：'+e.message,'var(--red)');
-    document.getElementById('emptyState').style.display='';
-    document.getElementById('emptyState').textContent='⚠️ 資料載入失敗：'+e.message;
-  }
+  }catch(e){showToast('載入失敗：'+e.message,'var(--red)');}
   setLoading(false);
 }
 
@@ -1076,8 +1071,7 @@ function parseQuickText(){
   if(!text){alert('請先貼上 LINE 訊息內容');return;}
   
   quickParsed = {};
-  const lines = text.split(/[
-]+/).map(l=>l.trim()).filter(Boolean);
+  const lines = text.split(/[\r\n]+/).map(l=>l.trim()).filter(Boolean);
   
   // 日期時間解析
   const datePatterns = [
@@ -1146,8 +1140,7 @@ function parseQuickText(){
     if(l.match(/電話[：:]/)) return false;
     return true;
   });
-  quickParsed.description = descLines.join('
-');
+  quickParsed.description = descLines.join('\n');
 
   // 顯示解析結果
   const items = [
@@ -1184,12 +1177,9 @@ function applyQuickResult(){
   document.getElementById('fCloseDate').value='';
   // 描述包含聯絡資訊
   let desc = quickParsed.description||'';
-  if(quickParsed.location) desc = quickParsed.location + '
-' + desc;
-  if(quickParsed.contact) desc += '
-聯絡人：' + quickParsed.contact;
-  if(quickParsed.phone) desc += '
-電話：' + quickParsed.phone;
+  if(quickParsed.location) desc = quickParsed.location + '\n' + desc;
+  if(quickParsed.contact) desc += '\n聯絡人：' + quickParsed.contact;
+  if(quickParsed.phone) desc += '\n電話：' + quickParsed.phone;
   document.getElementById('fDescription').value=desc.trim();
   document.getElementById('fResult').value='';
   document.getElementById('formModal').classList.add('open');
@@ -1278,8 +1268,7 @@ async function saveRecord(){
       const msg = '⚠️ 此車牌在30天內有 '+dupCases.length+' 筆未結案件：
 
 '+
-        dupCases.map(r=>'・'+r.id+' ['+r.status+'] '+r.subcategory).join('
-')+
+        dupCases.map(r=>'・'+r.id+' ['+r.status+'] '+r.subcategory).join('\n')+
         '
 
 確定要建立新案件嗎？';
