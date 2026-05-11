@@ -125,6 +125,15 @@ textarea.fi{resize:vertical;min-height:68px;}
 .highlight{background:rgba(91,140,255,.3);border-radius:2px;}
 .es{padding:50px;text-align:center;color:var(--text3);font-size:13px;}
 
+
+
+
+
+
+
+
+
+
 </style>
 </head>
 <body>
@@ -1265,13 +1274,7 @@ async function saveRecord(){
       r.date && new Date(r.date) > thirtyDaysAgo
     );
     if(dupCases.length>0){
-      const msg = '⚠️ 此車牌在30天內有 '+dupCases.length+' 筆未結案件：
-
-'+
-        dupCases.map(r=>'・'+r.id+' ['+r.status+'] '+r.subcategory).join('\n')+
-        '
-
-確定要建立新案件嗎？';
+      const msg = '⚠️ 此車牌在30天內有 '+dupCases.length+' 筆未結案件：\n\n'+dupCases.map(r=>'・'+r.id+' ['+r.status+'] '+r.subcategory).join('\n')+'\n\n確定要建立新案件嗎？';
       if(!confirm(msg)){return;}
     }
   }
