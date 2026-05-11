@@ -124,9 +124,12 @@ textarea.fi{resize:vertical;min-height:68px;}
 .oci{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);width:120px;flex-shrink:0;}
 .highlight{background:rgba(91,140,255,.3);border-radius:2px;}
 .es{padding:50px;text-align:center;color:var(--text3);font-size:13px;}
+
+
 </style>
 </head>
 <body>
+
 <div class="app">
   <div class="topbar">
     <div class="topbar-logo">⚡ 售服案件系統</div>
@@ -138,14 +141,33 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
   </div>
 
-  <div class="view active" id="view-records">
+  <div id="dailyTodo" style="display:none;background:linear-gradient(135deg,#1e2235,#22263a);border-bottom:1px solid var(--border);padding:10px 20px">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="todoItems"></div>
+</div>
+<div class="view active" id="view-records">
     <div class="toolbar">
       <div class="toolbar-row">
-        <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
+        <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…（支援車牌快速搜尋）" oninput="applyFilters()"></div>
         <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>轉派技師</option><option>轉派工程師</option><option>客服處理中</option><option>待客戶寄回</option></select>
         <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
         <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
-        <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
+        <select id="filterHandler" onchange="applyFilters()">
+          <option value="">所有處理人</option>
+          <option>Alan</option>
+          <option>Alex</option>
+          <option>Emily</option>
+          <option>RD</option>
+          <option>大Eddie</option>
+          <option>客戶</option>
+          <option>彭向謙</option>
+          <option>彭子豪</option>
+          <option>楊明憲</option>
+          <option>港仔</option>
+          <option>王睿揚</option>
+          <option>陳世豪</option>
+          <option>黃世緯</option>
+          <option>黃泊鑫</option>
+        </select>
         <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select>
         <button class="overdue-toggle" id="overdueBtn" onclick="toggleOverdue()">🔴 超過7天未結案</button>
         <select id="perPageSelect" onchange="changePerPage()" style="width:90px">
@@ -166,9 +188,30 @@ textarea.fi{resize:vertical;min-height:68px;}
         <span id="filterResultInfo" style="font-size:11px;color:var(--text3);margin-left:4px"></span>
       </div>
     </div>
-    <div class="table-container">
+    <div id="batchBar" style="display:none;background:var(--accent);padding:8px 16px;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="batchCount" style="color:#fff;font-size:13px;font-weight:600"></span>
+      <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:12px;background:#fff">
+        <option value="">選擇新狀態…</option>
+        <option value="客服處理中">客服處理中</option>
+        <option value="轉派技師">轉派技師</option>
+        <option value="轉派工程師">轉派工程師</option>
+        <option value="待客戶寄回">待客戶寄回</option>
+        <option value="結案">結案</option>
+      </select>
+      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:12px;background:#fff">
+        <option value="">選擇負責人…</option>
+        <option>Alan</option><option>Alex</option><option>Emily</option><option>RD</option>
+        <option>大Eddie</option><option>客戶</option><option>彭向謙</option><option>彭子豪</option>
+        <option>楊明憲</option><option>港仔</option><option>王睿揚</option><option>陳世豪</option>
+        <option>黃世緯</option><option>黃泊鑫</option>
+      </select>
+      <button class="btn btn-sm" style="background:#fff;color:var(--accent);font-weight:600" onclick="applyBatch()">✅ 套用</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="clearSelection()">取消</button>
+    </div>
+<div class="table-container">
       <table>
         <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" style="cursor:pointer"></th>
           <th>編號</th><th>進線日期時間</th><th>管道</th><th>公司名稱</th><th>車牌</th>
           <th>問題大類</th><th>問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>操作</th>
         </tr></thead>
@@ -222,6 +265,72 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div id="actlogEmpty" class="es" style="display:none">尚無操作記錄</div>
     </div>
   </div>
+
+<!-- Status Menu -->
+<div id="statusMenu" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;min-width:130px;overflow:hidden">
+  <div style="padding:6px 0">
+    <div class="smItem" onclick="setStatus('客服處理中')"><span class="badge badge-客服處理中">客服處理中</span></div>
+    <div class="smItem" onclick="setStatus('轉派技師')"><span class="badge badge-轉派技師">轉派技師</span></div>
+    <div class="smItem" onclick="setStatus('轉派工程師')"><span class="badge badge-轉派工程師">轉派工程師</span></div>
+    <div class="smItem" onclick="setStatus('待客戶寄回')"><span class="badge badge-待客戶寄回">待客戶寄回</span></div>
+    <div class="smItem" onclick="setStatus('結案')"><span class="badge badge-結案">結案</span></div>
+  </div>
+</div>
+
+<!-- Import Preview Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal" style="max-width:800px">
+    <div class="mh">
+      <div><div class="mt">📥 匯入 Excel 預覽</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="importMeta"></div></div>
+      <button class="mc" onclick="closeImport()">✕</button>
+    </div>
+    <div class="mb" style="padding:0">
+      <div id="importPreview" style="overflow:auto;max-height:400px"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeImport()">取消</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()">✅ 確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Company History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal" style="max-width:700px">
+    <div class="mh">
+      <div><div class="mt" id="historyTitle">客戶歷史案件</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="historyMeta"></div></div>
+      <button class="mc" onclick="closeHistory()">✕</button>
+    </div>
+    <div class="mb" id="historyBody" style="padding:0"></div>
+  </div>
+</div>
+
+<!-- Quick Form Modal -->
+<div class="modal-overlay" id="quickModal">
+  <div class="modal" style="max-width:520px">
+    <div class="mh">
+      <div><div class="mt">⚡ 快速新增</div><div style="font-size:11px;color:var(--text3);margin-top:2px">貼上 LINE 訊息，系統自動解析欄位</div></div>
+      <button class="mc" onclick="closeQuickForm()">✕</button>
+    </div>
+    <div class="mb" style="padding:16px">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">貼上 LINE 訊息內容</label>
+        <textarea id="quickText" style="width:100%;height:140px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:vertical;font-family:inherit" placeholder="例如：
+桃園所
+599-XM
+倒車顯影沒畫面
+聯絡人：方韋榮
+電話：0975041573"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="parseQuickText()">🔍 自動解析</button>
+      <div id="quickResult" style="display:none;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px">
+        <div style="font-weight:600;color:var(--text2);margin-bottom:8px">解析結果（可在下一步修改）：</div>
+        <div id="quickResultContent"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="applyQuickResult()">✅ 套用並開啟表單</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Form Modal -->
 <div class="modal-overlay" id="formModal">
@@ -281,7 +390,11 @@ textarea.fi{resize:vertical;min-height:68px;}
   <div class="modal">
     <div class="mh"><div><div class="mt" id="dId"></div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="dMeta"></div></div><button class="mc" onclick="closeDetail()">✕</button></div>
     <div class="mb" id="dBody"></div>
-    <div class="mf"><button class="btn btn-outline" onclick="closeDetail()">關閉</button><button class="btn btn-primary" id="dEditBtn">編輯此案件</button></div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeDetail()">關閉</button>
+      <button class="btn btn-outline" id="dNotifyBtn" style="display:none" onclick="copyCloseNotice()">📋 複製結案通知</button>
+      <button class="btn btn-primary" id="dEditBtn">編輯此案件</button>
+    </div>
   </div>
 </div>
 
@@ -299,8 +412,8 @@ async function sbFetch(path,opt={}){
   return txt?JSON.parse(txt):[];
 }
 
-function toRow(r){return{id:r.id,date:r.date||null,channel:r.channel||null,company:r.company||null,plate:r.plate||null,product:r.product||null,category:r.category||null,subcategory:r.subcategory||null,description:r.description||null,status:r.status||null,dispatch_date:r.dispatchDate||null,handler:r.handler||null,result:r.result||null,close_date:r.closeDate||null,warranty:r.warranty||null};}
-function fromRow(r){return{id:r.id,date:r.date||'',channel:r.channel||'',company:r.company||'',plate:r.plate||'',product:r.product||'',category:r.category||'',subcategory:r.subcategory||'',description:r.description||'',status:r.status||'',dispatchDate:r.dispatch_date||'',handler:r.handler||'',result:r.result||'',closeDate:r.close_date||'',warranty:r.warranty||''};}
+function toRow(r){return{id:r.id,date:r.date||null,channel:r.channel||null,company:r.company||null,plate:r.plate||null,product:r.product||null,category:r.category||null,subcategory:r.subcategory||null,description:r.description||null,status:r.status||null,dispatch_date:r.dispatchDate||null,handler:r.handler||null,result:r.result||null,close_date:r.closeDate||null,warranty:r.warranty||null,invoice:r.invoice||null};}
+function fromRow(r){return{id:r.id,date:r.date||'',channel:r.channel||'',company:r.company||'',plate:r.plate||'',product:r.product||'',category:r.category||'',subcategory:r.subcategory||'',description:r.description||'',status:r.status||'',dispatchDate:r.dispatch_date||'',handler:r.handler||'',result:r.result||'',closeDate:r.close_date||'',warranty:r.warranty||'',invoice:r.invoice||''};}
 
 const SUBMAP={
   '平台系統':['帳號密碼問題','定位異常','定位時間延遲','工作天數與實際不符','APP無法登入','登入失敗','網頁速度慢','畫面顯示處理中/Loading','歷史影像資料無法下載','API異常','查無報表資料','溫度異常','平台操作問題','權限問題','資料提供','其他'],
@@ -315,6 +428,7 @@ const SUBMAP={
 };
 
 let records=[],filtered=[],editIdx=null,page=1,showOverdue=false;
+let currentUser='系統';
 let PER=50;
 
 function changePerPage(){
@@ -454,20 +568,27 @@ function renderTable(){
   tbody.innerHTML=pd.map((r,i)=>{
     const dur=calcDur(r.date,r.closeDate);
     const ov=isOverdue(r);
+    const warning=!ov&&r.dispatchDate&&r.status!=='結案'&&r.handler!=='客戶'&&(new Date()-new Date(r.dispatchDate))>5*864e5;
     const wB=r.warranty?`<span class="badge badge-${r.warranty}">${r.warranty}</span>`:'<span style="color:var(--text3);font-size:10px">—</span>';
     const dC=dur?`<span style="font-size:10px;color:${dur.includes('天')&&parseInt(dur)>7?'var(--orange)':'var(--green)'}">${dur}</span>`:(r.status==='結案'?'<span style="font-size:10px;color:var(--text3)">—</span>':'<span style="font-size:10px;color:var(--text3)">進行中</span>');
-    return`<tr class="${ov?'overdue-row':''}">
-      <td><span class="mono">${hl(r.id,q)}</span>${ov?'<span style="font-size:9px;color:var(--orange);margin-left:3px">⚠逾7天</span>':''}</td>
+    return`<tr class="${ov?'overdue-row':warning?'warning-row':''}" data-idx="${start+i}">
+      <td style="text-align:center"><input type="checkbox" class="rowCheck" value="${start+i}" onclick="updateBatchBar()"></td>
+      <td><span class="mono">${hl(r.id,q)}</span>${ov?'<span style="font-size:9px;color:var(--orange);margin-left:3px">⚠逾7天</span>':warning?'<span style="font-size:9px;color:var(--yellow);margin-left:3px">⏰快到期</span>':''}</td>
       <td style="font-size:10px;color:var(--text2);white-space:nowrap">${fdt(r.date)}</td>
       <td style="font-size:10px;color:var(--text3)">${r.channel||'—'}</td>
-      <td><strong style="font-size:12px">${hl(r.company,q)}</strong></td>
+      <td><strong style="font-size:12px;cursor:pointer;color:var(--accent)" onclick="showCompanyHistory('${r.company}')" title="查看${r.company}所有案件">${hl(r.company,q)}</strong></td>
       <td style="font-size:10px;color:var(--text2)">${hl(r.plate,q)||'—'}</td>
       <td style="font-size:11px">${hl(r.category,q)}</td>
       <td style="font-size:10px;color:var(--text2)">${hl(r.subcategory,q)}</td>
-      <td><span class="badge badge-${r.status}">${r.status}</span></td>
+      <td>
+        <div class="status-dropdown" style="position:relative;display:inline-block">
+          <span class="badge badge-${r.status}" style="cursor:pointer" onclick="toggleStatusMenu(event,${start+i})" title="點擊快速更改狀態">${r.status} ▾</span>
+        </div>
+      </td>
       <td style="font-size:11px">${hl(r.handler,q)||'—'}</td>
       <td>${dC}</td>
       <td>${wB}</td>
+      <td>${r.invoice?`<span class="badge" style="background:${r.invoice==='待開立'?'rgba(248,113,113,.15)':r.invoice==='已開立'?'rgba(52,211,153,.15)':'rgba(100,116,139,.15)'};color:${r.invoice==='待開立'?'var(--red)':r.invoice==='已開立'?'var(--green)':'var(--text3)'}">${r.invoice}</span>`:'<span style="color:var(--text3);font-size:10px">—</span>'}</td>
       <td><div class="row-actions">
         <button class="btn btn-outline btn-sm" onclick="showDetail(${start+i})">詳情</button>
         <button class="btn btn-outline btn-sm" onclick="openEdit(${start+i})">編輯</button>
@@ -502,6 +623,7 @@ function showDetail(idx){
       <div class="di"><div class="dl">問題大類</div><div class="dv">${r.category||'—'}</div></div>
       <div class="di"><div class="dl">問題次分類</div><div class="dv">${r.subcategory||'—'}</div></div>
       <div class="di"><div class="dl">保固狀態</div><div class="dv">${r.warranty||'—'}</div></div>
+      <div class="di"><div class="dl">發票狀態</div><div class="dv">${r.invoice?`<span style="color:${r.invoice==='待開立'?'var(--red)':r.invoice==='已開立'?'var(--green)':'var(--text3)'}">${r.invoice}</span>`:'—'}</div></div>
     </div>
     <div class="dst">問題詳細描述</div>
     <div class="dd">${(r.description||'（無描述）').replace(/</g,'&lt;')}</div>
@@ -514,6 +636,10 @@ function showDetail(idx){
       <div class="di" style="grid-column:1/-1"><div class="dl">最終處理結果</div><div class="dv">${r.result||'—'}</div></div>
     </div>`;
   document.getElementById('dEditBtn').onclick=()=>{closeDetail();openEdit(idx);};
+  // 結案通知按鈕只在結案時顯示
+  const notifyBtn = document.getElementById('dNotifyBtn');
+  notifyBtn.style.display = r.status==='結案' ? '' : 'none';
+  notifyBtn._record = r;
   document.getElementById('detailModal').classList.add('open');
 }
 function closeDetail(){document.getElementById('detailModal').classList.remove('open');}
@@ -539,6 +665,7 @@ function openNewForm(){
   document.getElementById('fCloseDate').value='';
   document.getElementById('fDescription').value='';
   document.getElementById('fResult').value='';
+  document.getElementById('fInvoice').value='';
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -564,6 +691,7 @@ function openEdit(idx){
   document.getElementById('fCloseDate').value=r.closeDate?r.closeDate.slice(0,19):'';
   document.getElementById('fDescription').value=r.description;
   document.getElementById('fResult').value=r.result;
+  document.getElementById('fInvoice').value=r.invoice||'';
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -596,12 +724,499 @@ async function loadActivityLog(){
       return`<tr>
         <td style="font-size:11px;color:var(--text2);white-space:nowrap">${dt}</td>
         <td><span class="badge" style="background:rgba(${color==='34D399'?'52,211,153':color==='5B8CFF'?'91,140,255':'248,113,113'},.15);color:#${color}">${r.action}</span></td>
-        <td><span class="mono">${r.case_id||'—'}</span></td>
+        <td style="text-align:center"><input type="checkbox" class="rowCheck" value="${start+i}" onclick="updateBatchBar()"></td>
+      <td><span class="mono">${r.case_id||'—'}</span></td>
         <td style="font-size:12px">${r.changed_by||'—'}</td>
         <td style="font-size:11px;color:var(--text2)">${r.detail||'—'}</td>
       </tr>`;
     }).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px">載入失敗</td></tr>';}
+}
+
+// 解析結果暫存
+// ===== 狀態快速切換 =====
+let statusTargetIdx = null;
+
+function toggleStatusMenu(e, idx){
+  e.stopPropagation();
+  const menu = document.getElementById('statusMenu');
+  const rect = e.target.getBoundingClientRect();
+  statusTargetIdx = idx;
+  menu.style.left = rect.left + 'px';
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.display = menu.style.display==='none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', ()=>{
+  document.getElementById('statusMenu').style.display='none';
+});
+
+async function setStatus(newStatus){
+  document.getElementById('statusMenu').style.display='none';
+  if(statusTargetIdx===null) return;
+  const r = filtered[statusTargetIdx];
+  if(r.status === newStatus) return;
+  setLoading(true);
+  try{
+    const updateData = {status: newStatus};
+    // 如果改成結案，自動填入結案時間
+    if(newStatus==='結案' && !r.closeDate){
+      const now=new Date();
+      updateData.close_date=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+    }
+    await sbFetch('cases?id=eq.'+encodeURIComponent(r.id),{method:'PATCH',body:JSON.stringify(updateData)});
+    await logActivity(r.id,'編輯',`狀態變更：${r.status} → ${newStatus}`);
+    showToast('✅ 狀態已更新為「'+newStatus+'」');
+    await loadRecords();
+  }catch(e){showToast('更新失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+
+// ===== 客戶歷史查詢 =====
+function showCompanyHistory(company){
+  const history = records.filter(r=>r.company===company).slice(0,30);
+  document.getElementById('historyTitle').textContent = company + ' 歷史案件';
+  document.getElementById('historyMeta').textContent = '共 '+history.length+' 筆記錄';
+  const closed = history.filter(r=>r.status==='結案').length;
+  const body = document.getElementById('historyBody');
+  body.innerHTML = `
+    <div style="padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:12px">
+      <span>總案件：<strong style="color:var(--accent)">${history.length}</strong></span>
+      <span>已結案：<strong style="color:var(--green)">${closed}</strong></span>
+      <span>未結案：<strong style="color:var(--yellow)">${history.length-closed}</strong></span>
+    </div>
+    <div style="overflow-y:auto;max-height:400px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:var(--surface2)">
+          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">進線日期</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">車牌</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">問題次分類</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">狀態</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">負責人</th>
+        </tr></thead>
+        <tbody>
+          ${history.map((r,i)=>`<tr style="background:${i%2===0?'var(--surface)':'var(--surface2)'}">
+            <td style="padding:8px 12px;color:var(--text2)">${r.date?r.date.slice(0,10):'—'}</td>
+            <td style="padding:8px 12px"><span style="cursor:pointer;color:var(--accent)" onclick="closeHistory();searchByPlate('${r.plate}')" title="搜尋此車牌所有案件">${r.plate||'—'}</span></td>
+            <td style="padding:8px 12px;color:var(--text2)">${r.subcategory||'—'}</td>
+            <td style="padding:8px 12px"><span class="badge badge-${r.status}">${r.status}</span></td>
+            <td style="padding:8px 12px">${r.handler||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  document.getElementById('historyModal').classList.add('open');
+}
+
+// ===== Excel 匯入 =====
+let importRows = [];
+
+function importExcel(event){
+  const file = event.target.files[0];
+  event.target.value=''; // reset
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {raw:false, dateNF:'yyyy-mm-dd HH:mm:ss'});
+      if(!data.length){alert('Excel 無資料');return;}
+      
+      // 欄位對應
+      const colMap = {
+        '編號':'id','進線日期':'date','進線管道':'channel','公司名稱':'company',
+        '車牌':'plate','產品別':'product','問題大類':'category','問題次分類':'subcategory',
+        '問題詳細描述':'description','處理狀態':'status','派工日期':'dispatch_date',
+        '負責處理人員':'handler','最終處理結果':'result','結案日期':'close_date',
+        '保固狀態':'warranty'
+      };
+      
+      importRows = data.map(row=>{
+        const r={};
+        Object.entries(colMap).forEach(([cn,key])=>{
+          if(row[cn]!==undefined) r[key]=row[cn]||null;
+        });
+        if(!r.id) r.id=genId(r.date||new Date().toISOString());
+        return r;
+      });
+
+      // 重複偵測
+      const existIds = new Set(records.map(r=>r.id));
+      const newRows = importRows.filter(r=>!existIds.has(r.id));
+      const dupRows = importRows.filter(r=>existIds.has(r.id));
+
+      document.getElementById('importMeta').textContent = 
+        `共 ${importRows.length} 筆　新增 ${newRows.length} 筆　重複 ${dupRows.length} 筆（跳過）`;
+      
+      // 預覽
+      const preview = document.getElementById('importPreview');
+      preview.innerHTML = `
+        <div style="padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:16px">
+          <span style="color:var(--green)">✅ 新增：${newRows.length} 筆</span>
+          <span style="color:var(--text3)">⏭ 跳過重複：${dupRows.length} 筆</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:var(--surface2)">
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">狀態</th>
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">編號</th>
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">進線日期</th>
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">公司</th>
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">車牌</th>
+            <th style="padding:7px 10px;text-align:left;color:var(--text3)">問題</th>
+          </tr></thead>
+          <tbody>
+            ${importRows.map((r,i)=>{
+              const isDup=existIds.has(r.id);
+              return `<tr style="background:${isDup?'rgba(100,116,139,.08)':i%2===0?'var(--surface)':'var(--surface2)'}">
+                <td style="padding:7px 10px">${isDup?'<span style="color:var(--text3);font-size:10px">跳過</span>':'<span style="color:var(--green);font-size:10px">✅新增</span>'}</td>
+                <td style="padding:7px 10px;font-family:monospace;font-size:10px">${r.id||'—'}</td>
+                <td style="padding:7px 10px;color:var(--text2)">${r.date?String(r.date).slice(0,10):'—'}</td>
+                <td style="padding:7px 10px;font-weight:500">${r.company||'—'}</td>
+                <td style="padding:7px 10px;color:var(--text2)">${r.plate||'—'}</td>
+                <td style="padding:7px 10px;color:var(--text2)">${r.subcategory||r.description?.slice(0,20)||'—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+      
+      document.getElementById('importConfirmBtn').disabled = newRows.length===0;
+      document.getElementById('importModal').classList.add('open');
+    }catch(err){
+      alert('匯入失敗：'+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function closeImport(){
+  document.getElementById('importModal').classList.remove('open');
+  importRows=[];
+}
+
+async function confirmImport(){
+  const existIds = new Set(records.map(r=>r.id));
+  const newRows = importRows.filter(r=>!existIds.has(r.id));
+  if(!newRows.length){alert('沒有新資料可匯入');return;}
+  setLoading(true);
+  closeImport();
+  try{
+    // 分批插入（每批30筆）
+    for(let i=0;i<newRows.length;i+=30){
+      const batch=newRows.slice(i,i+30);
+      await sbFetch('cases',{method:'POST',body:JSON.stringify(batch)});
+    }
+    showToast(`✅ 成功匯入 ${newRows.length} 筆資料`);
+    await loadRecords();
+  }catch(e){
+    showToast('匯入失敗：'+e.message,'var(--red)');
+  }
+  setLoading(false);
+}
+
+// ===== 每日待辦 =====
+function renderDailyTodo(){
+  const todos=[];
+  const today=new Date();
+
+  // 派工逾7天未結案
+  const od=records.filter(r=>isDispatchOverdue(r));
+  if(od.length) todos.push({color:'var(--orange)',icon:'⚠️',text:`${od.length} 筆派工逾7天未結案`,action:"document.getElementById('overdueBtn').click()"});
+
+  // 快到期（5-7天）
+  const warn=records.filter(r=>!isDispatchOverdue(r)&&r.dispatchDate&&r.status!=='結案'&&r.handler!=='客戶'&&(new Date()-new Date(r.dispatchDate))>5*864e5);
+  if(warn.length) todos.push({color:'var(--yellow)',icon:'⏰',text:`${warn.length} 筆案件快到7天`,action:''});
+
+  // 待開立發票
+  const inv=records.filter(r=>r.invoice==='待開立');
+  if(inv.length) todos.push({color:'var(--red)',icon:'🧾',text:`${inv.length} 筆待開立發票`,action:"switchView('analytics',document.querySelectorAll('.tab-btn')[1])"});
+
+  // 今日新進線
+  const todayStr=today.toISOString().slice(0,10);
+  const todayNew=records.filter(r=>r.date&&r.date.slice(0,10)===todayStr);
+  if(todayNew.length) todos.push({color:'var(--accent)',icon:'📥',text:`今日 ${todayNew.length} 筆新進線`,action:''});
+
+  const bar=document.getElementById('dailyTodo');
+  const items=document.getElementById('todoItems');
+  if(!todos.length){bar.style.display='none';return;}
+  bar.style.display='';
+  items.innerHTML=todos.map(t=>`<span style="background:rgba(255,255,255,.08);border-radius:6px;padding:4px 10px;font-size:12px;color:${t.color};cursor:${t.action?'pointer':'default'}" ${t.action?`onclick="${t.action}"`:''}>${t.icon} ${t.text}</span>`).join('');
+}
+
+// ===== 批次更新 =====
+function toggleSelectAll(){
+  const checked=document.getElementById('selectAll').checked;
+  document.querySelectorAll('.rowCheck').forEach(cb=>cb.checked=checked);
+  updateBatchBar();
+}
+
+function updateBatchBar(){
+  const checked=document.querySelectorAll('.rowCheck:checked');
+  const bar=document.getElementById('batchBar');
+  if(checked.length>0){
+    bar.style.display='flex';
+    document.getElementById('batchCount').textContent=`已選 ${checked.length} 筆`;
+  } else {
+    bar.style.display='none';
+  }
+}
+
+function clearSelection(){
+  document.querySelectorAll('.rowCheck').forEach(cb=>cb.checked=false);
+  document.getElementById('selectAll').checked=false;
+  document.getElementById('batchBar').style.display='none';
+}
+
+async function applyBatch(){
+  const checked=[...document.querySelectorAll('.rowCheck:checked')];
+  if(!checked.length){alert('請先勾選案件');return;}
+  const newStatus=document.getElementById('batchStatus').value;
+  const newHandler=document.getElementById('batchHandler').value;
+  if(!newStatus&&!newHandler){alert('請選擇要更新的狀態或負責人');return;}
+  if(!confirm(`確定要更新 ${checked.length} 筆案件？`)) return;
+  setLoading(true);
+  try{
+    for(const cb of checked){
+      const r=filtered[parseInt(cb.value)];
+      const updateData={};
+      if(newStatus) updateData.status=newStatus;
+      if(newHandler) updateData.handler=newHandler;
+      if(newStatus==='結案'&&!r.closeDate){
+        const now=new Date();
+        updateData.close_date=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+      }
+      await sbFetch('cases?id=eq.'+encodeURIComponent(r.id),{method:'PATCH',body:JSON.stringify(updateData)});
+      await logActivity(r.id,'編輯',`批次更新：${newStatus?'狀態→'+newStatus:''}${newHandler?'負責人→'+newHandler:''}`);
+    }
+    showToast(`✅ 已更新 ${checked.length} 筆案件`);
+    clearSelection();
+    await loadRecords();
+  }catch(e){showToast('更新失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+
+async function markInvoiceDone(caseId){
+  if(!confirm('確定將此案件發票狀態改為「已開立」？')) return;
+  setLoading(true);
+  try{
+    await sbFetch('cases?id=eq.'+encodeURIComponent(caseId),{method:'PATCH',body:JSON.stringify({invoice:'已開立'})});
+    await logActivity(caseId,'編輯','發票狀態：待開立 → 已開立');
+    showToast('✅ 發票狀態已更新');
+    await loadRecords();
+    renderAnalytics();
+  }catch(e){showToast('更新失敗：'+e.message,'var(--red)');}
+  setLoading(false);
+}
+
+function closeHistory(){
+  document.getElementById('historyModal').classList.remove('open');
+}
+
+// ===== 結案通知模板 =====
+function copyCloseNotice(){
+  const r = document.getElementById('dNotifyBtn')._record;
+  if(!r) return;
+  const date = r.closeDate ? r.closeDate.slice(0,10) : new Date().toISOString().slice(0,10);
+  const msg = `您好，感謝您的耐心等候！
+
+以下為本次維修結案通知：
+
+🚗 車牌：${r.plate||'—'}
+🏢 公司：${r.company||'—'}
+📋 問題：${r.subcategory||'—'}
+✅ 處理結果：${r.result||'已完成維修'}
+📅 結案日期：${date}
+如有任何問題，歡迎再次聯繫，謝謝！
+富立提 fleetivity 售服團隊`;
+
+  navigator.clipboard.writeText(msg).then(()=>{
+    showToast('✅ 結案通知已複製，可直接貼到 LINE！');
+  }).catch(()=>{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = msg;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('✅ 結案通知已複製，可直接貼到 LINE！');
+  });
+}
+
+// ===== 車牌快速搜尋 =====
+function searchByPlate(plate){
+  document.getElementById('searchInput').value = plate;
+  applyFilters();
+  // 切換到案件列表
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-records').classList.add('active');
+  document.querySelector('.tab-btn').classList.add('active');
+}
+
+let quickParsed = {};
+
+function openQuickForm(){
+  document.getElementById('quickText').value='';
+  document.getElementById('quickResult').style.display='none';
+  document.getElementById('quickModal').classList.add('open');
+  setTimeout(()=>document.getElementById('quickText').focus(),100);
+}
+function closeQuickForm(){
+  document.getElementById('quickModal').classList.remove('open');
+}
+
+function parseQuickText(){
+  const text = document.getElementById('quickText').value.trim();
+  if(!text){alert('請先貼上 LINE 訊息內容');return;}
+  
+  quickParsed = {};
+  const lines = text.split(/[
+
+]+/).map(l=>l.trim()).filter(Boolean);
+  
+  // 日期時間解析
+  const datePatterns = [
+    /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s*(\d{1,2}):(\d{2})/,  // 2026/04/27 10:10
+    /(\d{1,2})[\/\-](\d{1,2})\s*(\d{1,2}):(\d{2})/,                 // 4/27 10:10
+    /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/,                        // 2026/04/27
+    /(\d{1,2})[\/\-](\d{1,2})/                                        // 4/27
+  ];
+  let foundDate = null;
+  for(const line of lines){
+    for(const pat of datePatterns){
+      const m = line.match(pat);
+      if(m){
+        const now = new Date();
+        let y,mo,d,h=now.getHours(),mi=now.getMinutes();
+        if(pat.source.includes('\d{4}')){
+          if(m.length>=6){y=m[1];mo=m[2];d=m[3];h=m[4];mi=m[5];}
+          else{y=m[1];mo=m[2];d=m[3];}
+        } else {
+          y=now.getFullYear();
+          if(m.length>=5){mo=m[1];d=m[2];h=m[3];mi=m[4];}
+          else{mo=m[1];d=m[2];}
+        }
+        foundDate = `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}T${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:00`;
+        break;
+      }
+    }
+    if(foundDate) break;
+  }
+  // 沒找到日期 → 用現在時間
+  if(!foundDate){
+    const now=new Date();
+    foundDate=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  }
+  quickParsed.date = foundDate;
+
+  // 車牌解析 (格式: ABC-1234 或 ABC1234 或 1234-AB)
+  for(const line of lines){
+    const m = line.match(/([A-Z0-9]{2,4}[-\s][A-Z0-9]{2,4})/i);
+    if(m){quickParsed.plate = m[1].toUpperCase(); break;}
+  }
+
+  // 電話解析
+  for(const line of lines){
+    const m = line.match(/(\d{4}[\-]?\d{3}[\-]?\d{3}|\d{10}|\d{4}[\-]\d{6})/);
+    if(m){quickParsed.phone = m[1]; break;}
+  }
+
+  // 聯絡人解析
+  for(const line of lines){
+    const m = line.match(/聯絡人[：:]\s*(.+)/);
+    if(m){quickParsed.contact = m[1].trim(); break;}
+  }
+
+  // 站所解析
+  for(const line of lines){
+    const m = line.match(/(.{2,8}所|.{2,6}倉|.{2,6}廠)/);
+    if(m){quickParsed.location = m[1]; break;}
+  }
+
+  // 問題描述：把所有內容合併（扣除已解析的）
+  const descLines = lines.filter(l=>{
+    if(quickParsed.plate && l.includes(quickParsed.plate)) return false;
+    if(quickParsed.phone && l.includes(quickParsed.phone)) return false;
+    if(l.match(/聯絡人[：:]/)) return false;
+    if(l.match(/電話[：:]/)) return false;
+    return true;
+  });
+  quickParsed.description = descLines.join('
+');
+
+  // 顯示解析結果
+  const items = [
+    ['📅 進線時間', quickParsed.date?.replace('T',' ')],
+    ['🚗 車牌', quickParsed.plate||'（未偵測到）'],
+    ['📍 站所', quickParsed.location||'（未偵測到）'],
+    ['👤 聯絡人', quickParsed.contact||'（未偵測到）'],
+    ['📞 電話', quickParsed.phone||'（未偵測到）'],
+    ['📝 問題描述', quickParsed.description],
+  ];
+  document.getElementById('quickResultContent').innerHTML = items.map(([k,v])=>
+    `<div style="display:flex;gap:8px;margin-bottom:5px"><span style="color:var(--text3);min-width:80px">${k}</span><span style="color:var(--text);flex:1">${v||'—'}</span></div>`
+  ).join('');
+  document.getElementById('quickResult').style.display='block';
+}
+
+function applyQuickResult(){
+  closeQuickForm();
+  // 開啟新增表單並填入解析結果
+  editIdx=null;
+  document.getElementById('formTitle').textContent='新增案件';
+  document.getElementById('fDate').value=quickParsed.date||'';
+  document.getElementById('fChannel').value='官方LINE';
+  document.getElementById('fCompany').value='';
+  document.getElementById('fCompanyNewGroup').style.display='none';
+  document.getElementById('fPlate').value=quickParsed.plate||'';
+  document.getElementById('fProduct').value='';
+  document.getElementById('fCategory').value='平台系統';
+  updateSub();
+  document.getElementById('fStatus').value='客服處理中';
+  document.getElementById('fDispatchDate').value='';
+  document.getElementById('fHandler').value='';
+  document.getElementById('fWarranty').value='';
+  document.getElementById('fCloseDate').value='';
+  // 描述包含聯絡資訊
+  let desc = quickParsed.description||'';
+  if(quickParsed.location) desc = quickParsed.location + '
+' + desc;
+  if(quickParsed.contact) desc += '
+聯絡人：' + quickParsed.contact;
+  if(quickParsed.phone) desc += '
+電話：' + quickParsed.phone;
+  document.getElementById('fDescription').value=desc.trim();
+  document.getElementById('fResult').value='';
+  document.getElementById('formModal').classList.add('open');
+}
+
+function copyLastRecord(){
+  if(!records.length){alert('尚無案件可複製');return;}
+  const last=records[0]; // 最新一筆
+  editIdx=null;
+  document.getElementById('formTitle').textContent='新增案件（複製上筆）';
+  const now=new Date();now.setSeconds(0,0);
+  const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  document.getElementById('fDate').value=local;
+  document.getElementById('fChannel').value=last.channel||'官方LINE';
+  const cs=document.getElementById('fCompany');
+  const op=[...cs.options].find(o=>o.value===last.company);
+  if(op){cs.value=last.company;document.getElementById('fCompanyNewGroup').style.display='none';}
+  else{cs.value='__new__';document.getElementById('fCompanyNew').value=last.company;document.getElementById('fCompanyNewGroup').style.display='';}
+  document.getElementById('fPlate').value=''; // 車牌清空，通常不同車
+  document.getElementById('fProduct').value=last.product||'';
+  document.getElementById('fCategory').value=last.category||'平台系統';
+  updateSub();
+  document.getElementById('fSubcategory').value=last.subcategory||'';
+  document.getElementById('fStatus').value='客服處理中';
+  document.getElementById('fDispatchDate').value='';
+  document.getElementById('fHandler').value=last.handler||'';
+  document.getElementById('fWarranty').value=last.warranty||'';
+  document.getElementById('fCloseDate').value='';
+  document.getElementById('fDescription').value='';
+  document.getElementById('fResult').value='';
+  document.getElementById('formModal').classList.add('open');
 }
 
 async function deleteRecord(idx){
@@ -623,6 +1238,13 @@ async function saveRecord(){
   let company=document.getElementById('fCompany').value;
   if(company==='__new__')company=document.getElementById('fCompanyNew').value.trim();
   if(!dt||!company){alert('請填寫進線日期時間與公司名稱');return;}
+  // 派工日期提醒
+  const statusVal=document.getElementById('fStatus').value;
+  const dispatchVal=document.getElementById('fDispatchDate').value;
+  if((statusVal==='轉派技師'||statusVal==='轉派工程師') && !dispatchVal){
+    if(!confirm('⚠️ 狀態為「'+statusVal+'」但未填寫派工日期，確定要儲存嗎？')){return;}
+  }
+
   const rec={
     id:editIdx!==null?editIdx:genId(dt),
     date:dt,channel:document.getElementById('fChannel').value,
@@ -634,10 +1256,33 @@ async function saveRecord(){
     dispatchDate:document.getElementById('fDispatchDate').value,
     handler:document.getElementById('fHandler').value,
     warranty:document.getElementById('fWarranty').value,
+    invoice:document.getElementById('fInvoice').value,
     closeDate:document.getElementById('fCloseDate').value,
     description:document.getElementById('fDescription').value.trim(),
     result:document.getElementById('fResult').value.trim(),
   };
+  // 重複車牌偵測（只在新增時）
+  if(editIdx===null && rec.plate){
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+    const dupCases = records.filter(r=>
+      r.plate && r.plate.replace(/[-\s]/g,'').toLowerCase()===rec.plate.replace(/[-\s]/g,'').toLowerCase() &&
+      r.status!=='結案' &&
+      r.date && new Date(r.date) > thirtyDaysAgo
+    );
+    if(dupCases.length>0){
+      const msg = '⚠️ 此車牌在30天內有 '+dupCases.length+' 筆未結案件：
+
+'+
+        dupCases.map(r=>'・'+r.id+' ['+r.status+'] '+r.subcategory).join('
+')+
+        '
+
+確定要建立新案件嗎？';
+      if(!confirm(msg)){return;}
+    }
+  }
+
   setLoading(true);
   try{
     if(editIdx!==null){
@@ -675,19 +1320,17 @@ function getWeekLabel(date){
 }
 
 function getLastCompletedSat(){
-  // 取得最近已完成週期的週六（週六到週五為一週）
-  // 今天若是週六，代表新週剛開始，本週是上週六到昨天（週五）
-  // 今天若是週日到週五，本週六是上一個週六
+  // 本週 = 最近已完成的週六到週五
+  // JS getDay: 0=日,1=一,2=二,3=三,4=四,5=五,6=六
+  // 週期：週六開始，週五結束
+  // 今天週六(6)→上週六7天前, 今天週日(0)→上週六8天前
+  // 今天週一(1)→上週六2天前, 週二(2)→3天...週五(5)→6天前
   const now=new Date();
-  const day=now.getDay(); // 0=日,1=一...6=六
+  const day=now.getDay();
   let diffToSat;
-  if(day===6){
-    // 今天週六，本週從上週六開始（7天前）
-    diffToSat=7;
-  } else {
-    // 週日(0)差1天、週一(1)差2天...週五(5)差6天
-    diffToSat=day+1;
-  }
+  if(day===6){diffToSat=7;}       // 週六 → 新週剛開始，本週是上週六
+  else if(day===0){diffToSat=8;}  // 週日 → 上週六是8天前
+  else{diffToSat=day+1;}          // 週一(1)→2, 週二(2)→3...週五(5)→6
   const sat=new Date(now);
   sat.setDate(now.getDate()-diffToSat);
   sat.setHours(0,0,0,0);
@@ -1104,7 +1747,7 @@ function renderAnalytics(){
     '</div>';
 }
 
-['formModal','detailModal'].forEach(id=>{
+['formModal','detailModal','quickModal','historyModal','importModal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget)document.getElementById(id).classList.remove('open');});
 });
 
