@@ -54,6 +54,7 @@ tr:hover td{background:rgba(34,38,58,.5);}
 .badge-轉派技師{background:rgba(251,191,36,.12);color:var(--yellow);}
 .badge-轉派工程師{background:rgba(167,139,250,.12);color:var(--purple);}
 .badge-客服處理中{background:rgba(91,140,255,.15);color:var(--accent);}
+.badge-待派工{background:rgba(251,191,36,.15);color:#fbbf24;}
 .badge-待客戶寄回{background:rgba(248,113,113,.12);color:var(--red);}
 .badge-保固內{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);}
 .badge-保固外{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);}
@@ -157,7 +158,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="toolbar">
       <div class="toolbar-row">
         <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…（支援車牌快速搜尋）" oninput="applyFilters()"></div>
-        <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>轉派技師</option><option>轉派工程師</option><option>客服處理中</option><option>待客戶寄回</option></select>
+        <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
         <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
         <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
         <select id="filterHandler" onchange="applyFilters()">
@@ -203,6 +204,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:12px;background:#fff">
         <option value="">選擇新狀態…</option>
         <option value="客服處理中">客服處理中</option>
+              <option value="待派工">待派工</option>
         <option value="轉派技師">轉派技師</option>
         <option value="轉派工程師">轉派工程師</option>
         <option value="待客戶寄回">待客戶寄回</option>
@@ -223,7 +225,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         <thead><tr>
           <th style="width:32px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" style="cursor:pointer"></th>
           <th>編號</th><th>進線日期時間</th><th>管道</th><th>公司名稱</th><th>車牌</th>
-          <th>問題大類</th><th>問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>操作</th>
+          <th>問題大類</th><th>問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>發票</th><th>操作</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -280,6 +282,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div id="statusMenu" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;min-width:130px;overflow:hidden">
   <div style="padding:6px 0">
     <div class="smItem" onclick="setStatus('客服處理中')"><span class="badge badge-客服處理中">客服處理中</span></div>
+    <div class="smItem" onclick="setStatus('待派工')"><span class="badge badge-待派工">待派工</span></div>
     <div class="smItem" onclick="setStatus('轉派技師')"><span class="badge badge-轉派技師">轉派技師</span></div>
     <div class="smItem" onclick="setStatus('轉派工程師')"><span class="badge badge-轉派工程師">轉派工程師</span></div>
     <div class="smItem" onclick="setStatus('待客戶寄回')"><span class="badge badge-待客戶寄回">待客戶寄回</span></div>
@@ -376,7 +379,7 @@ textarea.fi{resize:vertical;min-height:68px;}
           </select></div>
         <div class="fgr"><div class="flb">問題次分類</div><select id="fSubcategory" class="fi"></select></div>
         <div class="fgr"><div class="flb">處理狀態</div>
-          <select id="fStatus" class="fi"><option>客服處理中</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
+          <select id="fStatus" class="fi"><option>客服處理中</option><option>待派工</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
         <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
         <div class="fgr"><div class="flb">負責處理人員</div>
           <select id="fHandler" class="fi"><option value="">-- 選擇 --</option>
