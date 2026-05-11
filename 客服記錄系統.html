@@ -457,8 +457,13 @@ async function loadRecords(){
     const rows=await sbFetch('cases?order=date.desc&limit=1000');
     records=rows.map(fromRow).sort((a,b)=>new Date(b.date)-new Date(a.date));
     document.getElementById('totalCount').textContent=records.length;
+    renderDailyTodo();
     applyFilters();
-  }catch(e){showToast('載入失敗：'+e.message,'var(--red)');}
+  }catch(e){
+    showToast('載入失敗：'+e.message,'var(--red)');
+    document.getElementById('emptyState').style.display='';
+    document.getElementById('emptyState').textContent='⚠️ 資料載入失敗：'+e.message;
+  }
   setLoading(false);
 }
 
