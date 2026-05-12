@@ -178,7 +178,7 @@ textarea.fi{resize:vertical;min-height:68px;}
           <option>黃世緯</option>
           <option>黃泊鑫</option>
         </select>
-        <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select>
+        <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
         <button class="overdue-toggle" id="overdueBtn" onclick="toggleOverdue()">🔴 超過7天未結案</button>
         <select id="perPageSelect" onchange="changePerPage()" style="width:90px">
           <option value="25">25筆/頁</option>
@@ -353,7 +353,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div class="fg">
         <div class="fgr"><div class="flb">進線日期時間 *</div><input type="datetime-local" id="fDate" class="fi" step="1"></div>
         <div class="fgr"><div class="flb">進線管道</div>
-          <select id="fChannel" class="fi"><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>其他</option></select></div>
+          <select id="fChannel" class="fi"><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select></div>
         <div class="fgr"><div class="flb">公司名稱 *</div>
           <select id="fCompany" class="fi">
             <option value="">-- 選擇客戶 --</option>
@@ -408,6 +408,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="mf">
       <button class="btn btn-outline" onclick="closeDetail()">關閉</button>
       <button class="btn btn-outline" id="dNotifyBtn" style="display:none" onclick="copyCloseNotice()">📋 複製結案通知</button>
+      <button class="btn btn-outline" id="dChildBtn" onclick="createChildCase()" style="background:rgba(124,108,255,.15);border:1px solid rgba(124,108,255,.3);color:var(--purple)">🔗 衍生子案件</button>
       <button class="btn btn-primary" id="dEditBtn">編輯此案件</button>
     </div>
   </div>
@@ -531,7 +532,7 @@ function applyFilters(){
     if(fch&&r.channel!==fch)return false;
     if(ff&&r.date&&r.date.slice(0,10)<ff)return false;
     if(ft&&r.date&&r.date.slice(0,10)>ft)return false;
-    if(showOverdue&&!isOverdue(r))return false;
+    if(showOverdue&&!isDispatchOverdue(r))return false;
     if(q){const h=[r.id,r.company,r.plate,r.category,r.subcategory,r.description,r.handler,r.result,r.channel].join(' ').toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
@@ -582,7 +583,7 @@ function renderTable(){
   const q=document.getElementById('searchInput').value;
   tbody.innerHTML=pd.map((r,i)=>{
     const dur=calcDur(r.date,r.closeDate);
-    const ov=isOverdue(r);
+    const ov=isDispatchOverdue(r);
     const warning=!ov&&r.dispatchDate&&r.status!=='結案'&&r.handler!=='客戶'&&(new Date()-new Date(r.dispatchDate))>5*864e5;
     const wB=r.warranty?`<span class="badge badge-${r.warranty}">${r.warranty}</span>`:'<span style="color:var(--text3);font-size:10px">—</span>';
     const dC=dur?`<span style="font-size:10px;color:${dur.includes('天')&&parseInt(dur)>7?'var(--orange)':'var(--green)'}">${dur}</span>`:(r.status==='結案'?'<span style="font-size:10px;color:var(--text3)">—</span>':'<span style="font-size:10px;color:var(--text3)">進行中</span>');
@@ -651,6 +652,7 @@ function showDetail(idx){
       <div class="di" style="grid-column:1/-1"><div class="dl">最終處理結果</div><div class="dv">${r.result||'—'}</div></div>
     </div>`;
   document.getElementById('dEditBtn').onclick=()=>{closeDetail();openEdit(idx);};
+  document.getElementById('dChildBtn')._record = r;
   // 結案通知按鈕只在結案時顯示
   const notifyBtn = document.getElementById('dNotifyBtn');
   notifyBtn.style.display = r.status==='結案' ? '' : 'none';
@@ -661,6 +663,7 @@ function closeDetail(){document.getElementById('detailModal').classList.remove('
 
 function openNewForm(){
   editIdx=null;
+  window._customId=null;
   document.getElementById('formTitle').textContent='新增案件';
   const now=new Date();now.setSeconds(0,0);
   const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
@@ -1201,6 +1204,65 @@ function applyQuickResult(){
   document.getElementById('formModal').classList.add('open');
 }
 
+function createChildCase(){
+  const parent = document.getElementById('dChildBtn')._record;
+  if(!parent){alert('找不到父案件資料');return;}
+  // 計算下一個子單號
+  const baseId = parent.id.split('-').slice(0,2).join('-'); // 去掉可能已有的 -NN
+  const existingChildren = records.filter(r => r.id.startsWith(baseId+'-') && r.id !== baseId);
+  // 找出最大的子編號
+  let maxSub = 0;
+  existingChildren.forEach(r => {
+    const parts = r.id.split('-');
+    if(parts.length === 3){
+      const n = parseInt(parts[2]);
+      if(!isNaN(n) && n > maxSub) maxSub = n;
+    }
+  });
+  const newId = baseId + '-' + String(maxSub+1).padStart(2,'0');
+  
+  closeDetail();
+  editIdx = null;
+  document.getElementById('formTitle').textContent = '衍生子案件（父：'+parent.id+'）';
+  const now = new Date(); now.setSeconds(0,0);
+  
+  // 帶入父案件資料
+  document.getElementById('fDate').value = now.toISOString().slice(0,19);
+  document.getElementById('fChannel').value = parent.channel || '官方LINE';
+  
+  // 公司名稱
+  const cs = document.getElementById('fCompany');
+  let found = false;
+  for(let i=0; i<cs.options.length; i++){
+    if(cs.options[i].value === parent.company){ cs.value = parent.company; found = true; break; }
+  }
+  if(!found && parent.company){
+    cs.value = '__new__';
+    document.getElementById('fCompanyNew').value = parent.company;
+    document.getElementById('fCompanyNewGroup').style.display = '';
+  }
+  
+  document.getElementById('fPlate').value = parent.plate || '';
+  document.getElementById('fProduct').value = parent.product || '';
+  document.getElementById('fCategory').value = parent.category || '';
+  document.getElementById('fSubcategory').value = parent.subcategory || '';
+  document.getElementById('fWarranty').value = parent.warranty || '';
+  document.getElementById('fInvoice').value = '';
+  document.getElementById('fStatus').value = '客服處理中';
+  document.getElementById('fHandler').value = '';
+  document.getElementById('fDispatchDate').value = '';
+  document.getElementById('fCloseDate').value = '';
+  document.getElementById('fDescription').value = '【衍生自 '+parent.id+'】\n原問題：'+(parent.subcategory||'')+'\n\n本次狀況：';
+  document.getElementById('fResult').value = '';
+  
+  // 儲存自訂 ID
+  window._customId = newId;
+  
+  updateSub();
+  document.getElementById('formModal').classList.add('open');
+  showToast('✨ 子案件編號：'+newId, 'var(--purple)');
+}
+
 function copyLastRecord(){
   if(!records.length){alert('尚無案件可複製');return;}
   const last=records[0]; // 最新一筆
@@ -1256,7 +1318,7 @@ async function saveRecord(){
   }
 
   const rec={
-    id:editIdx!==null?editIdx:genId(dt),
+    id:editIdx!==null?editIdx:(window._customId||genId(dt)),
     date:dt,channel:document.getElementById('fChannel').value,
     company,plate:document.getElementById('fPlate').value.trim(),
     product:document.getElementById('fProduct').value,
@@ -1295,6 +1357,7 @@ async function saveRecord(){
       await sbFetch('cases',{method:'POST',body:JSON.stringify(toRow(rec))});
       showToast('✅ 案件已新增');
     }
+    window._customId = null;
     closeForm();
     await loadRecords();
   }catch(e){showToast('儲存失敗：'+e.message,'var(--red)');}
@@ -1648,7 +1711,7 @@ function renderAnalytics(){
   const total=recs.length;
   const closed=recs.filter(r=>r.status==='結案').length;
   const open=recs.filter(r=>r.status!=='結案').length;
-  const overdue=recs.filter(r=>isOverdue(r)).length;
+  const overdue=records.filter(r=>isDispatchOverdue(r)).length;
   const sC={},cC={},coC={},hC={},chC={};
   recs.forEach(r=>{
     sC[r.status]=(sC[r.status]||0)+1;
@@ -1706,7 +1769,7 @@ function renderAnalytics(){
   }).join('');
 
   // Overdue table
-  const overdueList=recs.filter(r=>isOverdue(r));
+  const overdueList=records.filter(r=>isDispatchOverdue(r));
   const overdueRows=overdueList.map(r=>{
     const days=Math.floor((new Date()-new Date(r.date))/864e5);
     return '<tr><td><span class="mono" style="font-size:10px">'+r.id+'</span></td><td>'+r.company+'</td><td style="font-size:11px;color:var(--text2)">'+r.subcategory+'</td><td><span class="badge badge-'+r.status+'">'+r.status+'</span></td><td style="font-size:11px">'+(r.handler||'—')+'</td><td style="color:var(--orange);font-weight:700">'+days+'天</td></tr>';
