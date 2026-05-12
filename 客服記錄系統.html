@@ -1473,7 +1473,7 @@ async function exportWeeklyReport(){
     const res=await fetch('https://report-api-ehs7.onrender.com/weekly-report',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({records:recs,from,to})
+      body:JSON.stringify({records:recs,from,to,all_records:records})
     });
     if(!res.ok) throw new Error(await res.text());
     const blob=await res.blob();
@@ -1577,7 +1577,7 @@ async function exportMonthlyReport(){
     const res=await fetch('https://report-api-ehs7.onrender.com/monthly-report',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({records:recs,from,to})
+      body:JSON.stringify({records:recs,from,to,all_records:records})
     });
     if(!res.ok) throw new Error(await res.text());
     const blob=await res.blob();
