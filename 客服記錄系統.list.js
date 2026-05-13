@@ -4,6 +4,7 @@ function getFilterState(){
     status:document.getElementById('filterStatus').value,
     category:document.getElementById('filterCategory').value,
     warranty:document.getElementById('filterWarranty').value,
+    invoice:invoiceOnly,
     handler:document.getElementById('filterHandler').value,
     channel:document.getElementById('filterChannel').value,
     dateFrom:document.getElementById('filterDateFrom').value,
@@ -38,6 +39,7 @@ function recordMatchesFilters(record, state){
   if(state.status && record.status!==state.status) return false;
   if(state.category && record.category!==state.category) return false;
   if(!matchesWarrantyFilter(record, state.warranty)) return false;
+  if(state.invoice && (record.invoice||'')!==state.invoice) return false;
   if(state.handler && record.handler!==state.handler) return false;
   if(state.channel && record.channel!==state.channel) return false;
   const caseDateOnly=getDateOnlyText(record.date);
@@ -61,6 +63,7 @@ function clearFilters(){
   ['filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
   ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
   showOverdue=false;
+  invoiceOnly='';
   document.getElementById('overdueBtn').classList.remove('active');
   document.getElementById('filterResultInfo').textContent='';
   applyFilters();
