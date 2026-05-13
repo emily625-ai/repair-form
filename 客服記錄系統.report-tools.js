@@ -1,7 +1,14 @@
 function genId(dateText){
   const dateKey=getDateOnlyText(dateText).replace(/-/g,'');
-  const count=records.filter(record=>record.id.startsWith(dateKey)).length;
-  return `${dateKey}-${String(count+1).padStart(3,'0')}`;
+  const maxSequence=records
+    .filter(record=>record.id && record.id.startsWith(dateKey+'-'))
+    .map(record=>{
+      const sequenceText=String(record.id).split('-').pop();
+      const sequenceNumber=parseInt(sequenceText,10);
+      return Number.isNaN(sequenceNumber) ? 0 : sequenceNumber;
+    })
+    .reduce((maxValue,currentValue)=>Math.max(maxValue,currentValue),0);
+  return `${dateKey}-${String(maxSequence+1).padStart(3,'0')}`;
 }
 
 function exportExcel(){
