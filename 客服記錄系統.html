@@ -93,7 +93,7 @@ tr:hover td{background:rgba(62,74,102,.32);}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:92%;max-width:760px;max-height:92vh;overflow-y:auto;}
 .mh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1;}
-.mt{font-size:16px;font-weight:700;}
+.mt{font-size:18px;font-weight:700;}
 .mc{background:none;border:none;color:var(--text2);font-size:17px;cursor:pointer;padding:3px 7px;border-radius:6px;}
 .mc:hover{background:var(--surface2);}
 .mb{padding:18px 20px;}
@@ -106,14 +106,15 @@ tr:hover td{background:rgba(62,74,102,.32);}
 textarea.fi{resize:vertical;min-height:68px;}
 .mf{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
 .dg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
-.di{background:var(--bg);padding:9px 11px;border-radius:8px;}
-.dl{font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;}
-.dv{font-size:13px;color:var(--text);font-weight:500;}
-.dst{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;margin-top:14px;}
-.dd{background:#1b2230;padding:14px;border-radius:10px;font-size:14px;line-height:1.85;color:var(--text2);white-space:pre-wrap;}
+.detail-meta{font-size:14px;color:var(--text3);margin-top:4px;line-height:1.6;}
+.di{background:var(--bg);padding:12px 14px;border-radius:8px;}
+.dl{font-size:13px;color:var(--text3);margin-bottom:6px;font-weight:600;}
+.dv{font-size:15px;color:var(--text);font-weight:600;line-height:1.7;}
+.dst{font-size:14px;letter-spacing:.2px;color:var(--text3);margin-bottom:10px;margin-top:16px;font-weight:700;}
+.dd{background:#1b2230;padding:16px;border-radius:10px;font-size:15px;line-height:1.9;color:var(--text2);white-space:pre-wrap;}
 .pt{background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.22);padding:9px 13px;border-radius:8px;display:flex;align-items:center;gap:10px;margin-bottom:13px;}
 .ptv{font-size:18px;font-weight:700;color:var(--accent);}
-.ptl{font-size:10px;color:var(--text3);}
+.ptl{font-size:13px;color:var(--text3);line-height:1.6;}
 .analytics-toolbar{padding:13px 22px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;flex-shrink:0;}
 .at-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .at-right{display:flex;gap:8px;}
@@ -444,7 +445,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <!-- Detail Modal -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
-    <div class="mh"><div><div class="mt" id="dId"></div><div style="font-size:10px;color:var(--text3);margin-top:2px" id="dMeta"></div></div><button class="mc" onclick="closeDetail()">✕</button></div>
+    <div class="mh"><div><div class="mt" id="dId"></div><div class="detail-meta" id="dMeta"></div></div><button class="mc" onclick="closeDetail()">✕</button></div>
     <div class="mb" id="dBody"></div>
     <div class="mf">
       <button class="btn btn-outline" onclick="closeDetail()">關閉</button>

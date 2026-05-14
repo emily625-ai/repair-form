@@ -296,8 +296,8 @@ function renderProcessDetailSection(record){
   return renderDetailSection('處理資訊', renderDetailGrid([
     renderDetailItem('處理狀態', `<span class="badge badge-${record.status}">${record.status}</span>`),
     renderDetailItem('負責處理人員', escapeHtml(record.handler||'—')),
-    renderDetailItem('派工日期時間', fdt(record.dispatchDate), {style:'font-size:11px'}),
-    renderDetailItem('結案日期時間', fdt(record.closeDate), {style:'font-size:11px'}),
+    renderDetailItem('派工日期時間', fdt(record.dispatchDate)),
+    renderDetailItem('結案日期時間', fdt(record.closeDate)),
     renderDetailItem('最終處理結果', escapeHtml(record.result||'未填寫'), {fullWidth:true}),
   ]));
 }
