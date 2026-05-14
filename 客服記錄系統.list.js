@@ -170,14 +170,14 @@ function renderRecordRow(record, recordIndex, query){
   return `<tr class="${visualMeta.rowClass}" data-idx="${recordIndex}">
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="${recordIndex}" onclick="updateBatchBar()"></td>
     <td class="col-id"><span class="mono">${hl(record.id,query)}</span>${visualMeta.statusNote}</td>
-    <td class="col-date" style="font-size:14px;color:var(--text2);white-space:nowrap">${fdt(record.date)}</td>
-    <td class="col-channel" style="font-size:14px;color:var(--text2);white-space:nowrap">${record.channel||'—'}</td>
-    <td class="col-company"><strong style="font-size:16px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistory('${escapeSingleQuote(record.company)}')" title="查看 ${record.company} 的歷史案件">${hl(record.company,query)}</strong></td>
-    <td class="col-plate" style="font-size:15px;color:var(--text2);white-space:nowrap">${hl(record.plate,query)||'—'}</td>
-    <td class="col-category" style="font-size:15px;white-space:nowrap">${hl(record.category,query)}</td>
-    <td class="col-subcategory" style="font-size:15px;color:var(--text2)"><span class="subcategory-text">${hl(record.subcategory,query)||'—'}</span></td>
+    <td class="col-date" style="color:var(--text2);white-space:nowrap">${fdt(record.date)}</td>
+    <td class="col-channel" style="color:var(--text2);white-space:nowrap">${record.channel||'—'}</td>
+    <td class="col-company"><strong style="font-size:15px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistory('${escapeSingleQuote(record.company)}')" title="查看 ${record.company} 的歷史案件">${hl(record.company,query)}</strong></td>
+    <td class="col-plate" style="color:var(--text2);white-space:nowrap">${hl(record.plate,query)||'—'}</td>
+    <td class="col-category" style="white-space:nowrap">${hl(record.category,query)}</td>
+    <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${hl(record.subcategory,query)||'—'}</span></td>
     <td>${renderStatusDropdown(recordIndex, record)}</td>
-    <td style="font-size:15px;white-space:nowrap">${hl(record.handler,query)||'—'}</td>
+    <td style="white-space:nowrap">${hl(record.handler,query)||'—'}</td>
     <td>${getDurationBadge(record)}</td>
     <td>${getWarrantyBadge(record)}</td>
     <td>${getInvoiceBadge(record)}</td>
