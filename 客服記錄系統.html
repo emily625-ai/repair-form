@@ -25,6 +25,11 @@ body{font-family:'Noto Sans TC',sans-serif;background:linear-gradient(180deg,#20
 .view.active{display:flex;flex-direction:column;}
 .toolbar{padding:13px 22px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;}
 .toolbar-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.toolbar-row.meta-row{justify-content:space-between;}
+.toolbar-row.action-row{align-items:flex-start;}
+.filter-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.action-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.toolbar-spacer{flex:1 1 auto;}
 .search-box{flex:1;min-width:160px;position:relative;}
 .search-box input{width:100%;background:#1b2230;border:1px solid var(--border);color:var(--text);padding:10px 13px 10px 36px;border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s, box-shadow .2s;}
 .search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,162,255,.16);}
@@ -44,9 +49,26 @@ select:focus,input[type=date]:focus,input[type=datetime-local]:focus{border-colo
 .btn-sm{padding:8px 13px;font-size:13px;}
 .table-container{flex:1;overflow:auto;}
 table{width:100%;border-collapse:collapse;font-size:15px;}
+.records-table{min-width:1540px;}
 thead{position:sticky;top:0;z-index:10;}
 th{background:#3a4764;color:#e4ebf7;font-weight:700;padding:15px 16px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:13px;letter-spacing:.4px;text-transform:uppercase;}
 td{padding:16px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:15px;line-height:1.7;}
+.records-table th{font-size:14px;padding:16px 16px;}
+.records-table td{padding:18px 16px;}
+.records-table th.col-id,
+.records-table th.col-channel,
+.records-table th.col-company,
+.records-table th.col-plate,
+.records-table th.col-category,
+.records-table td.col-id,
+.records-table td.col-date,
+.records-table td.col-channel,
+.records-table td.col-company,
+.records-table td.col-plate,
+.records-table td.col-category{white-space:nowrap;}
+.records-table th.col-subcategory{min-width:220px;width:220px;}
+.records-table td.col-subcategory{white-space:normal;}
+.records-table .subcategory-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.55;max-width:220px;}
 tr:hover td{background:rgba(62,74,102,.32);}
 .mono{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);}
 .badge{display:inline-flex;align-items:center;padding:6px 11px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;}
@@ -126,6 +148,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 .highlight{background:rgba(91,140,255,.3);border-radius:2px;}
 .es{padding:50px;text-align:center;color:var(--text3);font-size:15px;}
 .todo-chip{background:rgba(255,255,255,.1);border-radius:8px;padding:7px 13px;font-size:14px;}
+.filter-summary{font-size:15px !important;color:var(--accent2) !important;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
 .import-summary{padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:16px;}
 .import-preview-table{width:100%;border-collapse:collapse;font-size:11px;}
 .import-preview-table thead tr{background:var(--surface2);}
@@ -202,15 +225,19 @@ textarea.fi{resize:vertical;min-height:68px;}
         </select>
         <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
         <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
-        <button class="btn btn-outline btn-sm" onclick="openQuickForm()">⚡ 快速新增</button>
-        <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
       </div>
-      <div class="toolbar-row">
-        <span class="fl">進線日期時間：</span>
-        <input type="date" id="filterDateFrom" onchange="applyFilters()">
-        <span class="fl">～</span>
-        <input type="date" id="filterDateTo" onchange="applyFilters()">
-        <span id="filterResultInfo" style="font-size:11px;color:var(--text3);margin-left:4px"></span>
+      <div class="toolbar-row meta-row">
+        <div class="filter-meta">
+          <span class="fl">進線日期時間：</span>
+          <input type="date" id="filterDateFrom" onchange="applyFilters()">
+          <span class="fl">～</span>
+          <input type="date" id="filterDateTo" onchange="applyFilters()">
+          <span id="filterResultInfo" class="filter-summary"></span>
+        </div>
+        <div class="action-group">
+          <button class="btn btn-outline btn-sm" onclick="openQuickForm()">⚡ 快速新增</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
+        </div>
       </div>
     </div>
     <div id="batchBar" style="display:none;background:var(--accent);padding:8px 16px;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
@@ -235,11 +262,11 @@ textarea.fi{resize:vertical;min-height:68px;}
       <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="clearSelection()">取消</button>
     </div>
 <div class="table-container">
-      <table>
+      <table class="records-table">
         <thead><tr>
           <th style="width:32px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" style="cursor:pointer"></th>
-          <th>編號</th><th>進線日期時間</th><th>管道</th><th>公司名稱</th><th>車牌</th>
-          <th>問題大類</th><th>問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>發票</th><th>操作</th>
+          <th class="col-id">編號</th><th>進線日期時間</th><th class="col-channel">管道</th><th class="col-company">公司名稱</th><th class="col-plate">車牌</th>
+          <th class="col-category">問題大類</th><th class="col-subcategory">問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>發票</th><th>操作</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -432,7 +459,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.core.js?v=20260513-1"></script>
 <script src="./客服記錄系統.data.js?v=20260513-1"></script>
 <script src="./客服記錄系統.form.js?v=20260513-1"></script>
-<script src="./客服記錄系統.list.js?v=20260513-2"></script>
+<script src="./客服記錄系統.list.js?v=20260514-1"></script>
 <script src="./客服記錄系統.analytics.js?v=20260513-1"></script>
 <script src="./客服記錄系統.app.js?v=20260513-1"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
