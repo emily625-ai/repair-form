@@ -105,7 +105,7 @@ const SUBMAP={
   MDVR:['鏡頭霧化、黑屏、藍屏、模糊不清','螢幕不會亮、黑屏、藍屏','螢幕顯示4分隔問題','DVR無法錄影','DVR錄影無影像檔','接頭問題','購料','報價單','其他'],
   'GPS設備':['定位異常','GPS離線','新安裝','拆機','移機','溫度異常','其他'],
   '行車視野':['螢幕不會亮、黑屏、藍屏','鏡頭霧化、黑屏、藍屏、模糊不清','鏡頭脫落','後鏡頭+無法錄影','DVR無法錄影','報價單','其他'],
-  '雷達設備':['燈盒問題','左右雷達','報價單','匯款單據','其他'],
+  '雷達設備':['燈盒問題','A柱雷達','左右雷達','報價單','匯款單據','其他'],
   '帳務問題':['發票問題','匯款單據','其他'],
   '冷鏈':['溫度異常','GPS離線','其他'],
   '溫度n/a':['感溫線(含頭)故障','溫度異常','其他'],
@@ -155,7 +155,7 @@ function isClosedStatus(status){
 
 function validateStatusTransition(status, dispatchDate){
   if(!isDispatchStatus(status) || dispatchDate) return true;
-  return confirm(`⚠️ 狀態為「${status}」但未填寫派工日期，確定要儲存嗎？`);
+  return confirm(`目前狀態改為「${status}」，但尚未填寫派工日期時間，確定要繼續儲存嗎？`);
 }
 
 function buildStatusPatch(record, newStatus, extraData={}){
@@ -171,7 +171,7 @@ function getDispatchElapsedDays(dispatchDate){
   const dispatchDt=toDateValue(dispatchDate);
   if(!dispatchDt) return null;
   const ms=new Date()-dispatchDt;
-  if(Number.isNaN(ms) || ms < 0) return null;
+  if(Number.isNaN(ms) || ms<0) return null;
   return Math.floor(ms/864e5);
 }
 
@@ -179,7 +179,7 @@ function isDispatchWarning(record){
   if(isDispatchOverdue(record)) return false;
   if(!record.dispatchDate || isClosedStatus(record.status) || record.handler==='客戶') return false;
   const days=getDispatchElapsedDays(record.dispatchDate);
-  return days !== null && days > 5;
+  return days!==null && days>5;
 }
 
 function getCaseVisualState(record){
@@ -200,12 +200,12 @@ function getDuplicateOpenPlateCases(plate, days=30){
   return records.filter(record=>
     normalizePlate(record.plate)===normalizedPlate &&
     !isClosedStatus(record.status) &&
-    toDateValue(record.date) > dateLimit
+    toDateValue(record.date)>dateLimit
   );
 }
 
 function buildActivityDetail(action, record){
-  const subject=`${record.company||'未填公司'} - ${record.subcategory||'未填分類'}`;
+  const subject=`${record.company||'未填公司'} - ${record.subcategory||'未填次分類'}`;
   if(action==='新增') return `新增案件：${subject}`;
   if(action==='編輯') return `編輯案件：${subject}`;
   return subject;
