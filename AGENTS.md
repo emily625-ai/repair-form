@@ -28,6 +28,16 @@ This repository is the frontend project for the customer service record system.
 - Supabase schema, RLS, and policy changes should be stored as SQL references or migration drafts only.
 - Sensitive exports and production data must stay outside Git.
 
+## Codex Project Root Rules
+
+- Open `F:\07_網站與專案\repair-form` when working on the formal frontend repo.
+- Open `C:\Users\emily\OneDrive\文件\New project\report-api` when working on the formal report API repo.
+- Treat `C:\Users\emily\OneDrive\文件\New project` as a temporary, reference, and staging workspace only.
+- Do not treat `C:\Users\emily\OneDrive\文件\New project` as one complete project root.
+- Only `C:\Users\emily\OneDrive\文件\New project\report-api` is a formal repo inside `New project`.
+- Do not move files between these roots unless the user explicitly requests it.
+- Confirm the target root before editing when the task mentions reports, API, Supabase SQL, frontend UI, or GitHub Pages.
+
 ## Change Workflow
 
 1. Read the relevant files before editing.
