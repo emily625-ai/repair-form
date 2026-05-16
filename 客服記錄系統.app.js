@@ -14,6 +14,7 @@ function switchView(viewName, button){
   button.classList.add('active');
   if(viewName==='analytics') renderAnalytics();
   if(viewName==='actlog') loadActivityLog();
+  if(viewName==='line-import' && typeof renderLineImport==='function') renderLineImport();
 }
 
 function updateSub(){
@@ -38,7 +39,7 @@ function isOverdue(record){
 }
 
 function bindModalBackdropClose(){
-  ['formModal','detailModal','quickModal','historyModal','importModal'].forEach(id=>{
+  ['formModal','detailModal','quickModal','historyModal','importModal','lineDetailModal'].forEach(id=>{
     const modal=document.getElementById(id);
     if(!modal) return;
     modal.addEventListener('click',event=>{

@@ -164,6 +164,37 @@ textarea.fi{resize:vertical;min-height:68px;}
 .import-code{font-family:monospace;font-size:10px;}
 .import-muted{color:var(--text2);}
 .import-company{font-weight:500;}
+.line-import-shell{flex:1;overflow:auto;padding:18px 22px;background:linear-gradient(180deg,rgba(40,48,67,.74),rgba(29,35,49,.96));}
+.line-import-grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px;align-items:start;}
+.line-panel{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.line-panel-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+.line-panel-title{font-size:15px;font-weight:800;color:var(--text);}
+.line-panel-sub{font-size:12px;color:var(--text3);margin-top:3px;}
+.line-panel-body{padding:14px 16px;}
+.line-upload-zone{border:1.5px dashed var(--border);background:#1b2230;border-radius:12px;padding:20px;text-align:center;color:var(--text2);transition:all .2s;}
+.line-upload-zone.dragover{border-color:var(--accent);background:rgba(125,162,255,.1);color:var(--accent2);}
+.line-upload-title{font-size:14px;font-weight:800;margin-bottom:4px;}
+.line-upload-note{font-size:12px;color:var(--text3);}
+.line-import-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.line-state-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.line-state-card{background:rgba(27,34,48,.86);border:1px solid var(--border);border-radius:12px;padding:13px 14px;}
+.line-state-label{font-size:12px;color:var(--text3);}
+.line-state-value{font-size:24px;font-weight:800;line-height:1.2;margin-top:3px;}
+.line-preview-table{min-width:920px;}
+.line-message-preview{max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.line-warning{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;}
+.line-warning-none{color:var(--text3);background:rgba(165,177,201,.09);}
+.line-warning-duplicate{color:var(--yellow);background:rgba(251,191,36,.13);border:1px solid rgba(251,191,36,.25);}
+.line-warning-hash{color:var(--orange);background:rgba(251,146,60,.13);border:1px solid rgba(251,146,60,.25);}
+.line-status-pending{background:rgba(125,162,255,.15);color:var(--accent2);}
+.line-status-classified{background:rgba(177,148,255,.14);color:var(--purple);}
+.line-status-linked{background:rgba(52,211,153,.14);color:var(--green);}
+.line-status-archived{background:rgba(165,177,201,.14);color:var(--text3);}
+.line-status-error{background:rgba(248,113,113,.14);color:var(--red);}
+.line-alert{border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.1);color:#fed7aa;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:none;}
+.line-alert.show{display:block;}
+.line-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.line-detail-message{background:#1b2230;border:1px solid var(--border);border-radius:10px;padding:13px;white-space:pre-wrap;color:var(--text2);font-size:14px;line-height:1.7;}
 
 
 
@@ -186,6 +217,7 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="topbar-tabs">
       <button class="tab-btn active" onclick="switchView('records',this)">📋 案件列表</button>
       <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
+      <button class="tab-btn" onclick="switchView('line-import',this)">💬 LINE匯入</button>
       <button class="tab-btn" onclick="switchView('actlog',this)">🕐 操作記錄</button>
     </div>
   </div>
@@ -321,6 +353,107 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div id="actlogEmpty" class="es" style="display:none">尚無操作記錄</div>
     </div>
   </div>
+
+  <!-- LINE IMPORT VIEW -->
+  <div class="view" id="view-line-import">
+    <div class="line-import-shell">
+      <div class="line-state-row">
+        <div class="line-state-card"><div class="line-state-label">待分類</div><div class="line-state-value" id="linePendingCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">預覽筆數</div><div class="line-state-value" id="linePreviewCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">重複警示</div><div class="line-state-value" id="lineDuplicateCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">錯誤</div><div class="line-state-value" id="lineErrorCount">0</div></div>
+      </div>
+
+      <div class="line-alert" id="lineImportAlert"></div>
+
+      <div class="line-import-grid">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title">CSV Upload</div>
+              <div class="line-panel-sub">MVP mock preview only，不寫入資料庫</div>
+            </div>
+            <div class="line-panel-body">
+              <div class="line-upload-zone" id="lineDropZone">
+                <div class="line-upload-title">拖拉 CSV 到這裡</div>
+                <div class="line-upload-note">欄位建議：received_at, sender_name, sender_id, message</div>
+              </div>
+              <div class="line-import-actions">
+                <input type="file" id="lineCsvInput" accept=".csv,text/csv" style="display:none" onchange="handleLineCsvFile(this.files[0])">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('lineCsvInput').click()">選擇檔案</button>
+                <button class="btn btn-primary btn-sm" onclick="loadLineMockCsv()">載入 mock CSV</button>
+                <button class="btn btn-outline btn-sm" onclick="clearLinePreview()">清除預覽</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title">狀態說明</div>
+              <div class="line-panel-sub">第一版只顯示 mock 狀態，不建立案件</div>
+            </div>
+            <div class="line-panel-body" style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="badge line-status-pending">待分類</span>
+              <span class="badge line-status-classified">已分類</span>
+              <span class="badge line-status-linked">已連結</span>
+              <span class="badge line-status-archived">已封存</span>
+              <span class="badge line-status-error">需處理</span>
+            </div>
+          </section>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title">CSV Parse Preview</div>
+              <div class="line-panel-sub" id="linePreviewMeta">尚未載入 CSV</div>
+            </div>
+            <div class="table-container" style="max-height:260px">
+              <table class="line-preview-table">
+                <thead><tr>
+                  <th>Sender</th><th>Message Preview</th><th>Received</th><th>Status</th><th>Duplicate Warning</th><th>Action</th>
+                </tr></thead>
+                <tbody id="linePreviewBody"></tbody>
+              </table>
+              <div id="linePreviewEmpty" class="es">請選擇 CSV 或載入 mock CSV</div>
+            </div>
+          </section>
+
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title">Pending Message List</div>
+              <div class="line-panel-sub">待分類訊息池，mock data only</div>
+            </div>
+            <div class="table-container" style="max-height:360px">
+              <table class="line-preview-table">
+                <thead><tr>
+                  <th>Sender</th><th>Message Preview</th><th>Received</th><th>Status</th><th>Duplicate Warning</th><th>Action</th>
+                </tr></thead>
+                <tbody id="linePendingBody"></tbody>
+              </table>
+              <div id="linePendingEmpty" class="es" style="display:none">目前沒有待分類訊息</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- LINE Message Detail Modal -->
+<div class="modal-overlay" id="lineDetailModal">
+  <div class="modal" style="max-width:720px">
+    <div class="mh">
+      <div><div class="mt" id="lineDetailTitle">LINE 訊息明細</div><div class="detail-meta" id="lineDetailMeta"></div></div>
+      <button class="mc" onclick="closeLineMessageDetail()">✕</button>
+    </div>
+    <div class="mb" id="lineDetailBody"></div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeLineMessageDetail()">關閉</button>
+      <button class="btn btn-outline" disabled>連結案件（MVP mock）</button>
+      <button class="btn btn-primary" disabled>建立案件（MVP mock）</button>
+    </div>
+  </div>
+</div>
 
 <!-- Status Menu -->
 <div id="statusMenu" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;min-width:130px;overflow:hidden">
@@ -468,6 +601,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.app.js?v=20260513-1"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
 <script src="./客服記錄系統.import.js?v=20260513-1"></script>
+<script src="./客服記錄系統.line-import.js?v=20260516-2"></script>
 <script src="./客服記錄系統.todo.js?v=20260513-1"></script>
 <script src="./客服記錄系統.batch.js?v=20260513-1"></script>
 <script src="./客服記錄系統.actions.js?v=20260513-1"></script>
