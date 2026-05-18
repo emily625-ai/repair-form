@@ -11,7 +11,13 @@ function openPendingInvoiceView(){
 }
 
 function toggleOverdueView(){
-  document.getElementById('overdueBtn').click();
+  const overdueBtn=document.getElementById('overdueBtn');
+  if(overdueBtn){
+    overdueBtn.click();
+    return;
+  }
+  showOverdue=!showOverdue;
+  applyFilters();
 }
 
 function createTodoItem({color,icon,text,action=''}){

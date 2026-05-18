@@ -27,7 +27,8 @@ function updateSub(){
 
 function toggleOverdue(){
   showOverdue=!showOverdue;
-  document.getElementById('overdueBtn').classList.toggle('active',showOverdue);
+  const overdueBtn=document.getElementById('overdueBtn');
+  if(overdueBtn) overdueBtn.classList.toggle('active',showOverdue);
   applyFilters();
 }
 

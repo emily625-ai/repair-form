@@ -62,7 +62,8 @@ function clearFilters(){
   ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
   showOverdue=false;
   invoiceOnly='';
-  document.getElementById('overdueBtn').classList.remove('active');
+  const overdueBtn=document.getElementById('overdueBtn');
+  if(overdueBtn) overdueBtn.classList.remove('active');
   document.getElementById('filterResultInfo').textContent='';
   applyFilters();
 }
