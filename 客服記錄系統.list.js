@@ -111,20 +111,20 @@ function getDurationBadge(record){
   const duration=calcDur(record.date,record.closeDate);
   if(duration){
     const color=duration.includes('天') && parseInt(duration,10)>7 ? 'var(--orange)' : 'var(--green)';
-    return `<span style="font-size:12px;color:${color}">${duration}</span>`;
+    return `<span style="font-size:15px;color:${color};font-weight:600">${duration}</span>`;
   }
-  if(isClosedStatus(record.status)) return '<span style="font-size:12px;color:var(--text3)">—</span>';
-  return '<span style="font-size:12px;color:var(--text3)">進行中</span>';
+  if(isClosedStatus(record.status)) return '<span style="font-size:14px;color:var(--text3)">—</span>';
+  return '<span style="font-size:14px;color:var(--text3)">進行中</span>';
 }
 
 function getWarrantyBadge(record){
   return record.warranty
     ? `<span class="badge badge-${record.warranty}">${record.warranty}</span>`
-    : '<span style="color:var(--text3);font-size:12px">—</span>';
+    : '<span style="color:var(--text3);font-size:14px">—</span>';
 }
 
 function getInvoiceBadge(record){
-  if(!record.invoice) return '<span style="color:var(--text3);font-size:12px">—</span>';
+  if(!record.invoice) return '<span style="color:var(--text3);font-size:14px">—</span>';
   const background=record.invoice==='待開立'
     ? 'rgba(248,113,113,.15)'
     : record.invoice==='已開立'
@@ -143,13 +143,13 @@ function getRowVisualMeta(record){
   if(visualState==='overdue'){
     return {
       rowClass:'overdue-row',
-      statusNote:'<span style="font-size:10px;color:var(--orange);margin-left:4px">已逾期</span>'
+      statusNote:'<span style="font-size:12px;color:var(--orange);margin-left:4px">已逾期</span>'
     };
   }
   if(visualState==='warning'){
     return {
       rowClass:'warning-row',
-      statusNote:'<span style="font-size:10px;color:var(--yellow);margin-left:4px">快逾期</span>'
+      statusNote:'<span style="font-size:12px;color:var(--yellow);margin-left:4px">快逾期</span>'
     };
   }
   return {rowClass:'',statusNote:''};
@@ -178,7 +178,7 @@ function renderRecordRow(record, recordIndex, query){
     <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${hl(record.subcategory,query)||'—'}</span></td>
     <td>${renderStatusDropdown(recordIndex, record)}</td>
     <td style="white-space:nowrap">${hl(record.handler,query)||'—'}</td>
-    <td>${getDurationBadge(record)}</td>
+    <td class="col-duration">${getDurationBadge(record)}</td>
     <td>${getWarrantyBadge(record)}</td>
     <td>${getInvoiceBadge(record)}</td>
     <td><div class="row-actions">
@@ -334,19 +334,19 @@ function showCompanyHistory(company){
   const closed = history.filter(r=>r.status==='結案').length;
   const body = document.getElementById('historyBody');
   body.innerHTML = `
-    <div style="padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:12px">
+    <div style="padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:13px">
       <span>總筆數 <strong style="color:var(--accent)">${history.length}</strong></span>
       <span>已結案 <strong style="color:var(--green)">${closed}</strong></span>
       <span>未結案 <strong style="color:var(--yellow)">${history.length-closed}</strong></span>
     </div>
     <div style="overflow-y:auto;max-height:400px">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="background:var(--surface2)">
-          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">日期</th>
-          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">車牌</th>
-          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">問題次分類</th>
-          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">狀態</th>
-          <th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3)">負責人</th>
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text3)">日期</th>
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text3)">車牌</th>
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text3)">問題次分類</th>
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text3)">狀態</th>
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--text3)">負責人</th>
         </tr></thead>
         <tbody>
           ${history.map((r,i)=>`<tr style="background:${i%2===0?'var(--surface)':'var(--surface2)'}">

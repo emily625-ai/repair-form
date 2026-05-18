@@ -16,45 +16,54 @@
 body{font-family:'Noto Sans TC',sans-serif;background:linear-gradient(180deg,#202738 0%,#1a2030 100%);color:var(--text);min-height:100vh;line-height:1.6;}
 .app{display:flex;flex-direction:column;height:100vh;}
 .topbar{background:rgba(40,48,67,.97);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:14px;height:66px;flex-shrink:0;}
-.topbar-logo{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
+.topbar-logo{font-size:20px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
 .topbar-tabs{display:flex;gap:2px;margin-left:auto;}
-.tab-btn{padding:9px 18px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-size:14px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;font-weight:600;}
+.tab-btn{padding:9px 18px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-size:15px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;font-weight:600;}
 .tab-btn.active{background:var(--accent);color:#fff;}
 .tab-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
 .view{display:none;flex:1;overflow:hidden;}
 .view.active{display:flex;flex-direction:column;}
-.toolbar{padding:13px 22px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;}
-.toolbar-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.toolbar{padding:8px 14px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
+.toolbar-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
 .toolbar-row.meta-row{justify-content:space-between;}
 .toolbar-row.action-row{align-items:flex-start;}
-.filter-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.action-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.toolbar-primary-filters{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1 1 100%;min-width:0;}
+.toolbar-primary-filters select{flex:0 1 112px;min-width:112px;}
+.toolbar-secondary-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;}
+.toolbar-secondary-group .btn,
+.toolbar-secondary-group .overdue-toggle,
+.toolbar-secondary-group select{font-size:14px;}
+.toolbar-secondary-group .btn{padding:7px 11px;}
+.toolbar-secondary-group .overdue-toggle{padding:7px 11px;}
+.toolbar-secondary-group #perPageSelect{width:92px;}
+.filter-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.action-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .toolbar-spacer{flex:1 1 auto;}
-.search-box{flex:1;min-width:160px;position:relative;}
-.search-box input{width:100%;background:#1b2230;border:1px solid var(--border);color:var(--text);padding:10px 13px 10px 36px;border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s, box-shadow .2s;}
+.search-box{flex:0 0 220px;min-width:220px;max-width:220px;position:relative;}
+.search-box input{width:100%;background:#1b2230;border:1px solid var(--border);color:var(--text);padding:8px 12px 8px 34px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s, box-shadow .2s;}
 .search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,162,255,.16);}
 .si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
-select,input[type=date],input[type=datetime-local]{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:15px;font-family:inherit;outline:none;cursor:pointer;}
+select,input[type=date],input[type=datetime-local]{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:8px 9px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;cursor:pointer;}
 select:focus,input[type=date]:focus,input[type=datetime-local]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,162,255,.16);}
 .fl{font-size:12px;color:var(--text3);white-space:nowrap;}
-.overdue-toggle{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text2);font-size:14px;font-family:inherit;cursor:pointer;transition:all .2s;}
+.overdue-toggle{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text2);font-size:14px;font-family:inherit;cursor:pointer;transition:all .2s;}
 .overdue-toggle.active{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.1);}
-.btn{padding:10px 17px;border-radius:10px;border:none;font-size:14px;font-family:inherit;cursor:pointer;font-weight:700;transition:all .2s;white-space:nowrap;}
+.btn{padding:8px 12px;border-radius:10px;border:none;font-size:14px;font-family:inherit;cursor:pointer;font-weight:700;transition:all .2s;white-space:nowrap;}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover{background:var(--accent2);}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .btn-green{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:var(--green);}
 .btn-green:hover{background:rgba(52,211,153,.25);}
-.btn-sm{padding:8px 13px;font-size:13px;}
+.btn-sm{padding:7px 10px;font-size:14px;}
 .table-container{flex:1;overflow:auto;}
-table{width:100%;border-collapse:collapse;font-size:15px;}
+table{width:100%;border-collapse:collapse;font-size:16px;}
 .records-table{min-width:1540px;}
 thead{position:sticky;top:0;z-index:10;}
-th{background:#3a4764;color:#e4ebf7;font-weight:700;padding:15px 16px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:13px;letter-spacing:.4px;text-transform:uppercase;}
-td{padding:16px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:15px;line-height:1.7;}
-.records-table th{font-size:14px;padding:16px 16px;}
-.records-table td{padding:18px 16px;font-size:15px;}
+th{background:#3a4764;color:#e4ebf7;font-weight:700;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:14px;letter-spacing:.2px;}
+td{padding:6px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:15px;line-height:1.2;}
+.records-table th{font-size:14px;padding:10px 12px;}
+.records-table td{padding:7px 16px;font-size:15px;}
 .records-table th.col-id,
 .records-table th.col-channel,
 .records-table th.col-company,
@@ -68,10 +77,12 @@ td{padding:16px 16px;border-bottom:1px solid var(--border);vertical-align:middle
 .records-table td.col-category{white-space:nowrap;}
 .records-table th.col-subcategory{min-width:220px;width:220px;}
 .records-table td.col-subcategory{white-space:normal;}
-.records-table .subcategory-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.55;max-width:220px;}
+.records-table .subcategory-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.12;max-width:220px;}
+.records-table th.col-duration,
+.records-table td.col-duration{white-space:nowrap;min-width:112px;width:112px;}
 tr:hover td{background:rgba(62,74,102,.32);}
 .mono{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text2);font-weight:600;}
-.badge{display:inline-flex;align-items:center;padding:6px 11px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap;}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1;}
 .badge-結案{background:rgba(52,211,153,.15);color:var(--green);}
 .badge-轉派技師{background:rgba(251,191,36,.12);color:var(--yellow);}
 .badge-轉派工程師{background:rgba(167,139,250,.12);color:var(--purple);}
@@ -84,9 +95,9 @@ tr:hover td{background:rgba(62,74,102,.32);}
 .overdue-row td{background:rgba(251,146,60,.04)!important;}
 .overdue-row td:first-child{border-left:3px solid var(--orange);}
 .row-actions{display:flex;gap:6px;}
-.pagination{padding:12px 22px;display:flex;gap:6px;align-items:center;background:rgba(40,48,67,.95);border-top:1px solid var(--border);}
-.pi{font-size:12px;color:var(--text3);margin-right:auto;}
-.page-btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;}
+.pagination{padding:8px 14px;display:flex;gap:6px;align-items:center;background:rgba(40,48,67,.95);border-top:1px solid var(--border);}
+.pi{font-size:13px;color:var(--text3);margin-right:auto;}
+.page-btn{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;}
 .page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
 .page-btn:disabled{opacity:.3;cursor:not-allowed;}
 .page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -94,63 +105,63 @@ tr:hover td{background:rgba(62,74,102,.32);}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:92%;max-width:760px;max-height:92vh;overflow-y:auto;}
 .mh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1;}
-.mt{font-size:18px;font-weight:700;}
-.mc{background:none;border:none;color:var(--text2);font-size:17px;cursor:pointer;padding:3px 7px;border-radius:6px;}
+.mt{font-size:22px;font-weight:700;}
+.mc{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;}
 .mc:hover{background:var(--surface2);}
 .mb{padding:18px 20px;}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
 .fgr{display:flex;flex-direction:column;gap:4px;}
 .fgr.full{grid-column:1/-1;}
-.flb{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
-.fi{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s;width:100%;}
+.flb{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.fi{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:16px;font-family:inherit;outline:none;transition:border-color .2s;width:100%;}
 .fi:focus{border-color:var(--accent);}
 textarea.fi{resize:vertical;min-height:68px;}
 .mf{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
 .dg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
-.detail-meta{font-size:14px;color:var(--text3);margin-top:4px;line-height:1.6;}
+.detail-meta{font-size:15px;color:var(--text3);margin-top:4px;line-height:1.6;}
 .di{background:var(--bg);padding:12px 14px;border-radius:8px;}
-.dl{font-size:13px;color:var(--text3);margin-bottom:6px;font-weight:600;}
-.dv{font-size:15px;color:var(--text);font-weight:600;line-height:1.7;}
-.dst{font-size:14px;letter-spacing:.2px;color:var(--text3);margin-bottom:10px;margin-top:16px;font-weight:700;}
-.dd{background:#1b2230;padding:16px;border-radius:10px;font-size:15px;line-height:1.9;color:var(--text2);white-space:pre-wrap;}
+.dl{font-size:15px;color:var(--text3);margin-bottom:6px;font-weight:600;}
+.dv{font-size:16px;color:var(--text);font-weight:600;line-height:1.7;}
+.dst{font-size:17px;letter-spacing:.2px;color:var(--text3);margin-bottom:10px;margin-top:16px;font-weight:700;}
+.dd{background:#1b2230;padding:16px;border-radius:10px;font-size:16px;line-height:1.9;color:var(--text2);white-space:pre-wrap;}
 .pt{background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.22);padding:9px 13px;border-radius:8px;display:flex;align-items:center;gap:10px;margin-bottom:13px;}
 .ptv{font-size:18px;font-weight:700;color:var(--accent);}
-.ptl{font-size:13px;color:var(--text3);line-height:1.6;}
+.ptl{font-size:15px;color:var(--text3);line-height:1.6;}
 .analytics-toolbar{padding:13px 22px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;flex-shrink:0;}
 .at-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .at-right{display:flex;gap:8px;}
 .analytics{flex:1;overflow-y:auto;padding:20px;}
 .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px;}
 .sc{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;padding:20px;}
-.slb{font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.slb{font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
 .sv{font-size:32px;font-weight:700;line-height:1;}
-.ss{font-size:12px;color:var(--text3);margin-top:5px;}
+.ss{font-size:13px;color:var(--text3);margin-top:5px;}
 .cg{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
 .cc{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;padding:20px;}
 .cc.wide{grid-column:1/-1;}
-.ct{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);}
+.ct{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text2);}
 .bc{display:flex;flex-direction:column;gap:8px;}
 .br{display:flex;align-items:center;gap:7px;}
-.bla{font-size:12px;color:var(--text2);width:125px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bla{font-size:13px;color:var(--text2);width:125px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bt{flex:1;height:19px;background:var(--bg);border-radius:4px;overflow:hidden;}
-.bf{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,.95);}
+.bf{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:13px;font-weight:700;color:rgba(255,255,255,.95);}
 .dw{display:flex;gap:18px;align-items:center;}
 .leg{display:flex;flex-direction:column;gap:6px;flex:1;}
-.li{display:flex;align-items:center;gap:6px;font-size:12px;}
+.li{display:flex;align-items:center;gap:6px;font-size:13px;}
 .ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .occ{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .rpt-section-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:8px;padding-left:2px;}
 .occ td{padding:9px 12px;border-bottom:1px solid var(--border);}
 .occ tr:last-child td{border-bottom:none;}
 .occ tr:hover td{background:rgba(34,38,58,.5);}
-.och{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);}
-.ocr{display:flex;align-items:center;gap:9px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px;}
+.och{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text2);}
+.ocr{display:flex;align-items:center;gap:9px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;}
 .ocr:last-child{border-bottom:none;}
 .oci{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);width:120px;flex-shrink:0;}
 .highlight{background:rgba(91,140,255,.3);border-radius:2px;}
 .es{padding:50px;text-align:center;color:var(--text3);font-size:15px;}
 .todo-chip{background:rgba(255,255,255,.1);border-radius:8px;padding:7px 13px;font-size:14px;}
-.filter-summary{font-size:15px !important;color:var(--accent2) !important;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
+.filter-summary{font-size:16px !important;color:var(--accent2) !important;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
 .import-summary{padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:16px;}
 .import-preview-table{width:100%;border-collapse:collapse;font-size:11px;}
 .import-preview-table thead tr{background:var(--surface2);}
@@ -213,7 +224,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div class="app">
   <div class="topbar">
     <div class="topbar-logo">⚡ 售服案件系統</div>
-    <div style="font-size:11px;color:var(--text3)">共 <span id="totalCount">0</span> 筆</div>
+    <div style="font-size:12px;color:var(--text3)">共 <span id="totalCount">0</span> 筆</div>
     <div class="topbar-tabs">
       <button class="tab-btn active" onclick="switchView('records',this)">📋 案件列表</button>
       <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
@@ -228,40 +239,41 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div class="view active" id="view-records">
     <div class="toolbar">
       <div class="toolbar-row">
-        <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…（支援車牌快速搜尋）" oninput="applyFilters()"></div>
-        <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
-        <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
-        <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
-        <select id="filterHandler" onchange="applyFilters()">
-          <option value="">所有處理人</option>
-          <option>Alan</option>
-          <option>Alex</option>
-          <option>Emily</option>
-          <option>RD</option>
-          <option>大Eddie</option>
-          <option>客戶</option>
-          <option>彭向謙</option>
-          <option>彭子豪</option>
-          <option>楊明憲</option>
-          <option>港仔</option>
-          <option>王睿揚</option>
-          <option>陳世豪</option>
-          <option>黃世緯</option>
-          <option>黃泊鑫</option>
-        </select>
-        <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
-        <button class="overdue-toggle" id="overdueBtn" onclick="toggleOverdue()">🔴 超過7天未結案</button>
-        <select id="perPageSelect" onchange="changePerPage()" style="width:90px">
-          <option value="25">25筆/頁</option>
-          <option value="50" selected>50筆/頁</option>
-          <option value="100">100筆/頁</option>
-          <option value="9999">全部</option>
-        </select>
-        <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
-        <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+        <div class="toolbar-primary-filters">
+          <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
+          <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
+          <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
+          <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
+          <select id="filterHandler" onchange="applyFilters()">
+            <option value="">所有處理人</option>
+            <option>Alan</option>
+            <option>Alex</option>
+            <option>Emily</option>
+            <option>RD</option>
+            <option>大Eddie</option>
+            <option>客戶</option>
+            <option>彭向謙</option>
+            <option>彭子豪</option>
+            <option>楊明憲</option>
+            <option>港仔</option>
+            <option>王睿揚</option>
+            <option>陳世豪</option>
+            <option>黃世緯</option>
+            <option>黃泊鑫</option>
+          </select>
+          <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
+          <select id="perPageSelect" onchange="changePerPage()">
+            <option value="25">25筆/頁</option>
+            <option value="50" selected>50筆/頁</option>
+            <option value="100">100筆/頁</option>
+            <option value="9999">全部</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
+          <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+        </div>
       </div>
       <div class="toolbar-row meta-row">
-        <div class="filter-meta">
+        <div class="toolbar-secondary-group">
           <span class="fl">進線日期時間：</span>
           <input type="date" id="filterDateFrom" onchange="applyFilters()">
           <span class="fl">～</span>
@@ -275,8 +287,8 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
     </div>
     <div id="batchBar" style="display:none;background:var(--accent);padding:8px 16px;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
-      <span id="batchCount" style="color:#fff;font-size:13px;font-weight:600"></span>
-      <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:12px;background:#fff">
+      <span id="batchCount" style="color:#fff;font-size:14px;font-weight:600"></span>
+      <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff">
         <option value="">選擇新狀態…</option>
         <option value="客服處理中">客服處理中</option>
               <option value="待派工">待派工</option>
@@ -286,7 +298,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         <option value="待客戶寄回">待客戶寄回</option>
         <option value="結案">結案</option>
       </select>
-      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:12px;background:#fff">
+      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff">
         <option value="">選擇負責人…</option>
         <option>Alan</option><option>Alex</option><option>Emily</option><option>RD</option>
         <option>大Eddie</option><option>客戶</option><option>彭向謙</option><option>彭子豪</option>
@@ -301,7 +313,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         <thead><tr>
           <th style="width:32px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" style="cursor:pointer"></th>
           <th class="col-id">編號</th><th>進線日期時間</th><th class="col-channel">管道</th><th class="col-company">公司名稱</th><th class="col-plate">車牌</th>
-          <th class="col-category">問題大類</th><th class="col-subcategory">問題次分類</th><th>處理狀態</th><th>負責人員</th><th>處理時間</th><th>保固</th><th>發票</th><th>操作</th>
+          <th class="col-category">問題大類</th><th class="col-subcategory">問題次分類</th><th>處理狀態</th><th>負責人員</th><th class="col-duration">處理時間</th><th>保固</th><th>發票</th><th>操作</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -340,7 +352,7 @@ textarea.fi{resize:vertical;min-height:68px;}
   <!-- ACTIVITY LOG VIEW -->
   <div class="view" id="view-actlog">
     <div class="toolbar" style="justify-content:space-between">
-      <div style="font-size:13px;color:var(--text2)">最近 200 筆操作記錄</div>
+      <div style="font-size:14px;color:var(--text2)">最近 200 筆操作記錄</div>
       <button class="btn btn-outline btn-sm" onclick="loadActivityLog()">🔄 重新整理</button>
     </div>
     <div class="table-container">
@@ -472,7 +484,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div class="modal-overlay" id="importModal">
   <div class="modal" style="max-width:800px">
     <div class="mh">
-      <div><div class="mt">📥 匯入 Excel 預覽</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="importMeta"></div></div>
+      <div><div class="mt">📥 匯入 Excel 預覽</div><div style="font-size:12px;color:var(--text3);margin-top:2px" id="importMeta"></div></div>
       <button class="mc" onclick="closeImport()">✕</button>
     </div>
     <div class="mb" style="padding:0">
@@ -489,7 +501,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div class="modal-overlay" id="historyModal">
   <div class="modal" style="max-width:700px">
     <div class="mh">
-      <div><div class="mt" id="historyTitle">客戶歷史案件</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="historyMeta"></div></div>
+      <div><div class="mt" id="historyTitle">客戶歷史案件</div><div style="font-size:12px;color:var(--text3);margin-top:2px" id="historyMeta"></div></div>
       <button class="mc" onclick="closeHistory()">✕</button>
     </div>
     <div class="mb" id="historyBody" style="padding:0"></div>
@@ -500,13 +512,13 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div class="modal-overlay" id="quickModal">
   <div class="modal" style="max-width:520px">
     <div class="mh">
-      <div><div class="mt">⚡ 快速新增</div><div style="font-size:11px;color:var(--text3);margin-top:2px">貼上 LINE 訊息，系統自動解析欄位</div></div>
+      <div><div class="mt">⚡ 快速新增</div><div style="font-size:12px;color:var(--text3);margin-top:2px">貼上 LINE 訊息，系統自動解析欄位</div></div>
       <button class="mc" onclick="closeQuickForm()">✕</button>
     </div>
     <div class="mb" style="padding:16px">
       <div style="margin-bottom:12px">
-        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">貼上 LINE 訊息內容</label>
-        <textarea id="quickText" style="width:100%;height:140px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:vertical;font-family:inherit" placeholder="例如：
+        <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">貼上 LINE 訊息內容</label>
+        <textarea id="quickText" style="width:100%;height:140px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;resize:vertical;font-family:inherit" placeholder="例如：
 桃園所
 599-XM
 倒車顯影沒畫面
@@ -514,7 +526,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 電話：0975041573"></textarea>
       </div>
       <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="parseQuickText()">🔍 自動解析</button>
-      <div id="quickResult" style="display:none;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px">
+      <div id="quickResult" style="display:none;background:var(--surface2);border-radius:8px;padding:12px;font-size:13px">
         <div style="font-weight:600;color:var(--text2);margin-bottom:8px">解析結果（可在下一步修改）：</div>
         <div id="quickResultContent"></div>
         <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="applyQuickResult()">✅ 套用並開啟表單</button>
