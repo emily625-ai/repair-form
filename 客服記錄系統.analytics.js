@@ -198,8 +198,8 @@ function renderAnalyticsCategorySection(model){
 
 function renderOverdueRows(model){
   return model.overdueList.map(r=>{
-    const dispatchDate=toDateValue(r.dispatchDate);
-    const days=dispatchDate?Math.floor((new Date()-dispatchDate)/864e5):'—';
+    const caseDate=toDateValue(r.date);
+    const days=caseDate?Math.floor((new Date()-caseDate)/864e5):'—';
     return '<tr><td><span class="mono" style="font-size:10px">'+r.id+'</span></td><td>'+escapeHtml(r.company)+'</td><td style="font-size:11px;color:var(--text2)">'+escapeHtml(r.subcategory)+'</td><td><span class="badge badge-'+r.status+'">'+r.status+'</span></td><td style="font-size:11px">'+(r.handler||'—')+'</td><td style="color:var(--orange);font-weight:700">'+(typeof days==='number'?`${days}天`:'—')+'</td></tr>';
   }).join('');
 }

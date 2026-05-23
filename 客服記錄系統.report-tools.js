@@ -115,8 +115,8 @@ function getRptRecords(){
 
 function isDispatchOverdue(record){
   if(record.status==='結案') return false;
-  const dispatchDate=toDateValue(record.dispatchDate);
-  if(!dispatchDate) return false;
+  const caseDate=toDateValue(record.date);
+  if(!caseDate) return false;
   if(record.handler==='客戶') return false;
-  return (new Date()-dispatchDate)>7*864e5;
+  return (new Date()-caseDate)>7*864e5;
 }

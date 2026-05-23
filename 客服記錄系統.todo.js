@@ -32,7 +32,7 @@ function collectDailyTodos(){
   const todos=[];
   const overdueRecords=records.filter(record=>isDispatchOverdue(record));
   if(overdueRecords.length){
-    todos.push(createTodoItem({color:'var(--orange)',icon:'⚠️',text:`${overdueRecords.length} 筆派工超過 7 天未結案`,action:'toggleOverdueView()'}));
+    todos.push(createTodoItem({color:'var(--orange)',icon:'⚠️',text:`${overdueRecords.length} 筆超過 7 天未結案`,action:'toggleOverdueView()'}));
   }
   const warningRecords=records.filter(record=>isDispatchWarning(record));
   if(warningRecords.length){
