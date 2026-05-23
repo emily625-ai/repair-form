@@ -319,6 +319,7 @@ function showDetail(idx){
   document.getElementById('dMeta').textContent=`建立時間：${fdt(r.date)} ｜ 管道：${r.channel||'—'}`;
   document.getElementById('dBody').innerHTML=renderDetailBody(r);
   document.getElementById('dEditBtn').onclick=()=>{closeDetail();openEdit(idx);};
+  document.getElementById('dCopyBtn')._record = r;
   document.getElementById('dChildBtn')._record = r;
   const notifyBtn = document.getElementById('dNotifyBtn');
   notifyBtn.style.display = r.status==='結案' ? '' : 'none';

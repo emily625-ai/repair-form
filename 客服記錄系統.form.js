@@ -130,6 +130,47 @@ function openEdit(idx){
   document.getElementById('formModal').classList.add('open');
 }
 
+function fillCompanyField(company){
+  const companySelect=document.getElementById('fCompany');
+  const existingOption=[...companySelect.options].find(option=>option.value===company);
+  if(existingOption){
+    companySelect.value=company;
+    document.getElementById('fCompanyNewGroup').style.display='none';
+    document.getElementById('fCompanyNew').value='';
+    return;
+  }
+  companySelect.value='__new__';
+  document.getElementById('fCompanyNew').value=company||'';
+  document.getElementById('fCompanyNewGroup').style.display='';
+}
+
+function copyDetailRecord(){
+  const source=document.getElementById('dCopyBtn')._record;
+  if(!source){alert('找不到可複製的案件資料');return;}
+
+  closeDetail();
+  editIdx=null;
+  window._customId=null;
+  document.getElementById('formTitle').textContent='新增案件（複製 '+source.id+'）';
+  document.getElementById('fDate').value='';
+  document.getElementById('fChannel').value=source.channel||'官方LINE';
+  fillCompanyField(source.company);
+  document.getElementById('fPlate').value=source.plate||'';
+  document.getElementById('fProduct').value=source.product||'';
+  document.getElementById('fCategory').value=source.category||'平台系統';
+  updateSub();
+  document.getElementById('fSubcategory').value=source.subcategory||'';
+  document.getElementById('fStatus').value='客服處理中';
+  document.getElementById('fDispatchDate').value='';
+  document.getElementById('fHandler').value=source.handler||'';
+  document.getElementById('fWarranty').value='';
+  document.getElementById('fInvoice').value='';
+  document.getElementById('fCloseDate').value='';
+  document.getElementById('fDescription').value=source.description||'';
+  document.getElementById('fResult').value='';
+  document.getElementById('formModal').classList.add('open');
+}
+
 let quickParsed = {};
 
 function openQuickForm(){
