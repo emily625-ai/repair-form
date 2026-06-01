@@ -21,6 +21,8 @@ function validateRecordInput(record){
 
 function collectRecordFormData(){
   const formDate=document.getElementById('fDate').value;
+  const surveyReplied=document.getElementById('fSurveyReplied').checked;
+  const surveySent=document.getElementById('fSurveySent').checked || surveyReplied;
   return {
     id:buildRecordId(formDate),
     date:formDate,
@@ -35,6 +37,8 @@ function collectRecordFormData(){
     handler:document.getElementById('fHandler').value,
     warranty:document.getElementById('fWarranty').value,
     invoice:document.getElementById('fInvoice').value,
+    surveySent,
+    surveyReplied,
     closeDate:document.getElementById('fCloseDate').value,
     description:document.getElementById('fDescription').value.trim(),
     result:document.getElementById('fResult').value.trim(),
@@ -101,6 +105,8 @@ function openNewForm(){
   document.getElementById('fDescription').value='';
   document.getElementById('fResult').value='';
   document.getElementById('fInvoice').value='';
+  document.getElementById('fSurveySent').checked=false;
+  document.getElementById('fSurveyReplied').checked=false;
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -127,6 +133,8 @@ function openEdit(idx){
   document.getElementById('fDescription').value=r.description;
   document.getElementById('fResult').value=r.result;
   document.getElementById('fInvoice').value=r.invoice||'';
+  document.getElementById('fSurveySent').checked=!!r.surveySent;
+  document.getElementById('fSurveyReplied').checked=!!r.surveyReplied;
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -165,6 +173,8 @@ function copyDetailRecord(){
   document.getElementById('fHandler').value=source.handler||'';
   document.getElementById('fWarranty').value='';
   document.getElementById('fInvoice').value='';
+  document.getElementById('fSurveySent').checked=false;
+  document.getElementById('fSurveyReplied').checked=false;
   document.getElementById('fCloseDate').value='';
   document.getElementById('fDescription').value=source.description||'';
   document.getElementById('fResult').value='';
@@ -283,6 +293,8 @@ function applyQuickResult(){
   document.getElementById('fHandler').value='';
   document.getElementById('fWarranty').value='';
   document.getElementById('fInvoice').value='';
+  document.getElementById('fSurveySent').checked=false;
+  document.getElementById('fSurveyReplied').checked=false;
   document.getElementById('fCloseDate').value='';
   let desc = quickParsed.description||'';
   if(quickParsed.location) desc = quickParsed.location + '\n' + desc;
@@ -332,6 +344,8 @@ function createChildCase(){
   document.getElementById('fSubcategory').value = parent.subcategory || '';
   document.getElementById('fWarranty').value = parent.warranty || '';
   document.getElementById('fInvoice').value = '';
+  document.getElementById('fSurveySent').checked = false;
+  document.getElementById('fSurveyReplied').checked = false;
   document.getElementById('fStatus').value = '客服處理中';
   document.getElementById('fHandler').value = '';
   document.getElementById('fDispatchDate').value = '';
@@ -367,6 +381,8 @@ function copyLastRecord(){
   document.getElementById('fDispatchDate').value='';
   document.getElementById('fHandler').value=last.handler||'';
   document.getElementById('fWarranty').value=last.warranty||'';
+  document.getElementById('fSurveySent').checked=false;
+  document.getElementById('fSurveyReplied').checked=false;
   document.getElementById('fCloseDate').value='';
   document.getElementById('fDescription').value='';
   document.getElementById('fResult').value='';

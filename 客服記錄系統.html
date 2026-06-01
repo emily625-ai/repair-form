@@ -581,6 +581,10 @@ textarea.fi{resize:vertical;min-height:68px;}
           <select id="fWarranty" class="fi" onchange="if(this.value==='保固外')document.getElementById('fInvoice').value='待開立'"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
         <div class="fgr"><div class="flb">發票狀態</div>
           <select id="fInvoice" class="fi"><option value="">未填</option><option>待開立</option><option>已開立</option><option>免開立</option></select></div>
+        <div class="fgr"><div class="flb">問卷追蹤</div>
+          <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;margin-top:8px"><input type="checkbox" id="fSurveySent"> 是否發送問卷</label>
+          <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;margin-top:8px"><input type="checkbox" id="fSurveyReplied"> 是否收到回覆</label>
+        </div>
         <div class="fgr"><div class="flb">結案日期時間</div><input type="datetime-local" id="fCloseDate" class="fi" step="1"></div>
         <div class="fgr full"><div class="flb">問題詳細描述</div><textarea id="fDescription" class="fi" rows="3" placeholder="客戶問題描述…"></textarea></div>
         <div class="fgr full"><div class="flb">最終處理結果</div><textarea id="fResult" class="fi" rows="2" placeholder="處理結果…"></textarea></div>

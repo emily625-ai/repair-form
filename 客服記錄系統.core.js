@@ -75,7 +75,9 @@ function toRow(record){
     handler:record.handler||null,
     result:record.result||null,
     warranty:record.warranty||null,
-    invoice:record.invoice||null
+    invoice:record.invoice||null,
+    survey_sent:!!record.surveySent,
+    survey_replied:!!record.surveyReplied
   };
 }
 
@@ -96,7 +98,9 @@ function fromRow(row){
     result:row.result||'',
     closeDate:getCaseDateValue(row,'closeDate'),
     warranty:row.warranty||'',
-    invoice:row.invoice||''
+    invoice:row.invoice||'',
+    surveySent:row.survey_sent===true || row.surveySent===true,
+    surveyReplied:row.survey_replied===true || row.surveyReplied===true
   };
 }
 

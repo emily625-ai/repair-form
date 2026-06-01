@@ -265,6 +265,10 @@ function renderInvoiceText(record){
   return `<span style="color:${color}">${record.invoice}</span>`;
 }
 
+function renderSurveyText(value){
+  return value ? '<span style="color:var(--green);font-weight:700">是</span>' : '否';
+}
+
 function renderDetailHeader(record){
   const duration=calcDur(record.date,record.closeDate);
   return duration
@@ -286,6 +290,8 @@ function renderIssueDetailSection(record){
     renderDetailItem('問題次分類', escapeHtml(record.subcategory||'—')),
     renderDetailItem('保固狀態', escapeHtml(record.warranty||'—')),
     renderDetailItem('發票狀態', renderInvoiceText(record)),
+    renderDetailItem('是否發送問卷', renderSurveyText(record.surveySent)),
+    renderDetailItem('是否收到回覆', renderSurveyText(record.surveyReplied)),
   ]));
 }
 

@@ -55,6 +55,8 @@ function buildAnalyticsModel(){
   const total=recs.length;
   const closed=recs.filter(r=>r.status==='結案').length;
   const open=total-closed;
+  const surveySent=recs.filter(r=>r.surveySent).length;
+  const surveyReplied=recs.filter(r=>r.surveyReplied).length;
   return {
     recs,
     from,
@@ -62,6 +64,8 @@ function buildAnalyticsModel(){
     total,
     closed,
     open,
+    surveySent,
+    surveyReplied,
     overdueList:records.filter(r=>isDispatchOverdue(r)),
     statusCounts:buildCountMap(recs, r=>r.status),
     categoryCounts:buildCountMap(recs, r=>r.category, '其他'),
@@ -139,11 +143,13 @@ function renderSummaryCard(label, value, subtext, style=''){
 
 function renderAnalyticsSummary(model){
   const closeRate=model.total>0?((model.closed/model.total)*100).toFixed(1):0;
+  const surveyRate=model.surveySent>0?((model.surveyReplied/model.surveySent)*100).toFixed(1):0;
   return '<div class="sg">'
     + renderSummaryCard('總案件數', model.total, '期間記錄', 'color:var(--accent)')
     + renderSummaryCard('已結案', model.closed, '結案率 '+closeRate+'%', 'color:var(--green)')
     + renderSummaryCard('未結案', model.open, '逾7天 <span style="color:var(--orange);font-weight:700">'+model.overdueList.length+'</span> 筆', 'color:var(--yellow)')
     + renderSummaryCard('平均處理時間', model.avgDurationLabel, '已結案案件', 'color:var(--purple);font-size:20px')
+    + renderSummaryCard('問卷回收率', surveyRate+'%', '發送 '+model.surveySent+' / 回覆 '+model.surveyReplied, 'color:var(--accent2)')
     + '</div>';
 }
 
