@@ -6,6 +6,18 @@ function openAnalyticsView(){
 function openPendingInvoiceView(){
   const recordsTab=document.querySelectorAll('.tab-btn')[0];
   invoiceOnly=INVOICE_STATUS.pending;
+  surveyTodoMode='';
+  if(recordsTab) switchView('records',recordsTab);
+  applyFilters();
+}
+
+function openSurveyTodoView(mode){
+  const recordsTab=document.querySelectorAll('.tab-btn')[0];
+  surveyTodoMode=mode;
+  invoiceOnly='';
+  showOverdue=false;
+  const overdueBtn=document.getElementById('overdueBtn');
+  if(overdueBtn) overdueBtn.classList.remove('active');
   if(recordsTab) switchView('records',recordsTab);
   applyFilters();
 }
@@ -46,6 +58,14 @@ function collectDailyTodos(){
   const todayRecords=records.filter(record=>getDateOnlyText(record.date)===todayText);
   if(todayRecords.length){
     todos.push(createTodoItem({color:'var(--accent)',icon:'📌',text:`今日 ${todayRecords.length} 筆新案件`}));
+  }
+  const closedWithoutSurvey=records.filter(record=>record.status==='結案' && !record.surveySent);
+  if(closedWithoutSurvey.length){
+    todos.push(createTodoItem({color:'var(--purple)',icon:'📝',text:`${closedWithoutSurvey.length} 筆結案未發問卷`,action:"openSurveyTodoView('closed-unsent')"}));
+  }
+  const sentWithoutReply=records.filter(record=>record.surveySent && !record.surveyReplied);
+  if(sentWithoutReply.length){
+    todos.push(createTodoItem({color:'var(--accent2)',icon:'📨',text:`${sentWithoutReply.length} 筆問卷未回覆`,action:"openSurveyTodoView('sent-unreplied')"}));
   }
   return todos;
 }

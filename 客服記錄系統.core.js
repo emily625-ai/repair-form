@@ -116,7 +116,7 @@ const SUBMAP={
   '其他':['其他','轉接線','資料提供']
 };
 
-let records=[],filtered=[],editIdx=null,page=1,showOverdue=false,invoiceOnly='';
+let records=[],filtered=[],editIdx=null,page=1,showOverdue=false,invoiceOnly='',surveyTodoMode='';
 let currentUser='系統';
 let PER=50;
 

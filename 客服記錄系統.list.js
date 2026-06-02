@@ -10,6 +10,7 @@ function getFilterState(){
     dateFrom:document.getElementById('filterDateFrom').value,
     dateTo:document.getElementById('filterDateTo').value,
     overdueOnly:showOverdue,
+    surveyTodoMode,
   };
 }
 
@@ -43,6 +44,8 @@ function recordMatchesFilters(record, state){
   if(state.dateFrom && caseDateOnly && caseDateOnly<state.dateFrom) return false;
   if(state.dateTo && caseDateOnly && caseDateOnly>state.dateTo) return false;
   if(state.overdueOnly && !isDispatchOverdue(record)) return false;
+  if(state.surveyTodoMode==='closed-unsent' && !(record.status==='結案' && !record.surveySent)) return false;
+  if(state.surveyTodoMode==='sent-unreplied' && !(record.surveySent && !record.surveyReplied)) return false;
   if(state.query && !buildSearchHaystack(record).includes(state.query)) return false;
   return true;
 }
@@ -62,6 +65,7 @@ function clearFilters(){
   ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
   showOverdue=false;
   invoiceOnly='';
+  surveyTodoMode='';
   const overdueBtn=document.getElementById('overdueBtn');
   if(overdueBtn) overdueBtn.classList.remove('active');
   document.getElementById('filterResultInfo').textContent='';
@@ -180,7 +184,6 @@ function renderRecordRow(record, recordIndex, query){
     <td>${renderStatusDropdown(recordIndex, record)}</td>
     <td style="white-space:nowrap">${hl(record.handler,query)||'—'}</td>
     <td class="col-duration">${getDurationBadge(record)}</td>
-    <td>${getWarrantyBadge(record)}</td>
     <td>${getInvoiceBadge(record)}</td>
     <td><div class="row-actions">
       <button class="btn btn-outline btn-sm" onclick="showDetail(${recordIndex})">詳細</button>
