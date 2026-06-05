@@ -218,19 +218,51 @@ function normalizeLineImportRow(row, index) {
 }
 
 function mapLineMessageRecordToUiRow(row) {
+  const rawMessage = row.raw_message || '';
+  const displayMessage = formatLineMessagePreview(rawMessage);
   return {
     id: row.id,
     source: row.source || 'line_webhook',
-    sender_name: row.sender_name || 'LINE 客戶',
+    sender_name: normalizeLineSenderName(row.sender_name),
     sender_id: row.sender_id || '',
-    raw_message: row.raw_message || '',
-    normalized_message: row.normalized_message || normalizeLineMessageText(row.raw_message || ''),
+    raw_message: displayMessage,
+    original_raw_message: rawMessage,
+    normalized_message: row.normalized_message || normalizeLineMessageText(displayMessage),
     received_at: normalizeStoredDateTime(row.received_at),
     status: row.status || 'pending',
     case_id: row.case_id || '',
     duplicate_hash: row.duplicate_hash || '',
     duplicate_warning: row.duplicate_hash ? (row.sender_id ? 'none' : 'possible_duplicate') : 'hash_missing'
   };
+}
+
+function normalizeLineSenderName(value) {
+  const name = String(value || '').trim();
+  if (name === 'group') return 'LINE 群組';
+  if (name === 'user') return 'LINE 用戶';
+  if (name === 'room') return 'LINE 多人聊天室';
+  return name || 'LINE 客戶';
+}
+
+function formatLineMessagePreview(rawMessage) {
+  const text = String(rawMessage || '').trim();
+  if (!text) return '';
+  if (!text.startsWith('{')) return text;
+  try {
+    const payload = JSON.parse(text);
+    const messageType = payload.message_type || payload.type || '';
+    const labels = {
+      image: '圖片訊息',
+      sticker: '貼圖訊息',
+      video: '影片訊息',
+      audio: '語音訊息',
+      file: '檔案訊息',
+      location: '位置訊息'
+    };
+    return labels[messageType] ? `${labels[messageType]}（暫不建立案件）` : '非文字 LINE 訊息（暫不建立案件）';
+  } catch (error) {
+    return text;
+  }
 }
 
 function normalizeStoredDateTime(value) {

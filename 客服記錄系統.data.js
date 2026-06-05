@@ -25,7 +25,7 @@ async function createCaseRecord(record){
 }
 
 async function loadLineMessageRecords(){
-  return sbFetch('line_messages?order=received_at.desc.nullslast,created_at.desc.nullslast&limit=500');
+  return sbFetch('line_messages?status=in.(pending,error)&order=received_at.desc.nullslast,created_at.desc.nullslast&limit=500');
 }
 
 async function updateLineMessageRecord(id, patch){
