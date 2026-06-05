@@ -1,16 +1,16 @@
 const LINE_IMPORT_STATUS_LABELS = {
-  pending: 'Pending',
-  classified: 'Classified',
-  linked: 'Linked',
-  archived: 'Archived',
-  error: 'Needs review'
+  pending: '待分類',
+  classified: '已分類',
+  linked: '已連結',
+  archived: '已封存',
+  error: '需處理'
 };
 
 const LINE_IMPORT_WARNING_LABELS = {
   none: '-',
-  duplicate: 'Duplicate',
-  hash_missing: 'Check required',
-  possible_duplicate: 'Possible duplicate'
+  duplicate: '重複',
+  hash_missing: '缺必要欄位',
+  possible_duplicate: '可能重複'
 };
 
 let lineImportPreviewRows = [];
@@ -235,7 +235,22 @@ function mapLineMessageRecordToUiRow(row) {
 
 function normalizeStoredDateTime(value) {
   if (!value) return '';
-  return String(value).trim().replace('T', ' ').slice(0, 19);
+  const text = String(value).trim();
+  if (!text) return '';
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Taipei'
+    }).replace(/\//g, '-');
+  }
+  return text.replace('T', ' ').slice(0, 19);
 }
 
 function normalizeLineMessageText(message) {
@@ -350,7 +365,7 @@ function buildLineImportRow(row, sourceName) {
         (row.status === 'pending' || row.status === 'error') ? `<button class="btn btn-primary btn-sm" onclick="createCaseFromLineMessage('${escapeHtml(row.id)}')">建立案件</button>` : '',
         row.status !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="updateLinePendingStatus('${escapeHtml(row.id)}','archived')">封存</button>` : ''
       ].filter(Boolean).join(' ')
-    : `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">Detail</button>`;
+    : `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">詳細</button>`;
   return `
     <tr>
       <td>${escapeHtml(row.sender_name)}</td>
