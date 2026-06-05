@@ -399,6 +399,9 @@ async function saveRecord(){
   setLoading(true);
   try{
     const saveResult=await persistRecord(rec);
+    if(saveResult.action==='create' && typeof handleLineCaseCreated==='function'){
+      handleLineCaseCreated(rec.id);
+    }
     showToast(saveResult.toast);
     resetSaveContext();
     closeForm();

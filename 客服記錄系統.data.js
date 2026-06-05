@@ -24,6 +24,17 @@ async function createCaseRecord(record){
   return sbFetch('cases',{method:'POST',body:JSON.stringify(toRow(record))});
 }
 
+async function loadLineMessageRecords(){
+  return sbFetch('line_messages?order=received_at.desc.nullslast,created_at.desc.nullslast&limit=500');
+}
+
+async function updateLineMessageRecord(id, patch){
+  return sbFetch(`line_messages?id=eq.${encodeURIComponent(id)}`,{
+    method:'PATCH',
+    body:JSON.stringify(patch)
+  });
+}
+
 async function updateCaseRecord(record){
   return sbFetch(`cases?id=eq.${encodeURIComponent(record.id)}`,{
     method:'PATCH',

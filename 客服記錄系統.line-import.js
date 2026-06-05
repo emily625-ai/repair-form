@@ -14,8 +14,10 @@ const LINE_IMPORT_WARNING_LABELS = {
 };
 
 let lineImportPreviewRows = [];
+let lineImportBootstrapped = false;
+let lineImportStorageMode = 'local';
 
-const lineImportPendingRows = [
+let lineImportPendingRows = [
   {
     id: 'mock-line-001',
     source: 'csv',
@@ -54,11 +56,37 @@ const lineImportPendingRows = [
   }
 ];
 
-function renderLineImport() {
+async function renderLineImport() {
   setupLineImportDropZone();
+  if (!lineImportBootstrapped) {
+    await refreshLineImportPendingRows({ silent: true });
+    lineImportBootstrapped = true;
+  }
   renderLineImportPreview();
   renderLinePendingMessages();
   updateLineImportStats();
+}
+
+async function refreshLineImportPendingRows(options = {}) {
+  if (typeof loadLineMessageRecords !== 'function') {
+    if (!options.silent) showLineImportAlert('目前找不到 LINE 訊息讀取功能。', 'error');
+    return;
+  }
+  setLineImportLoading(true, '重新讀取 LINE 訊息中...');
+  try {
+    const rows = await loadLineMessageRecords();
+    lineImportPendingRows = Array.isArray(rows) ? rows.map(mapLineMessageRecordToUiRow) : [];
+    lineImportStorageMode = 'remote';
+    renderLinePendingMessages();
+    updateLineImportStats();
+    if (!options.silent) showLineImportAlert(`已重新讀取 ${lineImportPendingRows.length} 筆 LINE 訊息。`, 'success');
+  } catch (error) {
+    lineImportStorageMode = 'local';
+    console.warn('LINE import refresh failed:', error);
+    if (!options.silent) showLineImportAlert(`LINE 訊息讀取失敗：${error.message || error}`, 'error');
+  } finally {
+    setLineImportLoading(false);
+  }
 }
 
 function setupLineImportDropZone() {
@@ -78,9 +106,11 @@ function setupLineImportDropZone() {
   });
 }
 
-function setLineImportLoading(isLoading) {
+function setLineImportLoading(isLoading, message = '處理中...') {
   const loading = document.getElementById('lineImportLoading');
-  if (loading) loading.style.display = isLoading ? 'flex' : 'none';
+  if (!loading) return;
+  loading.textContent = message;
+  loading.style.display = isLoading ? 'block' : 'none';
 }
 
 function showLineImportAlert(message, type = 'info') {
@@ -187,6 +217,27 @@ function normalizeLineImportRow(row, index) {
   };
 }
 
+function mapLineMessageRecordToUiRow(row) {
+  return {
+    id: row.id,
+    source: row.source || 'line_webhook',
+    sender_name: row.sender_name || 'LINE 客戶',
+    sender_id: row.sender_id || '',
+    raw_message: row.raw_message || '',
+    normalized_message: row.normalized_message || normalizeLineMessageText(row.raw_message || ''),
+    received_at: normalizeStoredDateTime(row.received_at),
+    status: row.status || 'pending',
+    case_id: row.case_id || '',
+    duplicate_hash: row.duplicate_hash || '',
+    duplicate_warning: row.duplicate_hash ? (row.sender_id ? 'none' : 'possible_duplicate') : 'hash_missing'
+  };
+}
+
+function normalizeStoredDateTime(value) {
+  if (!value) return '';
+  return String(value).trim().replace('T', ' ').slice(0, 19);
+}
+
 function normalizeLineMessageText(message) {
   return String(message || '')
     .replace(/\s+/g, ' ')
@@ -280,12 +331,26 @@ function renderLineImportPreview() {
 
 function renderLinePendingMessages() {
   const tbody = document.getElementById('linePendingBody');
+  const empty = document.getElementById('linePendingEmpty');
   if (!tbody) return;
+  if (!lineImportPendingRows.length) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
   tbody.innerHTML = lineImportPendingRows.map(row => buildLineImportRow(row, 'pending')).join('');
 }
 
 function buildLineImportRow(row, sourceName) {
   const messagePreview = row.raw_message.length > 70 ? `${row.raw_message.slice(0, 70)}...` : row.raw_message;
+  const actions = sourceName === 'pending'
+    ? [
+        `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">詳細</button>`,
+        (row.status === 'pending' || row.status === 'error') ? `<button class="btn btn-primary btn-sm" onclick="createCaseFromLineMessage('${escapeHtml(row.id)}')">建立案件</button>` : '',
+        row.status !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="updateLinePendingStatus('${escapeHtml(row.id)}','archived')">封存</button>` : ''
+      ].filter(Boolean).join(' ')
+    : `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">Detail</button>`;
   return `
     <tr>
       <td>${escapeHtml(row.sender_name)}</td>
@@ -293,7 +358,7 @@ function buildLineImportRow(row, sourceName) {
       <td>${escapeHtml(row.received_at || '-')}</td>
       <td>${buildLineStatusBadge(row.status)}</td>
       <td>${buildLineWarningBadge(row.duplicate_warning)}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">Detail</button></td>
+      <td>${actions}</td>
     </tr>
   `;
 }
@@ -326,6 +391,7 @@ function openLineMessageDetail(id, sourceName) {
   const rows = sourceName === 'preview' ? lineImportPreviewRows : lineImportPendingRows;
   const row = rows.find(item => item.id === id);
   if (!row) return;
+  window._currentLineDetailId = sourceName === 'pending' ? id : null;
 
   setText('lineDetailTitle', row.sender_name || 'Message detail');
   setText('lineDetailMeta', `${row.source || '-'} | ${row.received_at || '-'}`);
@@ -336,6 +402,87 @@ function openLineMessageDetail(id, sourceName) {
 
   const modal = document.getElementById('lineDetailModal');
   if (modal) modal.classList.add('show');
+}
+
+function updateLinePendingStatus(id, nextStatus) {
+  const row = lineImportPendingRows.find(item => item.id === id);
+  if (!row) return;
+  row.status = nextStatus;
+  persistLinePendingPatch(row.id, { status: nextStatus });
+  renderLinePendingMessages();
+  updateLineImportStats();
+}
+
+async function persistLinePendingPatch(id, patch) {
+  if (lineImportStorageMode !== 'remote' || typeof updateLineMessageRecord !== 'function') return;
+  try {
+    await updateLineMessageRecord(id, patch);
+  } catch (error) {
+    console.warn('LINE import patch failed:', error);
+  }
+}
+
+function createCaseFromLineMessage(id) {
+  const row = lineImportPendingRows.find(item => item.id === id);
+  if (!row) return;
+  if (typeof openNewForm === 'function') openNewForm();
+
+  const dateInput = document.getElementById('fDate');
+  if (dateInput && row.received_at) dateInput.value = toFormDateTimeValue(row.received_at);
+
+  const channelInput = document.getElementById('fChannel');
+  if (channelInput) channelInput.value = '官方LINE';
+
+  const plateInput = document.getElementById('fPlate');
+  if (plateInput) plateInput.value = extractLinePlate(row.raw_message || '');
+
+  const categoryInput = document.getElementById('fCategory');
+  if (categoryInput) categoryInput.value = '平台系統';
+  if (typeof updateSub === 'function') updateSub();
+
+  const statusInput = document.getElementById('fStatus');
+  if (statusInput) statusInput.value = '客服處理中';
+
+  const descriptionInput = document.getElementById('fDescription');
+  if (descriptionInput) descriptionInput.value = buildLineCaseDescription(row);
+
+  window._lineImportContext = { lineMessageId: row.id };
+}
+
+function buildLineCaseDescription(row) {
+  return [
+    `LINE 客戶：${row.sender_name || '-'}`,
+    row.received_at ? `進線時間：${row.received_at}` : '',
+    '',
+    '【LINE 訊息】',
+    row.raw_message || ''
+  ].filter(Boolean).join('\n');
+}
+
+function handleLineCaseCreated(caseId) {
+  const lineMessageId = window._lineImportContext?.lineMessageId;
+  if (!lineMessageId) return;
+  const row = lineImportPendingRows.find(item => item.id === lineMessageId);
+  if (!row) return;
+  row.case_id = caseId;
+  row.status = 'linked';
+  persistLinePendingPatch(row.id, { case_id: caseId, status: 'linked' });
+  renderLinePendingMessages();
+  updateLineImportStats();
+  showLineImportAlert(`已將 LINE 訊息連結到案件 ${caseId}。`, 'success');
+  window._lineImportContext = null;
+}
+
+function toFormDateTimeValue(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.includes('T')) return text.slice(0, 19);
+  return text.replace(' ', 'T').slice(0, 19);
+}
+
+function extractLinePlate(message) {
+  const match = String(message || '').match(/\b([A-Z0-9]{2,4}[-\s][A-Z0-9]{2,4})\b/i);
+  return match ? match[1].toUpperCase().replace(/\s+/g, '-') : '';
 }
 
 function closeLineMessageDetail() {
