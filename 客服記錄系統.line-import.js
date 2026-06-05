@@ -448,6 +448,13 @@ function createCaseFromLineMessage(id) {
   const channelInput = document.getElementById('fChannel');
   if (channelInput) channelInput.value = '官方LINE';
 
+  const companyInput = document.getElementById('fCompany');
+  const companyName = inferLineCompanyName(row);
+  if (companyInput && companyName) {
+    companyInput.value = companyName;
+    if (typeof handleCompanyChange === 'function') handleCompanyChange();
+  }
+
   const plateInput = document.getElementById('fPlate');
   if (plateInput) plateInput.value = extractLinePlate(row.raw_message || '');
 
@@ -472,6 +479,27 @@ function buildLineCaseDescription(row) {
     '【LINE 訊息】',
     row.raw_message || ''
   ].filter(Boolean).join('\n');
+}
+
+function inferLineCompanyName(row) {
+  const companyInput = document.getElementById('fCompany');
+  if (!companyInput) return '';
+  const candidates = Array.from(companyInput.options || [])
+    .map(option => option.value || option.textContent || '')
+    .filter(value => value && value !== '__new__' && !value.startsWith('--'));
+  const searchText = normalizeLineCompanyText([
+    row.sender_name,
+    row.raw_message,
+    row.normalized_message
+  ].filter(Boolean).join(' '));
+  return candidates.find(company => searchText.includes(normalizeLineCompanyText(company))) || '';
+}
+
+function normalizeLineCompanyText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[()（）\-－_＿]/g, '');
 }
 
 function handleLineCaseCreated(caseId) {
