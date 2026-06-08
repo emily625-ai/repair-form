@@ -440,15 +440,38 @@ function openLineMessageDetail(id, sourceName) {
   if (!row) return;
   window._currentLineDetailId = sourceName === 'pending' ? id : null;
 
-  setText('lineDetailTitle', row.sender_name || 'Message detail');
+  setText('lineDetailTitle', row.sender_name || 'LINE 訊息明細');
   setText('lineDetailMeta', `${row.source || '-'} | ${row.received_at || '-'}`);
-  setText('lineDetailRaw', row.raw_message || '-');
-  setText('lineDetailNormalized', row.normalized_message || '-');
-  setText('lineDetailStatus', LINE_IMPORT_STATUS_LABELS[row.status] || row.status || '-');
-  setText('lineDetailDuplicate', LINE_IMPORT_WARNING_LABELS[row.duplicate_warning] || row.duplicate_warning || '-');
+  const body = document.getElementById('lineDetailBody');
+  if (body) {
+    body.innerHTML = `
+      <div class="line-detail-grid">
+        <div class="di">
+          <div class="dl">狀態</div>
+          <div class="dv">${escapeHtml(LINE_IMPORT_STATUS_LABELS[row.status] || row.status || '-')}</div>
+        </div>
+        <div class="di">
+          <div class="dl">重複警示</div>
+          <div class="dv">${escapeHtml(LINE_IMPORT_WARNING_LABELS[row.duplicate_warning] || row.duplicate_warning || '-')}</div>
+        </div>
+        <div class="di">
+          <div class="dl">發話者</div>
+          <div class="dv">${escapeHtml(row.sender_name || '-')}</div>
+        </div>
+        <div class="di">
+          <div class="dl">進線時間</div>
+          <div class="dv">${escapeHtml(row.received_at || '-')}</div>
+        </div>
+      </div>
+      <div class="dst">訊息內容</div>
+      <div class="line-detail-message">${escapeHtml(row.raw_message || '-')}</div>
+      <div class="dst">搜尋用文字</div>
+      <div class="line-detail-message">${escapeHtml(row.normalized_message || '-')}</div>
+    `;
+  }
 
   const modal = document.getElementById('lineDetailModal');
-  if (modal) modal.classList.add('show');
+  if (modal) modal.classList.add('open');
 }
 
 function updateLinePendingStatus(id, nextStatus) {
@@ -562,7 +585,7 @@ function extractLinePlate(message) {
 
 function closeLineMessageDetail() {
   const modal = document.getElementById('lineDetailModal');
-  if (modal) modal.classList.remove('show');
+  if (modal) modal.classList.remove('open');
 }
 
 function escapeHtml(value) {
