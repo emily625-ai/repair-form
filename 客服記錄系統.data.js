@@ -24,8 +24,11 @@ async function createCaseRecord(record){
   return sbFetch('cases',{method:'POST',body:JSON.stringify(toRow(record))});
 }
 
-async function loadLineMessageRecords(){
-  return sbFetch('line_messages?status=in.(pending,error)&order=received_at.desc.nullslast,created_at.desc.nullslast&limit=500');
+async function loadLineMessageRecords(statusFilter){
+  const statusQuery = statusFilter && statusFilter !== 'all'
+    ? `status=eq.${encodeURIComponent(statusFilter)}&`
+    : '';
+  return sbFetch(`line_messages?${statusQuery}order=received_at.desc.nullslast,created_at.desc.nullslast&limit=500`);
 }
 
 async function updateLineMessageRecord(id, patch){

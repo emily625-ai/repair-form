@@ -18,6 +18,7 @@ const LINE_SENDER_MAPPING_STORAGE_KEY = 'cs_line_sender_mappings';
 let lineImportPreviewRows = [];
 let lineImportBootstrapped = false;
 let lineImportStorageMode = 'local';
+let lineImportStatusFilter = 'pending';
 
 let lineImportPendingRows = [
   {
@@ -76,7 +77,8 @@ async function refreshLineImportPendingRows(options = {}) {
   }
   setLineImportLoading(true, '重新讀取 LINE 訊息中...');
   try {
-    const rows = await loadLineMessageRecords();
+    lineImportStatusFilter = getLineImportStatusFilter();
+    const rows = await loadLineMessageRecords(lineImportStatusFilter);
     lineImportPendingRows = Array.isArray(rows) ? rows.map(mapLineMessageRecordToUiRow) : [];
     lineImportStorageMode = 'remote';
     renderLinePendingMessages();
@@ -387,6 +389,7 @@ function renderLineImportPreview() {
 function renderLinePendingMessages() {
   const tbody = document.getElementById('linePendingBody');
   const empty = document.getElementById('linePendingEmpty');
+  setText('linePendingListTitle', getLineImportStatusLabel(lineImportStatusFilter));
   if (!tbody) return;
   if (!lineImportPendingRows.length) {
     tbody.innerHTML = '';
@@ -421,6 +424,16 @@ function buildLineImportRow(row, sourceName) {
 function buildLineStatusBadge(status) {
   const label = LINE_IMPORT_STATUS_LABELS[status] || status || 'Unknown';
   return `<span class="line-status-badge line-status-${escapeHtml(status)}">${escapeHtml(label)}</span>`;
+}
+
+function getLineImportStatusFilter() {
+  const select = document.getElementById('lineStatusFilter');
+  return select ? select.value || 'pending' : 'pending';
+}
+
+function getLineImportStatusLabel(statusFilter) {
+  if (statusFilter === 'all') return '全部';
+  return LINE_IMPORT_STATUS_LABELS[statusFilter] || '待分類';
 }
 
 function buildLineWarningBadge(warning) {
