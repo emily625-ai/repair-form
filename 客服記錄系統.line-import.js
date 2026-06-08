@@ -545,6 +545,56 @@ function createCaseFromLineMessage(id) {
   window._lineImportContext = { lineMessageId: row.id };
 }
 
+function createChildCaseFromLineMessage(id) {
+  const row = lineImportPendingRows.find(item => item.id === id);
+  if (!row) return;
+  if (!Array.isArray(records) || !records.length) {
+    alert('目前沒有案件資料，請先回到案件列表重新整理。');
+    return;
+  }
+
+  const parentId = prompt('請輸入母案編號，例如 20260608-001', '');
+  if (parentId === null) return;
+  const normalizedParentId = parentId.trim();
+  const parent = records.find(record => record.id === normalizedParentId);
+  if (!parent) {
+    alert(`找不到母案：${normalizedParentId}`);
+    return;
+  }
+
+  const childId = buildNextChildCaseId(parent.id);
+  if (typeof openNewForm === 'function') openNewForm();
+  closeLineMessageDetail();
+
+  const title = document.getElementById('formTitle');
+  if (title) title.textContent = `建立子案（母案：${parent.id}）`;
+
+  const dateInput = document.getElementById('fDate');
+  if (dateInput && row.received_at) dateInput.value = toFormDateTimeValue(row.received_at);
+
+  setLineFormValue('fChannel', '官方LINE');
+  fillLineChildCompany(parent.company || row.mapped_company || '');
+  setLineFormValue('fPlate', parent.plate || '');
+  setLineFormValue('fProduct', parent.product || '');
+  setLineFormValue('fCategory', parent.category || '平台系統');
+  if (typeof updateSub === 'function') updateSub();
+  setLineFormValue('fSubcategory', getLineChildSubcategory(parent));
+  setLineFormValue('fStatus', '客服處理中');
+  setLineFormValue('fHandler', '');
+  setLineFormValue('fDispatchDate', '');
+  setLineFormValue('fWarranty', parent.warranty || '');
+  setLineFormValue('fInvoice', '');
+  setLineFormValue('fCloseDate', '');
+  setLineFormChecked('fSurveySent', false);
+  setLineFormChecked('fSurveyReplied', false);
+  setLineFormValue('fDescription', buildLineChildCaseDescription(parent, row));
+  setLineFormValue('fResult', '');
+
+  window._customId = childId;
+  window._lineImportContext = { lineMessageId: row.id };
+  showLineImportAlert(`已準備建立子案 ${childId}，請確認內容後按儲存。`, 'success');
+}
+
 function buildLineCaseDescription(row) {
   return [
     `LINE 客戶：${row.sender_name || '-'}`,
@@ -555,6 +605,55 @@ function buildLineCaseDescription(row) {
     '【LINE 訊息】',
     row.raw_message || ''
   ].filter(Boolean).join('\n');
+}
+
+function buildLineChildCaseDescription(parent, row) {
+  return [
+    `【衍生自 ${parent.id}】`,
+    parent.subcategory ? `母案問題：${parent.subcategory}` : '',
+    row.sender_name ? `LINE 客戶：${row.sender_name}` : '',
+    row.mapped_contact ? `聯絡人：${row.mapped_contact}` : '',
+    row.received_at ? `進線時間：${row.received_at}` : '',
+    '',
+    '【本次 LINE 訊息】',
+    row.raw_message || ''
+  ].filter(Boolean).join('\n');
+}
+
+function buildNextChildCaseId(parentId) {
+  const baseId = String(parentId || '').split('-').slice(0, 2).join('-');
+  const existingChildren = records.filter(record => record.id && record.id.startsWith(`${baseId}-`) && record.id !== baseId);
+  const maxSub = existingChildren.reduce((max, record) => {
+    const parts = String(record.id || '').split('-');
+    const value = parts.length === 3 ? parseInt(parts[2], 10) : 0;
+    return Number.isFinite(value) && value > max ? value : max;
+  }, 0);
+  return `${baseId}-${String(maxSub + 1).padStart(2, '0')}`;
+}
+
+function getLineChildSubcategory(parent) {
+  const select = document.getElementById('fSubcategory');
+  if (!select) return parent.subcategory || '';
+  const progressOption = Array.from(select.options || []).find(option => option.value === '進度追蹤');
+  return progressOption ? '進度追蹤' : (parent.subcategory || '');
+}
+
+function fillLineChildCompany(company) {
+  if (typeof fillCompanyField === 'function') {
+    fillCompanyField(company || '');
+    return;
+  }
+  setLineFormValue('fCompany', company || '');
+}
+
+function setLineFormValue(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.value = value || '';
+}
+
+function setLineFormChecked(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.checked = !!value;
 }
 
 function inferLineCompanyName(row) {
