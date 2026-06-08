@@ -13,6 +13,8 @@ const LINE_IMPORT_WARNING_LABELS = {
   possible_duplicate: '可能重複'
 };
 
+const LINE_SENDER_MAPPING_STORAGE_KEY = 'cs_line_sender_mappings';
+
 let lineImportPreviewRows = [];
 let lineImportBootstrapped = false;
 let lineImportStorageMode = 'local';
@@ -220,11 +222,17 @@ function normalizeLineImportRow(row, index) {
 function mapLineMessageRecordToUiRow(row) {
   const rawMessage = row.raw_message || '';
   const displayMessage = formatLineMessagePreview(rawMessage);
+  const senderId = row.sender_id || '';
+  const originalSenderName = normalizeLineSenderName(row.sender_name);
+  const mappedSender = getLineSenderMapping(senderId);
   return {
     id: row.id,
     source: row.source || 'line_webhook',
-    sender_name: normalizeLineSenderName(row.sender_name),
-    sender_id: row.sender_id || '',
+    sender_name: mappedSender ? formatLineMappedSenderName(mappedSender, originalSenderName) : originalSenderName,
+    original_sender_name: originalSenderName,
+    sender_id: senderId,
+    mapped_company: mappedSender?.company || '',
+    mapped_contact: mappedSender?.contact || '',
     raw_message: displayMessage,
     original_raw_message: rawMessage,
     normalized_message: row.normalized_message || normalizeLineMessageText(displayMessage),
@@ -459,9 +467,20 @@ function openLineMessageDetail(id, sourceName) {
           <div class="dv">${escapeHtml(row.sender_name || '-')}</div>
         </div>
         <div class="di">
+          <div class="dl">公司對應</div>
+          <div class="dv">${escapeHtml(row.mapped_company || '未設定')}</div>
+        </div>
+        <div class="di">
+          <div class="dl">聯絡人對應</div>
+          <div class="dv">${escapeHtml(row.mapped_contact || '未設定')}</div>
+        </div>
+        <div class="di">
           <div class="dl">進線時間</div>
           <div class="dv">${escapeHtml(row.received_at || '-')}</div>
         </div>
+      </div>
+      <div class="line-import-actions" style="margin-bottom:14px">
+        <button class="btn btn-outline btn-sm" onclick="configureLineSenderMapping('${escapeHtml(row.id)}')">設定發話者對應</button>
       </div>
       <div class="dst">訊息內容</div>
       <div class="line-detail-message">${escapeHtml(row.raw_message || '-')}</div>
@@ -529,6 +548,8 @@ function createCaseFromLineMessage(id) {
 function buildLineCaseDescription(row) {
   return [
     `LINE 客戶：${row.sender_name || '-'}`,
+    row.mapped_company ? `公司對應：${row.mapped_company}` : '',
+    row.mapped_contact ? `聯絡人：${row.mapped_contact}` : '',
     row.received_at ? `進線時間：${row.received_at}` : '',
     '',
     '【LINE 訊息】',
@@ -537,6 +558,7 @@ function buildLineCaseDescription(row) {
 }
 
 function inferLineCompanyName(row) {
+  if (row.mapped_company) return row.mapped_company;
   const companyInput = document.getElementById('fCompany');
   if (!companyInput) return '';
   const candidates = Array.from(companyInput.options || [])
@@ -555,6 +577,67 @@ function normalizeLineCompanyText(value) {
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[()（）\-－_＿]/g, '');
+}
+
+function getLineSenderMappings() {
+  try {
+    return JSON.parse(localStorage.getItem(LINE_SENDER_MAPPING_STORAGE_KEY) || '{}') || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function getLineSenderMapping(senderId) {
+  if (!senderId) return null;
+  const mappings = getLineSenderMappings();
+  return mappings[senderId] || null;
+}
+
+function saveLineSenderMapping(senderId, mapping) {
+  if (!senderId) return;
+  const mappings = getLineSenderMappings();
+  mappings[senderId] = {
+    company: String(mapping.company || '').trim(),
+    contact: String(mapping.contact || '').trim(),
+    updated_at: new Date().toISOString()
+  };
+  localStorage.setItem(LINE_SENDER_MAPPING_STORAGE_KEY, JSON.stringify(mappings));
+}
+
+function formatLineMappedSenderName(mapping, fallbackName) {
+  const parts = [mapping.company, mapping.contact].filter(Boolean);
+  return parts.length ? parts.join(' ') : fallbackName;
+}
+
+function configureLineSenderMapping(id) {
+  const row = lineImportPendingRows.find(item => item.id === id) || lineImportPreviewRows.find(item => item.id === id);
+  if (!row) return;
+  if (!row.sender_id) {
+    alert('這筆 LINE 訊息沒有 sender_id，無法建立固定對應。');
+    return;
+  }
+  const company = prompt('請輸入公司名稱（需與案件公司下拉選單一致）', row.mapped_company || inferLineCompanyName(row) || '');
+  if (company === null) return;
+  const contact = prompt('請輸入聯絡人名稱', row.mapped_contact || '');
+  if (contact === null) return;
+
+  saveLineSenderMapping(row.sender_id, { company, contact });
+  applyLineSenderMappingToRows(row.sender_id);
+  renderLinePendingMessages();
+  renderLineImportPreview();
+  openLineMessageDetail(id, row.id.startsWith('preview-') ? 'preview' : 'pending');
+  showLineImportAlert('已儲存發話者對應，之後同一個 LINE sender 會自動帶出公司與聯絡人。', 'success');
+}
+
+function applyLineSenderMappingToRows(senderId) {
+  const mapping = getLineSenderMapping(senderId);
+  if (!mapping) return;
+  [...lineImportPendingRows, ...lineImportPreviewRows].forEach(row => {
+    if (row.sender_id !== senderId) return;
+    row.mapped_company = mapping.company || '';
+    row.mapped_contact = mapping.contact || '';
+    row.sender_name = formatLineMappedSenderName(mapping, row.original_sender_name || row.sender_name);
+  });
 }
 
 function handleLineCaseCreated(caseId) {
