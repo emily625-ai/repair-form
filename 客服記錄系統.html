@@ -579,7 +579,11 @@ textarea.fi{resize:vertical;min-height:68px;}
             <option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option>
             <option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option>
           </select></div>
-        <div class="fgr"><div class="flb">問題次分類</div><select id="fSubcategory" class="fi"></select></div>
+        <div class="fgr"><div class="flb">問題次分類</div><select id="fSubcategory" class="fi" onchange="toggleSubcategoryNote()"></select></div>
+        <div class="fgr full" id="fSubcategoryNoteGroup">
+          <div class="flb">其他原因 / 補充說明</div>
+          <input type="text" id="fSubcategoryNote" class="fi" maxlength="200" placeholder="請填寫無法歸入既有分類的原因">
+        </div>
         <div class="fgr"><div class="flb">處理狀態</div>
           <select id="fStatus" class="fi"><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
         <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
@@ -622,12 +626,12 @@ textarea.fi{resize:vertical;min-height:68px;}
 </div>
 
 <script src="./客服記錄系統.config.js?v=20260513-1"></script>
-<script src="./客服記錄系統.core.js?v=20260608-1"></script>
+<script src="./客服記錄系統.core.js?v=20260626-1"></script>
 <script src="./客服記錄系統.data.js?v=20260608-1"></script>
-<script src="./客服記錄系統.form.js?v=20260513-1"></script>
-<script src="./客服記錄系統.list.js?v=20260603-1"></script>
+<script src="./客服記錄系統.form.js?v=20260626-1"></script>
+<script src="./客服記錄系統.list.js?v=20260626-1"></script>
 <script src="./客服記錄系統.analytics.js?v=20260513-1"></script>
-<script src="./客服記錄系統.app.js?v=20260513-1"></script>
+<script src="./客服記錄系統.app.js?v=20260626-1"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
 <script src="./客服記錄系統.import.js?v=20260513-1"></script>
 <script src="./客服記錄系統.line-import.js?v=20260608-4"></script>

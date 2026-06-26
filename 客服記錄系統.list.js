@@ -26,6 +26,7 @@ function buildSearchHaystack(record){
     record.plate,
     record.category,
     record.subcategory,
+    record.subcategoryNote,
     record.description,
     record.handler,
     record.result,
@@ -164,6 +165,13 @@ function escapeSingleQuote(value){
   return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 
+function getSubcategoryDisplay(record){
+  if((record.category==='其他' || record.subcategory==='其他') && record.subcategoryNote){
+    return `${record.subcategory||'其他'}：${record.subcategoryNote}`;
+  }
+  return record.subcategory||'';
+}
+
 function renderStatusDropdown(recordIndex, record){
   return `<div class="status-dropdown" style="position:relative;display:inline-block">
     <span class="badge badge-${record.status}" style="cursor:pointer" onclick="toggleStatusMenu(event,${recordIndex})" title="點擊可快速切換狀態">${record.status} ▾</span>
@@ -180,7 +188,7 @@ function renderRecordRow(record, recordIndex, query){
     <td class="col-company"><strong style="font-size:15px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistory('${escapeSingleQuote(record.company)}')" title="查看 ${record.company} 的歷史案件">${hl(record.company,query)}</strong></td>
     <td class="col-plate" style="color:var(--text2);white-space:nowrap">${hl(record.plate,query)||'—'}</td>
     <td class="col-category" style="white-space:nowrap">${hl(record.category,query)}</td>
-    <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${hl(record.subcategory,query)||'—'}</span></td>
+    <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${highlightText(getSubcategoryDisplay(record),query)||'—'}</span></td>
     <td>${renderStatusDropdown(recordIndex, record)}</td>
     <td style="white-space:nowrap">${hl(record.handler,query)||'—'}</td>
     <td class="col-duration">${getDurationBadge(record)}</td>
@@ -244,6 +252,21 @@ function escapeHtml(value){
     .replace(/'/g,'&#39;');
 }
 
+function highlightText(value, query){
+  const text=String(value??'');
+  if(!query) return escapeHtml(text);
+  const expression=new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  let output='';
+  let lastIndex=0;
+  text.replace(expression,(match,offset)=>{
+    output+=escapeHtml(text.slice(lastIndex,offset));
+    output+=`<span class="highlight">${escapeHtml(match)}</span>`;
+    lastIndex=offset+match.length;
+    return match;
+  });
+  return output+escapeHtml(text.slice(lastIndex));
+}
+
 function renderDetailItem(label, value, options={}){
   const style=options.style ? ` style="${options.style}"` : '';
   const gridSpan=options.fullWidth ? ' style="grid-column:1/-1"' : '';
@@ -288,14 +311,18 @@ function renderCustomerDetailSection(record){
 }
 
 function renderIssueDetailSection(record){
-  return renderDetailSection('問題資訊', renderDetailGrid([
+  const items=[
     renderDetailItem('問題大類', escapeHtml(record.category||'—')),
     renderDetailItem('問題次分類', escapeHtml(record.subcategory||'—')),
+    (record.category==='其他' || record.subcategory==='其他')
+      ? renderDetailItem('其他原因 / 補充說明', escapeHtml(record.subcategoryNote||'—'), {fullWidth:true})
+      : '',
     renderDetailItem('保固狀態', escapeHtml(record.warranty||'—')),
     renderDetailItem('發票狀態', renderInvoiceText(record)),
     renderDetailItem('是否發送問卷', renderSurveyText(record.surveySent)),
     renderDetailItem('是否收到回覆', renderSurveyText(record.surveyReplied)),
-  ]));
+  ].filter(Boolean);
+  return renderDetailSection('問題資訊', renderDetailGrid(items));
 }
 
 function renderDescriptionSection(record){
@@ -363,7 +390,7 @@ function showCompanyHistory(company){
           ${history.map((r,i)=>`<tr style="background:${i%2===0?'var(--surface)':'var(--surface2)'}">
             <td style="padding:8px 12px;color:var(--text2)">${getDateOnlyText(r.date)||'—'}</td>
             <td style="padding:8px 12px"><span style="cursor:pointer;color:var(--accent)" onclick="closeHistory();searchByPlate('${r.plate}')" title="搜尋同車牌案件">${r.plate||'—'}</span></td>
-            <td style="padding:8px 12px;color:var(--text2)">${r.subcategory||'—'}</td>
+            <td style="padding:8px 12px;color:var(--text2)">${escapeHtml(getSubcategoryDisplay(r)||'—')}</td>
             <td style="padding:8px 12px"><span class="badge badge-${r.status}">${r.status}</span></td>
             <td style="padding:8px 12px">${r.handler||'—'}</td>
           </tr>`).join('')}

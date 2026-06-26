@@ -15,6 +15,10 @@ function validateRecordInput(record){
     alert('請填寫進線日期時間與公司名稱');
     return false;
   }
+  if((record.category==='其他' || record.subcategory==='其他') && !record.subcategoryNote){
+    alert('問題大類或問題次分類選擇「其他」時，請填寫其他原因 / 補充說明');
+    return false;
+  }
   if(!validateStatusTransition(record.status, record.dispatchDate)) return false;
   return true;
 }
@@ -32,6 +36,12 @@ function collectRecordFormData(){
     product:document.getElementById('fProduct').value,
     category:document.getElementById('fCategory').value,
     subcategory:document.getElementById('fSubcategory').value,
+    subcategoryNote:(
+      document.getElementById('fCategory').value==='其他' ||
+      document.getElementById('fSubcategory').value==='其他'
+    )
+      ? document.getElementById('fSubcategoryNote').value.trim()
+      : '',
     status:document.getElementById('fStatus').value,
     dispatchDate:document.getElementById('fDispatchDate').value,
     handler:document.getElementById('fHandler').value,
@@ -97,6 +107,7 @@ function openNewForm(){
   document.getElementById('fProduct').value='';
   document.getElementById('fCategory').value='平台系統';
   updateSub();
+  setSubcategoryNote('');
   document.getElementById('fStatus').value='客服處理中';
   document.getElementById('fDispatchDate').value='';
   document.getElementById('fHandler').value='';
@@ -125,6 +136,7 @@ function openEdit(idx){
   document.getElementById('fCategory').value=r.category;
   updateSub();
   document.getElementById('fSubcategory').value=r.subcategory;
+  setSubcategoryNote(r.subcategoryNote||'');
   document.getElementById('fStatus').value=r.status;
   document.getElementById('fDispatchDate').value=formatDateInputValue(r.dispatchDate);
   document.getElementById('fHandler').value=r.handler;
@@ -168,6 +180,7 @@ function copyDetailRecord(){
   document.getElementById('fCategory').value=source.category||'平台系統';
   updateSub();
   document.getElementById('fSubcategory').value=source.subcategory||'';
+  setSubcategoryNote(source.subcategoryNote||'');
   document.getElementById('fStatus').value='客服處理中';
   document.getElementById('fDispatchDate').value='';
   document.getElementById('fHandler').value=source.handler||'';
@@ -341,7 +354,9 @@ function createChildCase(){
   document.getElementById('fPlate').value = parent.plate || '';
   document.getElementById('fProduct').value = parent.product || '';
   document.getElementById('fCategory').value = parent.category || '';
+  updateSub();
   document.getElementById('fSubcategory').value = parent.subcategory || '';
+  setSubcategoryNote(parent.subcategoryNote||'');
   document.getElementById('fWarranty').value = parent.warranty || '';
   document.getElementById('fInvoice').value = '';
   document.getElementById('fSurveySent').checked = false;
@@ -354,7 +369,6 @@ function createChildCase(){
   document.getElementById('fResult').value = '';
   
   window._customId = newId;
-  updateSub();
   document.getElementById('formModal').classList.add('open');
   showToast('✨ 子案件編號：'+newId, 'var(--purple)');
 }
@@ -377,6 +391,7 @@ function copyLastRecord(){
   document.getElementById('fCategory').value=last.category||'平台系統';
   updateSub();
   document.getElementById('fSubcategory').value=last.subcategory||'';
+  setSubcategoryNote(last.subcategoryNote||'');
   document.getElementById('fStatus').value='客服處理中';
   document.getElementById('fDispatchDate').value='';
   document.getElementById('fHandler').value=last.handler||'';

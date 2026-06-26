@@ -70,6 +70,7 @@ function toRow(record){
     product:record.product||null,
     category:record.category||null,
     subcategory:record.subcategory||null,
+    subcategory_note:record.subcategoryNote||null,
     description:record.description||null,
     status:record.status||null,
     handler:record.handler||null,
@@ -91,6 +92,7 @@ function fromRow(row){
     product:row.product||'',
     category:row.category||'',
     subcategory:row.subcategory||'',
+    subcategoryNote:row.subcategory_note||row.subcategoryNote||'',
     description:row.description||'',
     status:row.status||'',
     dispatchDate:getCaseDateValue(row,'dispatchDate'),
@@ -209,7 +211,11 @@ function getDuplicateOpenPlateCases(plate, days=30){
 }
 
 function buildActivityDetail(action, record){
-  const subject=`${record.company||'未填公司'} - ${record.subcategory||'未填次分類'}`;
+  const hasOtherNote=(record.category==='其他' || record.subcategory==='其他') && record.subcategoryNote;
+  const subcategoryText=hasOtherNote
+    ? `${record.subcategory||'其他'}：${record.subcategoryNote}`
+    : record.subcategory||'未填次分類';
+  const subject=`${record.company||'未填公司'} - ${subcategoryText}`;
   if(action==='新增') return `新增案件：${subject}`;
   if(action==='編輯') return `編輯案件：${subject}`;
   return subject;

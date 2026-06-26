@@ -23,6 +23,25 @@ function updateSub(){
   const currentValue=select.value;
   const options=SUBMAP[category]||['其他'];
   select.innerHTML=options.map(option=>`<option${option===currentValue?' selected':''}>${option}</option>`).join('');
+  toggleSubcategoryNote();
+}
+
+function toggleSubcategoryNote(){
+  const category=document.getElementById('fCategory');
+  const subcategory=document.getElementById('fSubcategory');
+  const group=document.getElementById('fSubcategoryNoteGroup');
+  const input=document.getElementById('fSubcategoryNote');
+  if(!category || !subcategory || !group || !input) return;
+  const isOther=category.value==='其他' || subcategory.value==='其他';
+  group.style.display=isOther?'':'none';
+  input.required=isOther;
+  if(!isOther) input.value='';
+}
+
+function setSubcategoryNote(value=''){
+  const input=document.getElementById('fSubcategoryNote');
+  if(input) input.value=value||'';
+  toggleSubcategoryNote();
 }
 
 function toggleOverdue(){
