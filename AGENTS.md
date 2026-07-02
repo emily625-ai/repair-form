@@ -47,6 +47,21 @@ This repository is the frontend project for the customer service record system.
 5. Test the affected workflow manually after changes.
 6. Record security, SQL, API, or workflow changes in the appropriate docs folder.
 
+## Required Modification Procedure
+
+Use this procedure for every future code or SQL change unless the user explicitly says the task is documentation-only.
+
+1. Confirm the requirement and the intended outcome.
+2. Run `git status` in the affected repo before editing.
+3. Keep the modification small and limited to necessary files.
+4. Test locally or verify the affected workflow.
+5. Update the relevant documentation or change record.
+6. Split commits by purpose, such as UI, API, SQL, reports, or docs.
+7. Push only after confirming the commit scope is clean.
+8. Verify the production page, Render deploy, or Supabase result after deployment.
+
+Do not mix unrelated changes in one commit. If existing uncommitted changes are present, preserve them and avoid overwriting user work.
+
 ## Git Workflow
 
 - Work from `main` only for small documentation-only updates.

@@ -38,6 +38,21 @@ Before testing:
 - Do not use real destructive customer data for tests.
 - Do not execute SQL unless the task explicitly requires it.
 
+## Required Modification Procedure
+
+Use this procedure before changing code, SQL, or deployment-related settings:
+
+1. Confirm the requirement and the intended outcome.
+2. Run `git status` in the affected repo before editing.
+3. Keep the modification small and limited to necessary files.
+4. Test locally or verify the affected workflow.
+5. Update the relevant documentation or change record.
+6. Split commits by purpose, such as UI, API, SQL, reports, or docs.
+7. Push only after confirming the commit scope is clean.
+8. Verify the production page, Render deploy, or Supabase result after deployment.
+
+Do not mix unrelated changes in one commit. If existing uncommitted changes are present, preserve them and avoid overwriting user work.
+
 Recommended local URL:
 
 ```text

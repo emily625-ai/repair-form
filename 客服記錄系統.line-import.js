@@ -506,21 +506,30 @@ function openLineMessageDetail(id, sourceName) {
   if (modal) modal.classList.add('open');
 }
 
-function updateLinePendingStatus(id, nextStatus) {
+async function updateLinePendingStatus(id, nextStatus) {
   const row = lineImportPendingRows.find(item => item.id === id);
   if (!row) return;
+  const previousStatus = row.status;
   row.status = nextStatus;
-  persistLinePendingPatch(row.id, { status: nextStatus });
   renderLinePendingMessages();
   updateLineImportStats();
+  const saved = await persistLinePendingPatch(row.id, { status: nextStatus });
+  if (!saved) {
+    row.status = previousStatus;
+    renderLinePendingMessages();
+    updateLineImportStats();
+    showLineImportAlert('LINE 訊息狀態未能儲存，請稍後再試。', 'error');
+  }
 }
 
 async function persistLinePendingPatch(id, patch) {
-  if (lineImportStorageMode !== 'remote' || typeof updateLineMessageRecord !== 'function') return;
+  if (lineImportStorageMode !== 'remote' || typeof updateLineMessageRecord !== 'function') return true;
   try {
     await updateLineMessageRecord(id, patch);
+    return true;
   } catch (error) {
     console.warn('LINE import patch failed:', error);
+    return false;
   }
 }
 
@@ -752,14 +761,22 @@ function applyLineSenderMappingToRows(senderId) {
   });
 }
 
-function handleLineCaseCreated(caseId) {
+async function handleLineCaseCreated(caseId) {
   const lineMessageId = window._lineImportContext?.lineMessageId;
   if (!lineMessageId) return;
   const row = lineImportPendingRows.find(item => item.id === lineMessageId);
   if (!row) return;
+  const previousStatus = row.status;
+  const previousCaseId = row.case_id;
   row.case_id = caseId;
   row.status = 'linked';
-  persistLinePendingPatch(row.id, { case_id: caseId, status: 'linked' });
+  const saved = await persistLinePendingPatch(row.id, { case_id: caseId, status: 'linked' });
+  if (!saved) {
+    row.case_id = previousCaseId;
+    row.status = previousStatus;
+    showLineImportAlert(`案件 ${caseId} 已建立，但 LINE 待分類狀態未能儲存。`, 'error');
+    return;
+  }
   renderLinePendingMessages();
   updateLineImportStats();
   showLineImportAlert(`已將 LINE 訊息連結到案件 ${caseId}。`, 'success');

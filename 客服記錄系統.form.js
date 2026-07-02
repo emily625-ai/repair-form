@@ -12,7 +12,11 @@ function buildRecordId(formDate){
 
 function validateRecordInput(record){
   if(!record.date || !record.company){
-    alert('請填寫進線日期時間與公司名稱');
+    if(window._lineImportContext?.lineMessageId && !record.company){
+      alert('LINE 建立案件請先選擇或輸入公司名稱');
+    }else{
+      alert('請填寫進線日期時間與公司名稱');
+    }
     return false;
   }
   if((record.category==='其他' || record.subcategory==='其他') && !record.subcategoryNote){
@@ -415,7 +419,7 @@ async function saveRecord(){
   try{
     const saveResult=await persistRecord(rec);
     if(saveResult.action==='create' && typeof handleLineCaseCreated==='function'){
-      handleLineCaseCreated(rec.id);
+      await handleLineCaseCreated(rec.id);
     }
     showToast(saveResult.toast);
     resetSaveContext();
