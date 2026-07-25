@@ -2,10 +2,12 @@ const SUPA_URL='https://cbnrcwujxgopuglngdlb.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibnJjd3VqeGdvcHVnbG5nZGxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODE4MzEsImV4cCI6MjA5Mzg1NzgzMX0.UrFJLrIRlgImqt4KhXlwxETA0-umhNBL_8J0nif8iuE';
 
 async function sbFetch(path,opt={}){
+  const authToken=typeof getAuthAccessToken==='function' ? getAuthAccessToken() : '';
+  const bearerToken=authToken || SUPA_KEY;
   const res=await fetch(SUPA_URL+'/rest/v1/'+path,{
     headers:{
       apikey:SUPA_KEY,
-      Authorization:'Bearer '+SUPA_KEY,
+      Authorization:'Bearer '+bearerToken,
       'Content-Type':'application/json',
       Prefer:'return=representation',
       ...(opt.headers||{})

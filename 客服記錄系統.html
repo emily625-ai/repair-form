@@ -14,6 +14,17 @@
 :root{--bg:#1d2331;--surface:#283043;--surface2:#34405a;--border:#465473;--accent:#7da2ff;--accent2:#98b4ff;--green:#34d399;--yellow:#fbbf24;--red:#f87171;--orange:#fb923c;--purple:#b194ff;--text:#f7f9fd;--text2:#d5deed;--text3:#a5b1c9;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans TC',sans-serif;background:linear-gradient(180deg,#202738 0%,#1a2030 100%);color:var(--text);min-height:100vh;line-height:1.6;}
+body.auth-locked .app{display:none;}
+.auth-gate{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top left,rgba(125,162,255,.18),transparent 34%),linear-gradient(180deg,#202738 0%,#1a2030 100%);}
+body.auth-locked .auth-gate{display:flex;}
+.auth-card{width:min(430px,100%);background:rgba(40,48,67,.98);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.34);}
+.auth-title{font-size:24px;font-weight:800;color:var(--accent);margin-bottom:6px;}
+.auth-sub{font-size:14px;color:var(--text3);margin-bottom:20px;line-height:1.7;}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-message{display:none;padding:10px 12px;border-radius:10px;font-size:14px;border:1px solid var(--border);background:#1b2230;color:var(--text2);}
+.auth-message[data-type="error"]{border-color:rgba(248,113,113,.45);color:#fecaca;background:rgba(248,113,113,.1);}
+.auth-message[data-type="info"]{border-color:rgba(125,162,255,.35);color:var(--text2);background:rgba(125,162,255,.1);}
+.auth-user{font-size:12px;color:var(--text3);white-space:nowrap;}
 .app{display:flex;flex-direction:column;height:100vh;}
 .topbar{background:rgba(40,48,67,.97);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:14px;height:66px;flex-shrink:0;}
 .topbar-logo{font-size:20px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
@@ -218,7 +229,26 @@ textarea.fi{resize:vertical;min-height:68px;}
 
 </style>
 </head>
-<body>
+<body class="auth-locked">
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-title">客服案件管理系統</div>
+    <div class="auth-sub">請使用 Supabase Auth 帳號登入。此版本不執行 RLS migration，完整資料權限仍需後續搭配 Supabase RLS 收斂。</div>
+    <form class="auth-form" id="authForm">
+      <div class="fgr">
+        <div class="flb">Email</div>
+        <input type="email" id="authEmail" class="fi" autocomplete="username" placeholder="name@example.com">
+      </div>
+      <div class="fgr">
+        <div class="flb">密碼</div>
+        <input type="password" id="authPassword" class="fi" autocomplete="current-password" placeholder="請輸入密碼">
+      </div>
+      <div class="auth-message" id="authMessage"></div>
+      <button class="btn btn-primary" id="authLoginBtn" type="submit">登入系統</button>
+    </form>
+  </div>
+</div>
 
 </div>
 <div class="app">
@@ -230,6 +260,8 @@ textarea.fi{resize:vertical;min-height:68px;}
       <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
       <button class="tab-btn" onclick="switchView('line-import',this)">💬 LINE 匯入</button>
     </div>
+    <div class="auth-user" id="authUserLabel"></div>
+    <button class="btn btn-outline btn-sm" onclick="logout()">登出</button>
   </div>
 
   <div id="dailyTodo" style="display:none;background:linear-gradient(135deg,#1e2235,#22263a);border-bottom:1px solid var(--border);padding:10px 20px">
@@ -628,6 +660,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.config.js?v=20260513-1"></script>
 <script src="./客服記錄系統.core.js?v=20260626-1"></script>
 <script src="./客服記錄系統.data.js?v=20260608-1"></script>
+<script src="./客服記錄系統.auth.js?v=20260725-1"></script>
 <script src="./客服記錄系統.form.js?v=20260626-1"></script>
 <script src="./客服記錄系統.list.js?v=20260626-1"></script>
 <script src="./客服記錄系統.analytics.js?v=20260513-1"></script>

@@ -4,8 +4,16 @@ window.onload=()=>{
     document.getElementById('fCompanyNewGroup').style.display=this.value==='__new__'?'':'none';
   });
   bindModalBackdropClose();
-  loadRecords();
+  if(typeof requireAuthBeforeInit==='function'){
+    requireAuthBeforeInit();
+    return;
+  }
+  initializeAppAfterAuth();
 };
+
+async function initializeAppAfterAuth(){
+  loadRecords();
+}
 
 function switchView(viewName, button){
   document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));
