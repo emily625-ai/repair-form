@@ -114,10 +114,10 @@ async function loadActivityLog(){
         : '—';
       return `<tr>
         <td style="font-size:11px;color:var(--text2);white-space:nowrap">${changedAt}</td>
-        <td><span class="badge" style="background:rgba(${rgb},.15);color:#${color}">${row.action}</span></td>
-        <td><span class="mono">${row.case_id||'—'}</span></td>
-        <td style="font-size:12px">${row.changed_by||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${row.detail||'—'}</td>
+        <td><span class="badge" style="background:rgba(${rgb},.15);color:#${color}">${escapeHtml(row.action||'—')}</span></td>
+        <td><span class="mono">${escapeHtml(row.case_id||'—')}</span></td>
+        <td style="font-size:12px">${escapeHtml(row.changed_by||'—')}</td>
+        <td style="font-size:11px;color:var(--text2)">${escapeHtml(row.detail||'—')}</td>
       </tr>`;
     }).join('');
   }catch(e){
