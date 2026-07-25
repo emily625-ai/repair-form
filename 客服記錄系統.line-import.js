@@ -15,7 +15,6 @@ const LINE_IMPORT_WARNING_LABELS = {
 
 const LINE_SENDER_MAPPING_STORAGE_KEY = 'cs_line_sender_mappings';
 
-let lineImportPreviewRows = [];
 let lineImportBootstrapped = false;
 let lineImportStorageMode = 'local';
 let lineImportStatusFilter = 'pending';
@@ -60,12 +59,10 @@ let lineImportPendingRows = [
 ];
 
 async function renderLineImport() {
-  setupLineImportDropZone();
   if (!lineImportBootstrapped) {
     await refreshLineImportPendingRows({ silent: true });
     lineImportBootstrapped = true;
   }
-  renderLineImportPreview();
   renderLinePendingMessages();
   updateLineImportStats();
 }
@@ -93,23 +90,6 @@ async function refreshLineImportPendingRows(options = {}) {
   }
 }
 
-function setupLineImportDropZone() {
-  const dropZone = document.getElementById('lineDropZone');
-  if (!dropZone || dropZone.dataset.bound === '1') return;
-
-  dropZone.dataset.bound = '1';
-  dropZone.addEventListener('dragover', event => {
-    event.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', event => {
-    event.preventDefault();
-    dropZone.classList.remove('dragover');
-    handleLineCsvFile(event.dataTransfer.files[0]);
-  });
-}
-
 function setLineImportLoading(isLoading, message = '處理中...') {
   const loading = document.getElementById('lineImportLoading');
   if (!loading) return;
@@ -124,101 +104,6 @@ function showLineImportAlert(message, type = 'info') {
   alert.textContent = message || '';
   alert.dataset.type = type;
   alert.style.display = message ? 'block' : 'none';
-}
-
-function handleLineCsvFile(file) {
-  if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.csv')) {
-    showLineImportAlert('Please upload a CSV file.', 'error');
-    return;
-  }
-
-  setLineImportLoading(true);
-  const reader = new FileReader();
-  reader.onload = event => {
-    try {
-      lineImportPreviewRows = parseLineImportCsv(event.target.result);
-      renderLineImportPreview();
-      updateLineImportStats();
-      showLineImportAlert(`Preview loaded: ${lineImportPreviewRows.length} row(s). Mock only, not saved.`, 'success');
-    } catch (error) {
-      showLineImportAlert(error.message || 'CSV parse failed.', 'error');
-    } finally {
-      setLineImportLoading(false);
-    }
-  };
-  reader.onerror = () => {
-    setLineImportLoading(false);
-    showLineImportAlert('Unable to read this file.', 'error');
-  };
-  reader.readAsText(file, 'utf-8');
-}
-
-function parseLineImportCsv(csvText) {
-  const lines = String(csvText || '').split(/\r?\n/).filter(line => line.trim());
-  if (lines.length < 2) throw new Error('CSV must include a header row and at least one data row.');
-
-  const headers = parseCsvLine(lines[0]).map(header => header.trim().toLowerCase());
-  const requiredHeaders = ['received_at', 'sender_name', 'message'];
-  const missing = requiredHeaders.filter(header => !headers.includes(header));
-  if (missing.length) throw new Error(`Missing required column(s): ${missing.join(', ')}`);
-
-  return lines.slice(1).map((line, index) => {
-    const values = parseCsvLine(line);
-    const rawRow = {};
-    headers.forEach((header, headerIndex) => {
-      rawRow[header] = values[headerIndex] || '';
-    });
-    return normalizeLineImportRow(rawRow, index);
-  });
-}
-
-function parseCsvLine(line) {
-  const values = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    const next = line[index + 1];
-    if (char === '"' && inQuotes && next === '"') {
-      current += '"';
-      index += 1;
-    } else if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      values.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  values.push(current);
-  return values.map(value => value.trim());
-}
-
-function normalizeLineImportRow(row, index) {
-  const rawMessage = row.message || row.raw_message || '';
-  const senderName = row.sender_name || row.sender || 'Unknown';
-  const senderId = row.sender_id || '';
-  const receivedAt = row.received_at || row.time || '';
-  const normalizedMessage = normalizeLineMessageText(rawMessage);
-  const duplicateHash = buildLineDuplicateHash(senderId || senderName, receivedAt, normalizedMessage);
-
-  return {
-    id: `preview-${index + 1}`,
-    source: row.source || 'csv',
-    sender_name: senderName,
-    sender_id: senderId,
-    raw_message: rawMessage,
-    normalized_message: normalizedMessage,
-    received_at: receivedAt,
-    status: 'pending',
-    case_id: '',
-    duplicate_hash: duplicateHash,
-    duplicate_warning: getLineDuplicateWarning(senderId, receivedAt, normalizedMessage)
-  };
 }
 
 function mapLineMessageRecordToUiRow(row) {
@@ -302,90 +187,6 @@ function normalizeLineMessageText(message) {
     .toLowerCase();
 }
 
-function buildLineDuplicateHash(sender, receivedAt, normalizedMessage) {
-  if (!sender || !receivedAt || !normalizedMessage) return '';
-  return `${sender}|${receivedAt}|${normalizedMessage}`;
-}
-
-function getLineDuplicateWarning(senderId, receivedAt, normalizedMessage) {
-  if (!receivedAt || !normalizedMessage) return 'hash_missing';
-  if (!senderId) return 'possible_duplicate';
-  return 'none';
-}
-
-function loadLineMockCsv() {
-  lineImportPreviewRows = [
-    normalizeLineImportRow({
-      source: 'csv',
-      sender_name: 'Demo customer',
-      sender_id: 'demo-u001',
-      received_at: '2026-05-16 13:20:00',
-      message: 'Invoice cannot be issued. Please help check vehicle ABCD-1234.'
-    }, 0),
-    normalizeLineImportRow({
-      source: 'csv',
-      sender_name: 'Demo customer',
-      sender_id: 'demo-u001',
-      received_at: '2026-05-16 13:20:00',
-      message: 'Invoice cannot be issued. Please help check vehicle ABCD-1234.'
-    }, 1)
-  ];
-  lineImportPreviewRows[1].duplicate_warning = 'duplicate';
-  renderLineImportPreview();
-  updateLineImportStats();
-  showLineImportAlert('Mock CSV preview loaded. Nothing has been saved.', 'success');
-}
-
-function clearLinePreview() {
-  lineImportPreviewRows = [];
-  const input = document.getElementById('lineCsvInput');
-  if (input) input.value = '';
-  renderLineImportPreview();
-  updateLineImportStats();
-  showLineImportAlert('', 'info');
-}
-
-function parseManualLineMessages() {
-  const textarea = document.getElementById('lineManualPaste');
-  const text = textarea ? textarea.value : '';
-  const rows = text
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map((message, index) => normalizeLineImportRow({
-      source: 'manual_paste',
-      sender_name: 'Manual paste',
-      sender_id: '',
-      received_at: '',
-      message
-    }, index));
-
-  lineImportPreviewRows = rows;
-  renderLineImportPreview();
-  updateLineImportStats();
-  showLineImportAlert(`Manual paste preview loaded: ${rows.length} row(s).`, rows.length ? 'success' : 'info');
-}
-
-function mockImportLinePreview() {
-  if (!lineImportPreviewRows.length) {
-    showLineImportAlert('No preview rows to import.', 'error');
-    return;
-  }
-  showLineImportAlert('Mock import completed. DB write is intentionally disabled for MVP.', 'success');
-}
-
-function renderLineImportPreview() {
-  const tbody = document.getElementById('linePreviewBody');
-  if (!tbody) return;
-
-  if (!lineImportPreviewRows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">No preview rows yet.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = lineImportPreviewRows.map(row => buildLineImportRow(row, 'preview')).join('');
-}
-
 function renderLinePendingMessages() {
   const tbody = document.getElementById('linePendingBody');
   const empty = document.getElementById('linePendingEmpty');
@@ -397,18 +198,16 @@ function renderLinePendingMessages() {
     return;
   }
   if (empty) empty.style.display = 'none';
-  tbody.innerHTML = lineImportPendingRows.map(row => buildLineImportRow(row, 'pending')).join('');
+  tbody.innerHTML = lineImportPendingRows.map(row => buildLineImportRow(row)).join('');
 }
 
-function buildLineImportRow(row, sourceName) {
+function buildLineImportRow(row) {
   const messagePreview = row.raw_message.length > 70 ? `${row.raw_message.slice(0, 70)}...` : row.raw_message;
-  const actions = sourceName === 'pending'
-    ? [
-        `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">詳細</button>`,
-        (row.status === 'pending' || row.status === 'error') ? `<button class="btn btn-primary btn-sm" onclick="createCaseFromLineMessage('${escapeHtml(row.id)}')">建立案件</button>` : '',
-        row.status !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="updateLinePendingStatus('${escapeHtml(row.id)}','archived')">封存</button>` : ''
-      ].filter(Boolean).join(' ')
-    : `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}','${sourceName}')">詳細</button>`;
+  const actions = [
+    `<button class="btn btn-outline btn-sm" onclick="openLineMessageDetail('${escapeHtml(row.id)}')">詳細</button>`,
+    (row.status === 'pending' || row.status === 'error') ? `<button class="btn btn-primary btn-sm" onclick="createCaseFromLineMessage('${escapeHtml(row.id)}')">建立案件</button>` : '',
+    row.status !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="updateLinePendingStatus('${escapeHtml(row.id)}','archived')">封存</button>` : ''
+  ].filter(Boolean).join(' ');
   return `
     <tr>
       <td>${escapeHtml(row.sender_name)}</td>
@@ -445,8 +244,7 @@ function buildLineWarningBadge(warning) {
 
 function updateLineImportStats() {
   setText('linePendingCount', lineImportPendingRows.filter(row => row.status === 'pending').length);
-  setText('linePreviewCount', lineImportPreviewRows.length);
-  setText('lineDuplicateCount', lineImportPreviewRows.filter(row => row.duplicate_warning && row.duplicate_warning !== 'none').length);
+  setText('lineDuplicateCount', lineImportPendingRows.filter(row => row.duplicate_warning && row.duplicate_warning !== 'none').length);
   setText('lineErrorCount', lineImportPendingRows.filter(row => row.status === 'error').length);
 }
 
@@ -455,11 +253,10 @@ function setText(id, value) {
   if (element) element.textContent = value;
 }
 
-function openLineMessageDetail(id, sourceName) {
-  const rows = sourceName === 'preview' ? lineImportPreviewRows : lineImportPendingRows;
-  const row = rows.find(item => item.id === id);
+function openLineMessageDetail(id) {
+  const row = lineImportPendingRows.find(item => item.id === id);
   if (!row) return;
-  window._currentLineDetailId = sourceName === 'pending' ? id : null;
+  window._currentLineDetailId = id;
 
   setText('lineDetailTitle', row.sender_name || 'LINE 訊息明細');
   setText('lineDetailMeta', `${row.source || '-'} | ${row.received_at || '-'}`);
@@ -818,7 +615,7 @@ function formatLineMappedSenderName(mapping, fallbackName) {
 }
 
 function configureLineSenderMapping(id) {
-  const row = lineImportPendingRows.find(item => item.id === id) || lineImportPreviewRows.find(item => item.id === id);
+  const row = lineImportPendingRows.find(item => item.id === id);
   if (!row) return;
   if (!row.sender_id) {
     alert('這筆 LINE 訊息沒有 sender_id，無法建立固定對應。');
@@ -832,15 +629,14 @@ function configureLineSenderMapping(id) {
   saveLineSenderMapping(row.sender_id, { company, contact });
   applyLineSenderMappingToRows(row.sender_id);
   renderLinePendingMessages();
-  renderLineImportPreview();
-  openLineMessageDetail(id, row.id.startsWith('preview-') ? 'preview' : 'pending');
+  openLineMessageDetail(id);
   showLineImportAlert('已儲存發話者對應，之後同一個 LINE sender 會自動帶出公司與聯絡人。', 'success');
 }
 
 function applyLineSenderMappingToRows(senderId) {
   const mapping = getLineSenderMapping(senderId);
   if (!mapping) return;
-  [...lineImportPendingRows, ...lineImportPreviewRows].forEach(row => {
+  lineImportPendingRows.forEach(row => {
     if (row.sender_id !== senderId) return;
     row.mapped_company = mapping.company || '';
     row.mapped_contact = mapping.contact || '';
