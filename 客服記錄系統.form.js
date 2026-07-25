@@ -80,6 +80,26 @@ function confirmDuplicateCaseIfNeeded(record){
   return confirm(warningMessage);
 }
 
+function isDuplicateCaseIdError(error){
+  // PostgREST returns 23505 / "duplicate key" when the generated case id
+  // collides (e.g. two operators create a same-day case at the same time).
+  return /23505|duplicate key|already exists/i.test(String(error?.message||''));
+}
+
+async function createCaseWithIdRetry(record){
+  try{
+    await createCaseRecord(record);
+  }catch(error){
+    // Only retry auto-generated ids on a genuine id collision. A custom id
+    // (LINE child case) or any non-duplicate error is re-thrown as-is, so a
+    // failed-but-actually-inserted request never triggers a second insert.
+    if(!isDuplicateCaseIdError(error) || window._customId) throw error;
+    await loadRecords();
+    record.id=genId(record.date);
+    await createCaseRecord(record);
+  }
+}
+
 async function persistRecord(record){
   const isEditing=editIdx!==null;
   if(isEditing){
@@ -87,7 +107,7 @@ async function persistRecord(record){
     await logActivity(record.id,'編輯',buildActivityDetail('編輯', record));
     return {action:'edit',toast:'✅ 案件已更新'};
   }
-  await createCaseRecord(record);
+  await createCaseWithIdRetry(record);
   await logActivity(record.id,'新增',buildActivityDetail('新增', record));
   return {action:'create',toast:'✅ 案件已新增'};
 }
