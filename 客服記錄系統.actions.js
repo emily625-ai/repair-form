@@ -55,7 +55,15 @@ async function deleteRecord(index){
     await logActivity(record.id,ACTIVITY_ACTION.delete,`${record.company} - ${record.subcategory}`);
     await loadRecords();
   }catch(error){
-    showToast(UI_TEXT.deleteFailed+error.message,'var(--red)');
+    const message=String(error?.message||'');
+    // DELETE was revoked from the authenticated role during RLS convergence,
+    // so PostgREST returns a permission error. Show operators a clear next
+    // step instead of the raw Supabase permission payload.
+    if(/permission denied|must be owner|42501|not authorized/i.test(message)){
+      showToast('刪除功能已停用（權限限制），請改用「結案」狀態處理此案件。','var(--red)');
+    }else{
+      showToast(UI_TEXT.deleteFailed+message,'var(--red)');
+    }
   }
   setLoading(false);
 }

@@ -89,9 +89,19 @@ function setLastMonth(){
   setReportRange(first,last);
 }
 
+function toLocalDateInputValue(date){
+  // Format as local YYYY-MM-DD. Using toISOString() here would convert local
+  // midnight to UTC and shift the date back one day in UTC+8, so the quick
+  // range buttons (本週/上週/...) would select from one day earlier.
+  const year=date.getFullYear();
+  const month=String(date.getMonth()+1).padStart(2,'0');
+  const day=String(date.getDate()).padStart(2,'0');
+  return `${year}-${month}-${day}`;
+}
+
 function setReportRange(fromDate,toDate){
-  document.getElementById('rptFrom').value=fromDate.toISOString().slice(0,10);
-  document.getElementById('rptTo').value=toDate.toISOString().slice(0,10);
+  document.getElementById('rptFrom').value=toLocalDateInputValue(fromDate);
+  document.getElementById('rptTo').value=toLocalDateInputValue(toDate);
   renderAnalytics();
 }
 

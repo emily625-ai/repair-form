@@ -56,14 +56,18 @@ async function patchCaseRecord(caseId, patch){
   });
 }
 
+const CASE_LOAD_LIMIT=1000;
+
 async function loadRecords(){
   setLoading(true);
   try{
-    const rows=await sbFetch('cases?order=occurred_at.desc.nullslast,date.desc.nullslast&limit=1000');
+    const rows=await sbFetch(`cases?order=occurred_at.desc.nullslast,date.desc.nullslast&limit=${CASE_LOAD_LIMIT}`);
     records=rows
       .map(fromRow)
       .sort((a,b)=>(toDateValue(b.date)?.getTime()||0)-(toDateValue(a.date)?.getTime()||0));
     document.getElementById('totalCount').textContent=records.length;
+    const limitNotice=document.getElementById('caseLimitNotice');
+    if(limitNotice) limitNotice.style.display=rows.length>=CASE_LOAD_LIMIT?'':'none';
     applyFilters();
     renderDailyTodo();
   }catch(e){
@@ -114,10 +118,10 @@ async function loadActivityLog(){
         : '—';
       return `<tr>
         <td style="font-size:11px;color:var(--text2);white-space:nowrap">${changedAt}</td>
-        <td><span class="badge" style="background:rgba(${rgb},.15);color:#${color}">${row.action}</span></td>
-        <td><span class="mono">${row.case_id||'—'}</span></td>
-        <td style="font-size:12px">${row.changed_by||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${row.detail||'—'}</td>
+        <td><span class="badge" style="background:rgba(${rgb},.15);color:#${color}">${escapeHtml(row.action||'—')}</span></td>
+        <td><span class="mono">${escapeHtml(row.case_id||'—')}</span></td>
+        <td style="font-size:12px">${escapeHtml(row.changed_by||'—')}</td>
+        <td style="font-size:11px;color:var(--text2)">${escapeHtml(row.detail||'—')}</td>
       </tr>`;
     }).join('');
   }catch(e){

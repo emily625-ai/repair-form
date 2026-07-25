@@ -106,11 +106,10 @@ function calcDur(s,e){
 }
 
 function hl(t,q){
-  if(!t||!q) return t||'';
-  return String(t).replace(
-    new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
-    m=>`<span class="highlight">${m}</span>`
-  );
+  // Delegate to highlightText so all main-table cells are HTML-escaped.
+  // The previous inline version returned raw text (unescaped) when there was
+  // no search query, which allowed stored HTML in company/plate/handler to run.
+  return highlightText(t,q);
 }
 
 function getDurationBadge(record){
@@ -161,8 +160,13 @@ function getRowVisualMeta(record){
   return {rowClass:'',statusNote:''};
 }
 
-function escapeSingleQuote(value){
-  return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+function showCompanyHistoryFromRow(recordIndex){
+  const record=filtered[recordIndex];
+  if(record) showCompanyHistory(record.company);
+}
+
+function searchByPlateFromEl(element){
+  searchByPlate(element.getAttribute('data-plate')||'');
 }
 
 function getSubcategoryDisplay(record){
@@ -184,8 +188,8 @@ function renderRecordRow(record, recordIndex, query){
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="${recordIndex}" onclick="updateBatchBar()"></td>
     <td class="col-id"><span class="mono">${hl(record.id,query)}</span>${visualMeta.statusNote}</td>
     <td class="col-date" style="color:var(--text2);white-space:nowrap">${fdt(record.date)}</td>
-    <td class="col-channel" style="color:var(--text2);white-space:nowrap">${record.channel||'—'}</td>
-    <td class="col-company"><strong style="font-size:15px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistory('${escapeSingleQuote(record.company)}')" title="查看 ${record.company} 的歷史案件">${hl(record.company,query)}</strong></td>
+    <td class="col-channel" style="color:var(--text2);white-space:nowrap">${escapeHtml(record.channel||'—')}</td>
+    <td class="col-company"><strong style="font-size:15px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistoryFromRow(${recordIndex})" title="查看歷史案件">${hl(record.company,query)}</strong></td>
     <td class="col-plate" style="color:var(--text2);white-space:nowrap">${hl(record.plate,query)||'—'}</td>
     <td class="col-category" style="white-space:nowrap">${hl(record.category,query)}</td>
     <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${highlightText(getSubcategoryDisplay(record),query)||'—'}</span></td>
@@ -389,10 +393,10 @@ function showCompanyHistory(company){
         <tbody>
           ${history.map((r,i)=>`<tr style="background:${i%2===0?'var(--surface)':'var(--surface2)'}">
             <td style="padding:8px 12px;color:var(--text2)">${getDateOnlyText(r.date)||'—'}</td>
-            <td style="padding:8px 12px"><span style="cursor:pointer;color:var(--accent)" onclick="closeHistory();searchByPlate('${r.plate}')" title="搜尋同車牌案件">${r.plate||'—'}</span></td>
+            <td style="padding:8px 12px"><span style="cursor:pointer;color:var(--accent)" data-plate="${escapeHtml(r.plate||'')}" onclick="closeHistory();searchByPlateFromEl(this)" title="搜尋同車牌案件">${escapeHtml(r.plate||'—')}</span></td>
             <td style="padding:8px 12px;color:var(--text2)">${escapeHtml(getSubcategoryDisplay(r)||'—')}</td>
-            <td style="padding:8px 12px"><span class="badge badge-${r.status}">${r.status}</span></td>
-            <td style="padding:8px 12px">${r.handler||'—'}</td>
+            <td style="padding:8px 12px"><span class="badge badge-${r.status}">${escapeHtml(r.status||'—')}</span></td>
+            <td style="padding:8px 12px">${escapeHtml(r.handler||'—')}</td>
           </tr>`).join('')}
         </tbody>
       </table>

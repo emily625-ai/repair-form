@@ -173,18 +173,20 @@ function buildStatusPatch(record, newStatus, extraData={}){
   return patch;
 }
 
-function getDispatchElapsedDays(dispatchDate){
-  const dispatchDt=toDateValue(dispatchDate);
-  if(!dispatchDt) return null;
-  const ms=new Date()-dispatchDt;
+function getElapsedDaysSince(dateValue){
+  const startDate=toDateValue(dateValue);
+  if(!startDate) return null;
+  const ms=new Date()-startDate;
   if(Number.isNaN(ms) || ms<0) return null;
   return Math.floor(ms/864e5);
 }
 
+// 快逾期：從「進線日」起算 5 天(尚未逾 7 天前)。
+// 與 isDispatchOverdue(已逾期，進線日起算 7 天)同一個基準日，避免兩套標準。
 function isDispatchWarning(record){
   if(isDispatchOverdue(record)) return false;
-  if(!record.dispatchDate || isClosedStatus(record.status) || record.handler==='客戶') return false;
-  const days=getDispatchElapsedDays(record.dispatchDate);
+  if(isClosedStatus(record.status) || record.handler==='客戶') return false;
+  const days=getElapsedDaysSince(record.date);
   return days!==null && days>5;
 }
 
