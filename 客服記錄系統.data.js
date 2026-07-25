@@ -56,14 +56,18 @@ async function patchCaseRecord(caseId, patch){
   });
 }
 
+const CASE_LOAD_LIMIT=1000;
+
 async function loadRecords(){
   setLoading(true);
   try{
-    const rows=await sbFetch('cases?order=occurred_at.desc.nullslast,date.desc.nullslast&limit=1000');
+    const rows=await sbFetch(`cases?order=occurred_at.desc.nullslast,date.desc.nullslast&limit=${CASE_LOAD_LIMIT}`);
     records=rows
       .map(fromRow)
       .sort((a,b)=>(toDateValue(b.date)?.getTime()||0)-(toDateValue(a.date)?.getTime()||0));
     document.getElementById('totalCount').textContent=records.length;
+    const limitNotice=document.getElementById('caseLimitNotice');
+    if(limitNotice) limitNotice.style.display=rows.length>=CASE_LOAD_LIMIT?'':'none';
     applyFilters();
     renderDailyTodo();
   }catch(e){
