@@ -17,3 +17,6 @@ const ACTIVITY_ACTION={
   edit:'編輯',
   delete:'刪除',
 };
+
+// Shared by the form, list filter and batch assignment.
+const HANDLERS=["Alan", "Alex", "Emily", "RD", "大Eddie", "客戶", "彭向謙", "彭子豪", "楊明憲", "港仔", "群瑪", "葉哥", "王睿揚", "陳世豪", "黃世緯", "黃泊鑫", "William", "業務"];

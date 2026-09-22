@@ -1,4 +1,5 @@
 window.onload=()=>{
+  initializeHandlerOptions();
   updateSub();
   document.getElementById('fCompany').addEventListener('change',function(){
     document.getElementById('fCompanyNewGroup').style.display=this.value==='__new__'?'':'none';
@@ -73,5 +74,16 @@ function bindModalBackdropClose(){
     modal.addEventListener('click',event=>{
       if(event.target===event.currentTarget) modal.classList.remove('open');
     });
+  });
+}
+
+function initializeHandlerOptions(){
+  ['fHandler','filterHandler','batchHandler'].forEach(id=>{
+    const select=document.getElementById(id);
+    if(!select) return;
+    const value=select.value;
+    while(select.options.length>1) select.remove(1);
+    HANDLERS.forEach(name=>select.add(new Option(name,name)));
+    select.value=value;
   });
 }
