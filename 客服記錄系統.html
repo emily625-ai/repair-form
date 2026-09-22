@@ -223,6 +223,15 @@ textarea.fi{resize:vertical;min-height:68px;}
 
 
 
+/* Light theme limited to the analytics view. */
+#view-analytics{--bg:#f3f6fb;--surface:#fff;--surface2:#eaf0f8;--border:#cbd5e1;--accent:#2457c5;--accent2:#19449e;--green:#047857;--yellow:#854d0e;--red:#b91c1c;--orange:#9a3412;--purple:#6d28d9;--text:#172033;--text2:#334155;--text3:#526174;background:var(--bg);color:var(--text);color-scheme:light;}
+#view-analytics .analytics-toolbar,#view-analytics .sc,#view-analytics .cc{background:var(--surface);}
+#view-analytics input,#view-analytics select{background:var(--surface);color:var(--text);}
+#view-analytics th{background:var(--surface2);color:var(--text2);}
+#view-analytics tr:hover td{background:#edf2fa;}
+#view-analytics .badge-待派工{color:var(--yellow);}
+#view-analytics .badge-待客戶確認{color:#075985;}
+#view-analytics .bf{color:#172033;}
 </style>
 </head>
 <body class="auth-locked">
@@ -271,25 +280,7 @@ textarea.fi{resize:vertical;min-height:68px;}
           <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
           <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
           <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
-          <select id="filterHandler" onchange="applyFilters()">
-            <option value="">所有處理人</option>
-            <option>Alan</option>
-            <option>Alex</option>
-            <option>Emily</option>
-            <option>RD</option>
-            <option>大Eddie</option>
-            <option>客戶</option>
-            <option>彭向謙</option>
-            <option>彭子豪</option>
-            <option>楊明憲</option>
-            <option>港仔</option>
-            <option>群瑪</option>
-            <option>葉哥</option>
-            <option>王睿揚</option>
-            <option>陳世豪</option>
-            <option>黃世緯</option>
-            <option>黃泊鑫</option>
-          </select>
+          <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
           <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
           <select id="perPageSelect" onchange="changePerPage()">
             <option value="25">25筆/頁</option>
@@ -327,13 +318,7 @@ textarea.fi{resize:vertical;min-height:68px;}
         <option value="待客戶寄回">待客戶寄回</option>
         <option value="結案">結案</option>
       </select>
-      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff">
-        <option value="">選擇負責人…</option>
-        <option>Alan</option><option>Alex</option><option>Emily</option><option>RD</option>
-        <option>大Eddie</option><option>客戶</option><option>彭向謙</option><option>彭子豪</option>
-        <option>楊明憲</option><option>港仔</option><option>群瑪</option><option>葉哥</option><option>王睿揚</option><option>陳世豪</option>
-        <option>黃世緯</option><option>黃泊鑫</option>
-      </select>
+      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff"><option value="">選擇負責人…</option></select>
       <button class="btn btn-sm" style="background:#fff;color:var(--accent);font-weight:600" onclick="applyBatch()">✅ 套用</button>
       <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="clearSelection()">取消</button>
     </div>
@@ -580,11 +565,7 @@ textarea.fi{resize:vertical;min-height:68px;}
           <select id="fStatus" class="fi"><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
         <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
         <div class="fgr"><div class="flb">負責處理人員</div>
-          <select id="fHandler" class="fi"><option value="">-- 選擇 --</option>
-            <option>Alan</option><option>Alex</option><option>Emily</option><option>RD</option><option>大Eddie</option>
-            <option>客戶</option><option>彭向謙</option><option>彭子豪</option><option>楊明憲</option><option>港仔</option>
-            <option>群瑪</option><option>葉哥</option><option>王睿揚</option><option>陳世豪</option><option>黃世緯</option><option>黃泊鑫</option>
-          </select></div>
+          <select id="fHandler" class="fi"><option value="">-- 選擇 --</option></select></div>
         <div class="fgr"><div class="flb">保固狀態</div>
           <select id="fWarranty" class="fi" onchange="if(this.value==='保固外')document.getElementById('fInvoice').value='待開立'"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
         <div class="fgr"><div class="flb">發票狀態</div>
@@ -617,14 +598,14 @@ textarea.fi{resize:vertical;min-height:68px;}
   </div>
 </div>
 
-<script src="./客服記錄系統.config.js?v=20260513-1"></script>
+<script src="./客服記錄系統.config.js?v=20260922-1"></script>
 <script src="./客服記錄系統.core.js?v=20260725-3"></script>
 <script src="./客服記錄系統.data.js?v=20260725-3"></script>
 <script src="./客服記錄系統.auth.js?v=20260725-2"></script>
 <script src="./客服記錄系統.form.js?v=20260725-3"></script>
 <script src="./客服記錄系統.list.js?v=20260725-3"></script>
 <script src="./客服記錄系統.analytics.js?v=20260513-1"></script>
-<script src="./客服記錄系統.app.js?v=20260626-1"></script>
+<script src="./客服記錄系統.app.js?v=20260922-1"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
 <script src="./客服記錄系統.import.js?v=20260513-1"></script>
 <script src="./客服記錄系統.line-import.js?v=20260725-2"></script>
