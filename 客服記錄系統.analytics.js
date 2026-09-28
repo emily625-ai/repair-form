@@ -264,3 +264,37 @@ function buildLegacyReportPayload(model,allRecords){
   const legacy=record=>Object.fromEntries(Object.entries(record).filter(([key])=>!V2_FIELDS.includes(key)));
   return {records:model.recs.map(legacy),from:model.from,to:model.to,all_records:allRecords.map(legacy)};
 }
+
+
+function getReportMonth(model){
+  const source=model?.from || new Date().toISOString().slice(0,10);
+  const match=String(source).match(/^(\d{4})-(\d{2})/);
+  const now=new Date();
+  return {year:match?Number(match[1]):now.getFullYear(),month:match?Number(match[2])-1:now.getMonth()};
+}
+function localDateKey(value){
+  const date=toDateValue(value); if(!date) return '';
+  const local=new Date(date);
+  return `${local.getFullYear()}-${String(local.getMonth()+1).padStart(2,'0')}-${String(local.getDate()).padStart(2,'0')}`;
+}
+function buildMonthlyWeeklySummary(model){
+  const {year,month}=getReportMonth(model), first=new Date(year,month,1), last=new Date(year,month+1,0), weeks=[];
+  let cursor=new Date(first);
+  while(cursor<=last){
+    const weekStart=new Date(cursor), day=(weekStart.getDay()+6)%7, weekEnd=new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate()+(6-day)); if(weekEnd>last) weekEnd.setTime(last.getTime());
+    const startKey=localDateKey(weekStart), endKey=localDateKey(weekEnd);
+    const created=model.recs.filter(r=>{const key=localDateKey(r.date);return key>=startKey&&key<=endKey;});
+    const closed=model.recs.filter(r=>{const key=localDateKey(r.closeDate);return key>=startKey&&key<=endKey;});
+    weeks.push({label:`第${weeks.length+1}週`,range:`${month+1}/${weekStart.getDate()}–${month+1}/${weekEnd.getDate()}`,created:created.length,closed:closed.length,open:created.filter(r=>r.status!=='結案').length});
+    cursor=new Date(weekEnd); cursor.setDate(cursor.getDate()+1);
+  }
+  return {year,month,weeks};
+}
+function renderMonthlyWeeklySection(model){
+  const summary=buildMonthlyWeeklySummary(model), monthLabel=`${summary.year}年${summary.month+1}月`;
+  const rows=summary.weeks.map(week=>'<tr><td style="font-weight:700">'+week.label+'</td><td style="color:var(--text2)">'+week.range+'</td><td style="text-align:center;color:var(--accent);font-weight:700">'+week.created+'</td><td style="text-align:center;color:var(--green);font-weight:700">'+week.closed+'</td><td style="text-align:center;color:var(--yellow);font-weight:700">'+week.open+'</td></tr>').join('');
+  return '<div style="margin-bottom:14px"><div class="rpt-section-title">⑤ '+monthLabel+'每週案件統計</div><div class="occ"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">週別</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">日期範圍</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">新增</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">未結案</th></tr></thead><tbody>'+rows+'</tbody></table><div style="padding:8px 12px;color:var(--text3);font-size:11px">未結案＝該週新增案件中，目前狀態尚未結案。</div></div></div>';
+}
+const renderAnalyticsBase=renderAnalytics;
+renderAnalytics=function(){renderAnalyticsBase();const model=buildAnalyticsModel();document.getElementById('analyticsContent').insertAdjacentHTML('beforeend',renderMonthlyWeeklySection(model));};
