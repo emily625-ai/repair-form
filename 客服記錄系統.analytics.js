@@ -13,11 +13,11 @@ function buildCountMap(items, selector, fallback='未知'){
 // Prefer V2 classification for new records and keep historical records
 // visible through their legacy classification until they are reviewed.
 function analyticsCategory(record){
-  return record.new_category || record.category || '其他';
+  return record.category || '其他';
 }
 
 function analyticsSubcategory(record){
-  return record.new_subcategory || record.subcategory || '其他';
+  return record.subcategory || '其他';
 }
 
 function buildCategorySummary(items){
