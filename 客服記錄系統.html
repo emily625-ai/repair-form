@@ -224,11 +224,13 @@ textarea.fi{resize:vertical;min-height:68px;}
 
 
 /* Light theme limited to the analytics view. */
-#view-analytics{--bg:#f3f6fb;--surface:#fff;--surface2:#eaf0f8;--border:#cbd5e1;--accent:#2457c5;--accent2:#19449e;--green:#047857;--yellow:#854d0e;--red:#b91c1c;--orange:#9a3412;--purple:#6d28d9;--text:#172033;--text2:#334155;--text3:#526174;background:var(--bg);color:var(--text);color-scheme:light;}
-#view-analytics .analytics-toolbar,#view-analytics .sc,#view-analytics .cc{background:var(--surface);}
+#view-analytics{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--border:#cbd5e1;--accent:#2457c5;--accent2:#19449e;--green:#047857;--yellow:#854d0e;--red:#b91c1c;--orange:#9a3412;--purple:#6d28d9;--text:#172033;--text2:#334155;--text3:#526174;background:var(--bg);color:var(--text);color-scheme:light;}
+#view-analytics .analytics{background:var(--bg);}
+#view-analytics .analytics-toolbar,#view-analytics .sc,#view-analytics .cc,#view-analytics .occ{background:var(--surface);}
+#view-analytics .occ tbody td{background:var(--surface);color:var(--text);}
 #view-analytics input,#view-analytics select{background:var(--surface);color:var(--text);}
 #view-analytics th{background:var(--surface2);color:var(--text2);}
-#view-analytics tr:hover td{background:#edf2fa;}
+#view-analytics tr:hover td{background:#eef4ff;}
 #view-analytics .badge-待派工{color:var(--yellow);}
 #view-analytics .badge-待客戶確認{color:#075985;}
 #view-analytics .bf{color:#172033;}
