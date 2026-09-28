@@ -93,7 +93,7 @@ async function downloadReport(endpoint, filenamePrefix){
     const res=await fetch(`https://report-api-ehs7.onrender.com/${endpoint}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({records:model.recs,from:model.from,to:model.to,all_records:records})
+      body:JSON.stringify(buildLegacyReportPayload(model,records))
     });
     if(!res.ok) throw new Error(await res.text());
     const blob=await res.blob();
@@ -247,4 +247,10 @@ function renderAnalytics(){
     + renderAnalyticsVolumeSection(model)
     + renderAnalyticsCategorySection(model)
     + renderAnalyticsOverdueSection(model);
+}
+
+// External report API still consumes the legacy record contract.
+function buildLegacyReportPayload(model,allRecords){
+  const legacy=record=>Object.fromEntries(Object.entries(record).filter(([key])=>!V2_FIELDS.includes(key)));
+  return {records:model.recs.map(legacy),from:model.from,to:model.to,all_records:allRecords.map(legacy)};
 }

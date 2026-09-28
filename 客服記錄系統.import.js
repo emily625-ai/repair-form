@@ -30,18 +30,31 @@ function mapImportRow(row){
     '車牌':'plate','產品別':'product','問題大類':'category','問題次分類':'subcategory',
     '問題詳細描述':'description','處理狀態':'status','派工日期':'dispatch_date',
     '負責處理人員':'handler','最終處理結果':'result','結案日期':'close_date',
-    '保固狀態':'warranty'
+    '保固狀態':'warranty','其他原因 / 補充說明':'subcategory_note'
   };
+  V2_FIELDS.forEach((key,i)=>columnMap[V2_LABELS[i]]=key);
+  Object.assign(columnMap,{'進線日期時間':'date','派工日期時間':'dispatch_date','結案日期時間':'close_date'});
   const mapped={};
   Object.entries(columnMap).forEach(([label,key])=>{
     if(row[label]!==undefined) mapped[key]=row[label]||null;
   });
-  if(!mapped.id) mapped.id=genId(mapped.date||new Date().toISOString());
+  if(!mapped.id) throw new Error('匯入每列必須有編號，避免同批產生重複編號');
+  if(!mapped.date || !mapped.company) throw new Error('匯入需填進線日期及公司名稱');
+  if(V2_FIELDS.some(key=>mapped[key])){
+    if(mapped.classification_version!==V2_VERSION) throw new Error('不支援的 V2 分類版本');
+    validateV2Classification(mapped);
+    if(!['manual','line_rule','ai_suggested','historical_migration'].includes(mapped.classification_source)) throw new Error('分類來源無效');
+    if(!['confirmed','pending_review'].includes(mapped.classification_status)) throw new Error('分類確認狀態無效');
+    // V2 exports keep their original legacy values. Do not infer over them.
+    if(!mapped.product || !mapped.category || !mapped.subcategory) throw new Error('V2 匯入須保留舊產品／大類／次分類相容值');
+  }
   return mapped;
 }
 
 function splitImportRows(rows){
   const existingIds=new Set(records.map(record=>record.id));
+  const seen=new Set();
+  for(const row of rows){if(seen.has(row.id)) throw new Error('同批匯入編號重複：'+row.id);seen.add(row.id);}
   return {
     existingIds,
     newRows:rows.filter(row=>!existingIds.has(row.id)),
@@ -81,11 +94,11 @@ function buildImportPreviewRow(row, index, existingIds){
   const rowClass=isDuplicate?'import-row-duplicate':index%2===0?'import-row-even':'import-row-odd';
   return `<tr class="${rowClass}">
     <td>${isDuplicate?'<span class="import-status-duplicate">跳過</span>':'<span class="import-status-new">✅新增</span>'}</td>
-    <td class="import-code">${row.id||'—'}</td>
+    <td class="import-code">${escapeHtml(row.id||'—')}</td>
     <td class="import-muted">${getDateOnlyText(row.date)||'—'}</td>
-    <td class="import-company">${row.company||'—'}</td>
-    <td class="import-muted">${row.plate||'—'}</td>
-    <td class="import-muted">${row.subcategory||row.description?.slice(0,20)||'—'}</td>
+    <td class="import-company">${escapeHtml(row.company||'—')}</td>
+    <td class="import-muted">${escapeHtml(row.plate||'—')}</td>
+    <td class="import-muted">${escapeHtml(row.subcategory||row.description?.slice(0,20)||'—')}</td>
   </tr>`;
 }
 
@@ -106,6 +119,7 @@ async function confirmImport(){
     for(let index=0;index<newRows.length;index+=30){
       const batch=newRows.slice(index,index+30);
       await sbFetch('cases',{method:'POST',body:JSON.stringify(batch)});
+      for(const row of batch) await logActivity(row.id,'新增','Excel 匯入案件');
     }
     showToast(`✅ 成功匯入 ${newRows.length} 筆資料`);
     await loadRecords();

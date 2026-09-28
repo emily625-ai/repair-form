@@ -393,7 +393,7 @@ function classifyLineMessageText(text) {
 
 function formatLineClassificationSuggestion(row) {
   const suggestion = classifyLineMessageText(`${row.raw_message || ''} ${row.normalized_message || ''}`);
-  return suggestion ? `${suggestion.category} / ${suggestion.subcategory}（關鍵字：${suggestion.matchedKeyword}）` : '未判斷（將帶入預設「平台系統」）';
+  return suggestion ? `${suggestion.category} / ${suggestion.subcategory}（關鍵字：${suggestion.matchedKeyword}）` : '未判斷，請人工選擇 V2 分類';
 }
 
 function applyLineClassificationSuggestion(row) {
@@ -446,7 +446,7 @@ function createCaseFromLineMessage(id) {
   showLineImportAlert(
     suggestion
       ? `已依關鍵字「${suggestion.matchedKeyword}」自動帶入分類「${suggestion.category} / ${suggestion.subcategory}」，請確認是否正確。`
-      : '無法自動判斷分類，已帶入預設「平台系統」，請手動確認分類。',
+      : '無法自動判斷分類，請完整選擇並人工確認 V2 分類。',
     'info'
   );
 }
@@ -484,7 +484,9 @@ function createChildCaseFromLineMessage(id) {
   setLineFormValue('fProduct', parent.product || '');
   setLineFormValue('fCategory', parent.category || '平台系統');
   if (typeof updateSub === 'function') updateSub();
-  setLineFormValue('fSubcategory', getLineChildSubcategory(parent));
+  setLineFormValue('fSubcategory', parent.subcategory || '');
+  initializeV2Form(parent);
+  setPreservedSelect('fTrackingType','維修進度追蹤');
   setLineFormValue('fStatus', '客服處理中');
   setLineFormValue('fHandler', '');
   setLineFormValue('fDispatchDate', '');

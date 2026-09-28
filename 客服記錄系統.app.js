@@ -1,5 +1,8 @@
 window.onload=()=>{
   initializeHandlerOptions();
+  initializeV2Form();
+  v2Options("filterNature",Object.keys(V2_DICTIONARY));
+  v2Options("filterTracking",V2_TRACKING);
   updateSub();
   document.getElementById('fCompany').addEventListener('change',function(){
     document.getElementById('fCompanyNewGroup').style.display=this.value==='__new__'?'':'none';

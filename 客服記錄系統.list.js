@@ -1,5 +1,7 @@
 function getFilterState(){
   return {
+    nature:document.getElementById("filterNature").value,
+    tracking:document.getElementById("filterTracking").value,
     query:document.getElementById('searchInput').value.toLowerCase(),
     status:document.getElementById('filterStatus').value,
     category:document.getElementById('filterCategory').value,
@@ -21,6 +23,8 @@ function matchesWarrantyFilter(record, warranty){
 
 function buildSearchHaystack(record){
   return [
+    ...V2_FIELDS.map(key=>record[key]),
+    record.product,
     record.id,
     record.company,
     record.plate,
@@ -35,6 +39,8 @@ function buildSearchHaystack(record){
 }
 
 function recordMatchesFilters(record, state){
+  if(state.nature && record.case_nature!==state.nature) return false;
+  if(state.tracking && record.tracking_type!==state.tracking) return false;
   if(state.status && record.status!==state.status) return false;
   if(state.category && record.category!==state.category) return false;
   if(!matchesWarrantyFilter(record, state.warranty)) return false;
@@ -62,7 +68,7 @@ function applyFilters(){
 
 function clearFilters(){
   ['searchInput'].forEach(id=>document.getElementById(id).value='');
-  ['filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
+  ['filterNature','filterTracking','filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
   ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
   showOverdue=false;
   invoiceOnly='';
@@ -310,6 +316,7 @@ function renderCustomerDetailSection(record){
   return renderDetailSection('客戶資訊', renderDetailGrid([
     renderDetailItem('公司名稱', escapeHtml(record.company||'—')),
     renderDetailItem('車牌', escapeHtml(record.plate||'—')),
+    ...V2_FIELDS.map((key,i)=>renderDetailItem(V2_LABELS[i],escapeHtml(record[key]||'未填'))),
     renderDetailItem('產品別', escapeHtml(record.product||'—')),
   ]));
 }

@@ -63,6 +63,7 @@ function buildDatePatch(logicalKey, value){
 function toRow(record){
   return {
     id:record.id,
+    ...v2Fields(record),
     ...buildCaseDatePayload(record),
     channel:record.channel||null,
     company:record.company||null,
@@ -85,6 +86,7 @@ function toRow(record){
 function fromRow(row){
   return {
     id:row.id,
+    ...v2Fields(row),
     date:getCaseDateValue(row,'date'),
     channel:row.channel||'',
     company:row.company||'',
