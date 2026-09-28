@@ -280,7 +280,9 @@ textarea.fi{resize:vertical;min-height:68px;}
         <div class="toolbar-primary-filters">
           <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
           <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
-          <select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
+          <label>V2 案件性質 <select id="filterNature" onchange="applyFilters()"></select></label>
+<label>追蹤類型 <select id="filterTracking" onchange="applyFilters()"></select></label>
+<select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
           <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
           <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
           <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
@@ -547,7 +549,15 @@ textarea.fi{resize:vertical;min-height:68px;}
           </select></div>
         <div class="fgr" id="fCompanyNewGroup" style="display:none"><div class="flb">新客戶名稱</div><input type="text" id="fCompanyNew" class="fi" placeholder="輸入新客戶名稱"></div>
         <div class="fgr"><div class="flb">車牌</div><input type="text" id="fPlate" class="fi" placeholder="選填"></div>
-        <div class="fgr"><div class="flb">產品別</div>
+        <div class="fgr full"><div class="flb">V2 分類（新案件必填；舊案件未變更時保留原分類）</div></div><div class="fgr"><label class="flb" for="fNewProduct">V2 產品別</label><select id="fNewProduct" class="fi"></select></div>
+<div class="fgr"><label class="flb" for="fCaseNature">案件性質</label><select id="fCaseNature" class="fi" onchange="updateV2Categories()"></select></div>
+<div class="fgr"><label class="flb" for="fNewCategory">V2 問題大類</label><select id="fNewCategory" class="fi" onchange="updateV2Subcategories()"></select></div>
+<div class="fgr"><label class="flb" for="fNewSubcategory">V2 問題次分類</label><select id="fNewSubcategory" class="fi"></select></div>
+<div class="fgr"><label class="flb" for="fTrackingType">追蹤類型（可不選）</label><select id="fTrackingType" class="fi"></select></div>
+<div class="fgr"><label class="flb" for="fTrackingTopic">追蹤主題</label><input id="fTrackingTopic" class="fi"></div>
+<div class="fgr full"><label class="flb" for="fClassificationNote">分類備註</label><input id="fClassificationNote" class="fi"></div>
+<div class="fgr full"><label><input type="checkbox" id="fV2Confirm"> 已人工確認 V2 分類</label><p>以下舊分類供相容報表使用：新案件由 V2 產生相容值；既有案件保留原始值。</p></div>
+<div class="fgr"><div class="flb">原始產品別</div>
           <select id="fProduct" class="fi"><option value="">-- 選擇 --</option>
             <option>FMS-GPS(系統平台)</option><option>FMS-GPS(硬體)</option>
             <option>FMS-DMVR(純行車視野)</option><option>FMS-DMVR(不回傳主機硬體)</option>
@@ -601,20 +611,21 @@ textarea.fi{resize:vertical;min-height:68px;}
 </div>
 
 <script src="./客服記錄系統.config.js?v=20260922-1"></script>
-<script src="./客服記錄系統.core.js?v=20260725-3"></script>
+<script src="./客服記錄系統.classification.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.core.js?v=20260928-v2"></script>
 <script src="./客服記錄系統.data.js?v=20260725-3"></script>
 <script src="./客服記錄系統.auth.js?v=20260725-2"></script>
-<script src="./客服記錄系統.form.js?v=20260725-3"></script>
-<script src="./客服記錄系統.list.js?v=20260725-3"></script>
-<script src="./客服記錄系統.analytics.js?v=20260513-1"></script>
-<script src="./客服記錄系統.app.js?v=20260922-1"></script>
+<script src="./客服記錄系統.form.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.list.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.analytics.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.app.js?v=20260928-v2"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
-<script src="./客服記錄系統.import.js?v=20260513-1"></script>
-<script src="./客服記錄系統.line-import.js?v=20260725-2"></script>
+<script src="./客服記錄系統.import.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.line-import.js?v=20260928-v2"></script>
 <script src="./客服記錄系統.todo.js?v=20260603-1"></script>
 <script src="./客服記錄系統.batch.js?v=20260513-1"></script>
 <script src="./客服記錄系統.actions.js?v=20260725-3"></script>
-<script src="./客服記錄系統.report-tools.js?v=20260725-3"></script>
+<script src="./客服記錄系統.report-tools.js?v=20260928-v2"></script>
 </body>
 </html>
 

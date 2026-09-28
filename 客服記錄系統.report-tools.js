@@ -13,6 +13,7 @@ function genId(dateText){
 
 function exportExcel(){
   const data=filtered.map(record=>({
+    ...exportV2Fields(record),
     編號:record.id,
     進線日期時間:record.date,
     進線管道:record.channel,
@@ -21,6 +22,7 @@ function exportExcel(){
     產品別:record.product,
     問題大類:record.category,
     問題次分類:record.subcategory,
+    '其他原因 / 補充說明':record.subcategoryNote,
     問題詳細描述:record.description,
     處理狀態:record.status,
     派工日期時間:record.dispatchDate,

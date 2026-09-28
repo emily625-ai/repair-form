@@ -19,7 +19,7 @@ function validateRecordInput(record){
     }
     return false;
   }
-  if((record.category==='其他' || record.subcategory==='其他') && !record.subcategoryNote){
+  if(!v2Original && (record.category==='其他' || record.subcategory==='其他') && !record.subcategoryNote){
     alert('問題大類或問題次分類選擇「其他」時，請填寫其他原因 / 補充說明');
     return false;
   }
@@ -60,7 +60,8 @@ function collectRecordFormData(){
 }
 
 function buildRecordFromForm(){
-  const record=collectRecordFormData();
+  let record;
+  try{record=applyV2Form(collectRecordFormData());}catch(error){alert(error.message);return null;}
   if(!validateRecordInput(record)) return null;
   return record;
 }
@@ -119,6 +120,7 @@ function resetSaveContext(){
 function openNewForm(){
   editIdx=null;
   window._customId=null;
+  window._lineImportContext=null;
   document.getElementById('formTitle').textContent='新增案件';
   const now=new Date();now.setSeconds(0,0);
   const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,19);
@@ -142,10 +144,13 @@ function openNewForm(){
   document.getElementById('fInvoice').value='';
   document.getElementById('fSurveySent').checked=false;
   document.getElementById('fSurveyReplied').checked=false;
+  initializeV2Form();
   document.getElementById('formModal').classList.add('open');
 }
 
 function openEdit(idx){
+  window._customId=null;
+  window._lineImportContext=null;
   const r=filtered[idx];
   editIdx=r.id;
   document.getElementById('formTitle').textContent='編輯案件 '+r.id;
@@ -171,6 +176,8 @@ function openEdit(idx){
   document.getElementById('fInvoice').value=r.invoice||'';
   document.getElementById('fSurveySent').checked=!!r.surveySent;
   document.getElementById('fSurveyReplied').checked=!!r.surveyReplied;
+  initializeV2Form(r, true);
+  setSubcategoryNote(r.subcategoryNote||'');
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -215,6 +222,9 @@ function copyDetailRecord(){
   document.getElementById('fCloseDate').value='';
   document.getElementById('fDescription').value=source.description||'';
   document.getElementById('fResult').value='';
+  window._lineImportContext=null;
+  window._customId=null;
+  initializeV2Form(source, false);
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -308,7 +318,7 @@ function parseQuickText(){
     ['📝 問題描述', quickParsed.description],
   ];
   document.getElementById('quickResultContent').innerHTML = items.map(([k,v])=>
-    `<div style="display:flex;gap:8px;margin-bottom:5px"><span style="color:var(--text3);min-width:80px">${k}</span><span style="color:var(--text);flex:1">${v||'—'}</span></div>`
+    `<div style="display:flex;gap:8px;margin-bottom:5px"><span style="color:var(--text3);min-width:80px">${k}</span><span style="color:var(--text);flex:1">${escapeHtml(v||'—')}</span></div>`
   ).join('');
   document.getElementById('quickResult').style.display='block';
 }
@@ -339,6 +349,9 @@ function applyQuickResult(){
   if(quickParsed.phone) desc += '\n電話：' + quickParsed.phone;
   document.getElementById('fDescription').value=desc.trim();
   document.getElementById('fResult').value='';
+  window._lineImportContext=null;
+  window._customId=null;
+  initializeV2Form(null, false);
   document.getElementById('formModal').classList.add('open');
 }
 
@@ -393,6 +406,8 @@ function createChildCase(){
   document.getElementById('fResult').value = '';
   
   window._customId = newId;
+  window._lineImportContext=null;
+  initializeV2Form(parent, false);
   document.getElementById('formModal').classList.add('open');
   showToast('✨ 子案件編號：'+newId, 'var(--purple)');
 }
@@ -425,6 +440,9 @@ function copyLastRecord(){
   document.getElementById('fCloseDate').value='';
   document.getElementById('fDescription').value='';
   document.getElementById('fResult').value='';
+  window._lineImportContext=null;
+  window._customId=null;
+  initializeV2Form(last, false);
   document.getElementById('formModal').classList.add('open');
 }
 
