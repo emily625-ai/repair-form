@@ -77,7 +77,11 @@ function legacyCompatibility(r){
   const product={GPS:hardware?'FMS-GPS(硬體)':'FMS-GPS(系統平台)','冷鏈':hardware?'FMS-冷鏈(硬體)':'FMS-冷鏈(系統平台)','行車視野':'FMS-DMVR(純行車視野)','雷達':'FMS-雷達'}[r.new_product];
   const category=r.case_nature==='商務／行政'?'帳務問題':hardware?({GPS:'GPS設備','冷鏈':'冷鏈','行車視野':'行車視野','雷達':'雷達設備'}[r.new_product]):['系統異常','資料異動'].includes(r.case_nature)?'平台系統':'其他';
   const subcategory=SUBMAP[category]?.includes(r.new_subcategory)?r.new_subcategory:'其他';
-  return {product,category,subcategory,subcategoryNote:subcategory==='其他'?`V2：${r.case_nature}／${r.new_category}／${r.new_subcategory}`:''};
+  // The legacy category `其他` requires an explanatory note even when its
+  // legacy subcategory happens to contain the mapped V2 label (for example
+  // 服務作業 → 操作／資料協助 → 資料提供).
+  const needsNote=category==='其他'||subcategory==='其他';
+  return {product,category,subcategory,subcategoryNote:needsNote?`V2：${r.case_nature}／${r.new_category}／${r.new_subcategory}`:''};
 }
 function applyV2Form(record){
   const fields=Object.fromEntries(Object.entries(V2_INPUTS).map(([k,id])=>[k,document.getElementById(id).value.trim()||null]));
