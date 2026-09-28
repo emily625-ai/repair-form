@@ -261,8 +261,8 @@ function renderAnalytics(){
 
 // External report API still consumes the legacy record contract.
 function buildLegacyReportPayload(model,allRecords){
-  const legacy=record=>Object.fromEntries(Object.entries(record).filter(([key])=>!V2_FIELDS.includes(key)));
-  return {records:model.recs.map(legacy),from:model.from,to:model.to,all_records:allRecords.map(legacy)};
+  // Keep V2 fields in report payload so the API can use the new classification.
+  return {records:model.recs,from:model.from,to:model.to,all_records:allRecords};
 }
 
 
