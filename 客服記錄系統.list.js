@@ -206,7 +206,7 @@ function renderRecordRow(record, recordIndex, query){
     <td><div class="row-actions">
       <button class="btn btn-outline btn-sm" onclick="showDetail(${recordIndex})">詳細</button>
       <button class="btn btn-outline btn-sm" onclick="openEdit(${recordIndex})">編輯</button>
-      <button class="btn btn-sm" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red)" onclick="deleteRecord(${recordIndex})">刪除</button>
+      ${typeof isAdminUser==='function' && isAdminUser() ? '<button class="btn btn-sm" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);color:var(--red)" onclick="deleteRecord('+recordIndex+')">刪除</button>' : ''}
     </div></td>
   </tr>`;
 }

@@ -16,6 +16,10 @@ function isAuthenticated(){
   return !!getAuthAccessToken();
 }
 
+function isAdminUser(){
+  return authSession?.user?.app_metadata?.role === 'admin';
+}
+
 function isAuthSessionExpired(session){
   return !session?.expires_at || Date.now() >= Number(session.expires_at);
 }

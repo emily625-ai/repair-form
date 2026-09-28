@@ -46,6 +46,10 @@ function copyCloseNotice(){
 }
 
 async function deleteRecord(index){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('只有管理員可以刪除案件。','var(--red)');
+    return;
+  }
   const record=filtered[index];
   if(!confirm(`確定要刪除此案件？\n\n${record.id}\n${record.company} - ${record.subcategory}\n\n此操作無法復原！`)) return;
   setLoading(true);
