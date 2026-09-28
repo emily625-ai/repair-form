@@ -10,11 +10,21 @@ function buildCountMap(items, selector, fallback='未知'){
   return map;
 }
 
+// Prefer V2 classification for new records and keep historical records
+// visible through their legacy classification until they are reviewed.
+function analyticsCategory(record){
+  return record.new_category || record.category || '其他';
+}
+
+function analyticsSubcategory(record){
+  return record.new_subcategory || record.subcategory || '其他';
+}
+
 function buildCategorySummary(items){
   const map={};
   items.forEach(item=>{
-    const category=item.category||'其他';
-    const subcategory=item.subcategory||'其他';
+    const category=analyticsCategory(item);
+    const subcategory=analyticsSubcategory(item);
     if(!map[category]) map[category]={total:0,closed:0,subs:{}};
     map[category].total++;
     if(item.status==='結案') map[category].closed++;
@@ -68,7 +78,7 @@ function buildAnalyticsModel(){
     surveyReplied,
     overdueList:records.filter(r=>isDispatchOverdue(r)),
     statusCounts:buildCountMap(recs, r=>r.status),
-    categoryCounts:buildCountMap(recs, r=>r.category, '其他'),
+    categoryCounts:buildCountMap(recs, analyticsCategory, '其他'),
     companyCounts:buildCountMap(recs, r=>r.company, '未填公司'),
     handlerCounts:buildCountMap(recs, r=>r.handler),
     channelCounts:buildCountMap(recs, r=>r.channel),
@@ -156,7 +166,7 @@ function renderAnalyticsSummary(model){
 function renderStatusTableRows(model){
   return Object.entries(model.statusGroups).sort((a,b)=>b[1].length-a[1].length).map(([status,rows])=>{
     const handlers=[...new Set(rows.map(r=>r.handler).filter(Boolean))].join('、');
-    const notes=rows.slice(0,2).map(r=>'<div style="font-size:10px;color:var(--text2);margin-bottom:2px">・['+escapeHtml(r.company)+'] '+escapeHtml(r.subcategory)+(r.result?'<span style="color:var(--green)"> →'+escapeHtml(r.result)+'</span>':'')+'</div>').join('');
+    const notes=rows.slice(0,2).map(r=>'<div style="font-size:10px;color:var(--text2);margin-bottom:2px">・['+escapeHtml(r.company)+'] '+escapeHtml(analyticsSubcategory(r))+(r.result?'<span style="color:var(--green)"> →'+escapeHtml(r.result)+'</span>':'')+'</div>').join('');
     return '<tr><td><span class="badge badge-'+status+'">'+status+'</span></td><td style="font-weight:700;text-align:center">'+rows.length+'</td><td style="font-size:11px">'+(handlers||'—')+'</td><td>'+notes+'</td></tr>';
   }).join('');
 }
@@ -195,9 +205,9 @@ function renderCategoryTableRows(model){
 
 function renderAnalyticsCategorySection(model){
   return '<div style="margin-bottom:14px">'
-    + '<div class="rpt-section-title">③ 問題分類統計</div>'
+    + '<div class="rpt-section-title">③ V2 問題分類統計（歷史案件自動回退舊分類）</div>'
     + '<div class="occ"><table style="width:100%;border-collapse:collapse;font-size:12px">'
-    + '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">問題大類</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">總件數</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">已結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案率</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">主要次分類</th></tr></thead>'
+    + '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">V2 問題大類</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">總件數</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">已結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案率</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">主要 V2 次分類</th></tr></thead>'
     + '<tbody>'+renderCategoryTableRows(model)+'</tbody>'
     + '</table></div></div>';
 }
@@ -206,7 +216,7 @@ function renderOverdueRows(model){
   return model.overdueList.map(r=>{
     const caseDate=toDateValue(r.date);
     const days=caseDate?Math.floor((new Date()-caseDate)/864e5):'—';
-    return '<tr><td><span class="mono" style="font-size:10px">'+r.id+'</span></td><td>'+escapeHtml(r.company)+'</td><td style="font-size:11px;color:var(--text2)">'+escapeHtml(r.subcategory)+'</td><td><span class="badge badge-'+r.status+'">'+r.status+'</span></td><td style="font-size:11px">'+(r.handler||'—')+'</td><td style="color:var(--orange);font-weight:700">'+(typeof days==='number'?`${days}天`:'—')+'</td></tr>';
+    return '<tr><td><span class="mono" style="font-size:10px">'+r.id+'</span></td><td>'+escapeHtml(r.company)+'</td><td style="font-size:11px;color:var(--text2)">'+escapeHtml(analyticsSubcategory(r))+'</td><td><span class="badge badge-'+r.status+'">'+r.status+'</span></td><td style="font-size:11px">'+(r.handler||'—')+'</td><td style="color:var(--orange);font-weight:700">'+(typeof days==='number'?`${days}天`:'—')+'</td></tr>';
   }).join('');
 }
 
@@ -224,7 +234,7 @@ function renderAnalyticsOverdueSection(model){
 function renderAnalyticsOverview(model){
   return '<div class="cg">'
     + renderDonutCard(model.statusCounts,'📊 處理狀態分佈')
-    + renderBarCard(model.categoryCounts,'🏷️ 問題大類排行')
+    + renderBarCard(model.categoryCounts,'🏷️ V2 問題大類排行')
     + '</div>';
 }
 
