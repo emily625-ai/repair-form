@@ -239,6 +239,21 @@ function renderAnalyticsOverview(model){
 }
 
 async function exportWeeklyReport(){
+  const from=document.getElementById('rptFrom').value;
+  const to=document.getElementById('rptTo').value;
+  if(from){
+    const start=new Date(from+'T00:00:00');
+    // Weekly reports run Saturday through Friday; complete a partial range.
+    if(!Number.isNaN(start.getTime()) && start.getDay()===6){
+      const friday=new Date(start);
+      friday.setDate(friday.getDate()+6);
+      const endKey=toLocalDateInputValue(friday);
+      if(!to || to<endKey){
+        document.getElementById('rptTo').value=endKey;
+        renderAnalytics();
+      }
+    }
+  }
   return downloadReport('weekly-report','週報');
 }
 
