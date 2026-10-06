@@ -10,28 +10,37 @@ function buildCountMap(items, selector, fallback='未知'){
   return map;
 }
 
-// Prefer V2 classification for new records and keep historical records
-// visible through their legacy classification until they are reviewed.
-function analyticsCategory(record){
-  return record.category || '其他';
+const REPORT_CLASSIFICATION_VERSION='product-case-v1';
+const REPORT_PRODUCTS=['GPS','行車視野','雷達','冷鏈','共通平台／其他'];
+function reportClassification(r){
+  const text=v=>String(v||'').trim();
+  const mapProduct=v=>/GPS/i.test(v)?'GPS':/DMVR|行車視野/i.test(v)?'行車視野':/雷達/.test(v)?'雷達':/冷鏈/.test(v)?'冷鏈':'共通平台／其他';
+  const product=mapProduct(text(r.new_product)||text(r.product)||text(r.category));
+  const category=text(r.new_category)||text(r.category)||'未分類';
+  const subcategory=text(r.new_subcategory)||text(r.subcategory)||'未分類';
+  const nature=text(r.case_nature);
+  const problem=category+'／'+subcategory;
+  const aliases={'設備異常':'故障／異常','系統異常':'故障／異常','資料異動':'資料／設定異動','商務／行政':'帳務／文件','其他／待確認':'查詢／協助'};
+  const types=['故障／異常','安裝／維修作業','資料／設定異動','帳務／文件','查詢／協助'];
+  let caseType=types.includes(nature)?nature:aliases[nature];
+  if(!caseType){
+    const basis=nature?'服務作業'===nature?problem:'':problem;
+    caseType=/操作|資料提供|資料調閱|查詢|協助/.test(basis)?'查詢／協助':/安裝|施工|拆機|移機|維修|派工|設備處理|回收|更換|購料/.test(basis)?'安裝／維修作業':/修改|異動|設定|新增帳號|權限/.test(basis)?'資料／設定異動':/帳務|費用|發票|合約|文件|請款|報價/.test(basis)?'帳務／文件':/異常|故障|離線|黑屏|模糊|無法|GPS設備|雷達設備|平台系統|冷鏈|行車視野/.test(basis)?'故障／異常':'查詢／協助';
+  }
+  return {product,caseType,category,subcategory};
 }
-
-function analyticsSubcategory(record){
-  return record.subcategory || '其他';
-}
-
 function buildCategorySummary(items){
-  const map={};
-  items.forEach(item=>{
-    const category=analyticsCategory(item);
-    const subcategory=analyticsSubcategory(item);
-    if(!map[category]) map[category]={total:0,closed:0,subs:{}};
-    map[category].total++;
-    if(item.status==='結案') map[category].closed++;
-    map[category].subs[subcategory]=(map[category].subs[subcategory]||0)+1;
+  const map=Object.fromEntries(REPORT_PRODUCTS.map(p=>[p,{total:0,closed:0,subs:{}}]));
+  items.forEach(r=>{
+    const c=reportClassification(r), info=map[c.product];
+    const label=c.caseType+' → '+c.category+'／'+c.subcategory;
+    info.total++; if(r.status==='結案') info.closed++;
+    info.subs[label]=(info.subs[label]||0)+1;
   });
   return map;
 }
+function analyticsCategory(r){return reportClassification(r).product;}
+function analyticsSubcategory(r){return reportClassification(r).subcategory;}
 
 function groupByStatus(items){
   const map={};
@@ -195,9 +204,9 @@ function renderAnalyticsVolumeSection(model){
 }
 
 function renderCategoryTableRows(model){
-  return Object.entries(model.categorySummary).sort((a,b)=>b[1].total-a[1].total).map(([category,info])=>{
-    const topSubs=Object.entries(info.subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name,count])=>name+'('+count+')').join('、');
-    const rate=((info.closed/info.total)*100).toFixed(0);
+  return Object.entries(model.categorySummary).map(([category,info])=>{
+    const topSubs=Object.entries(info.subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name,count])=>escapeHtml(name)+'('+count+')').join('、');
+    const rate=(info.total?info.closed/info.total*100:0).toFixed(0);
     const rateColor=rate>=80?'var(--green)':rate>=50?'var(--yellow)':'var(--red)';
     return '<tr><td style="font-weight:600">'+category+'</td><td style="text-align:center;font-weight:700">'+info.total+'</td><td style="text-align:center;color:var(--green)">'+info.closed+'</td><td style="text-align:center"><span style="color:'+rateColor+'">'+rate+'%</span></td><td style="font-size:10px;color:var(--text2)">'+topSubs+'</td></tr>';
   }).join('');
@@ -207,7 +216,7 @@ function renderAnalyticsCategorySection(model){
   return '<div style="margin-bottom:14px">'
     + '<div class="rpt-section-title">③ V2 問題分類統計（歷史案件自動回退舊分類）</div>'
     + '<div class="occ"><table style="width:100%;border-collapse:collapse;font-size:12px">'
-    + '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">V2 問題大類</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">總件數</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">已結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案率</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">主要 V2 次分類</th></tr></thead>'
+    + '<thead><tr style="background:var(--surface2)"><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">產品別</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">總件數</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">已結案</th><th style="padding:9px 12px;text-align:center;font-size:10px;color:var(--text2)">結案率</th><th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--text2)">案件類型 → 問題大類／次分類</th></tr></thead>'
     + '<tbody>'+renderCategoryTableRows(model)+'</tbody>'
     + '</table></div></div>';
 }
@@ -234,7 +243,7 @@ function renderAnalyticsOverdueSection(model){
 function renderAnalyticsOverview(model){
   return '<div class="cg">'
     + renderDonutCard(model.statusCounts,'📊 處理狀態分佈')
-    + renderBarCard(model.categoryCounts,'🏷️ V2 問題大類排行')
+    + renderBarCard(model.categoryCounts,'🏷️ 產品別案件排行')
     + '</div>';
 }
 
@@ -274,10 +283,10 @@ function renderAnalytics(){
     + renderAnalyticsOverdueSection(model);
 }
 
-// External report API still consumes the legacy record contract.
+// Preview and export share the product summary; keep V2 fields in both periods.
 function buildLegacyReportPayload(model,allRecords){
   // Keep V2 fields in report payload so the API can use the new classification.
-  return {records:model.recs,from:model.from,to:model.to,all_records:allRecords};
+  return {records:model.recs,from:model.from,to:model.to,all_records:allRecords,classification_version:REPORT_CLASSIFICATION_VERSION,classification_summary:model.categorySummary};
 }
 
 
