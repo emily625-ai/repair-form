@@ -32,7 +32,7 @@ body.auth-locked .auth-gate{display:flex;}
 .tab-btn{padding:9px 18px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-size:15px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;font-weight:600;}
 .tab-btn.active{background:var(--accent);color:#fff;}
 .tab-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
-.view{display:none;flex:1;overflow:hidden;}
+.view{display:none;flex:1;min-height:0;min-width:0;overflow:hidden;}
 .view.active{display:flex;flex-direction:column;}
 .toolbar{padding:8px 14px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
 .toolbar-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
@@ -186,7 +186,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 .import-code{font-family:monospace;font-size:10px;}
 .import-muted{color:var(--text2);}
 .import-company{font-weight:500;}
-.line-import-shell{flex:1;overflow:auto;padding:18px 22px;background:linear-gradient(180deg,rgba(40,48,67,.74),rgba(29,35,49,.96));}
+.line-import-shell{flex:1;min-height:0;overflow:auto;padding:18px 22px;background:linear-gradient(180deg,rgba(40,48,67,.74),rgba(29,35,49,.96));}
 .line-import-grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px;align-items:start;}
 .line-panel{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .line-panel-head{padding:14px 16px;border-bottom:1px solid var(--border);}
@@ -257,7 +257,6 @@ textarea.fi{resize:vertical;min-height:68px;}
   </div>
 </div>
 
-</div>
 <div class="app">
   <div class="topbar">
     <div class="topbar-logo">⚡ 售服案件系統</div>
@@ -365,7 +364,6 @@ textarea.fi{resize:vertical;min-height:68px;}
     </div>
     <div class="analytics" id="analyticsContent"></div>
   </div>
-</div>
 
   <!-- ACTIVITY LOG VIEW -->
   <div class="view" id="view-actlog">
@@ -442,6 +440,8 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
     </div>
   </div>
+
+</div><!-- end .app: keep all switchable views inside the viewport shell -->
 
 <!-- LINE Message Detail Modal -->
 <div class="modal-overlay" id="lineDetailModal">
