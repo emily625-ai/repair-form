@@ -1,5 +1,6 @@
 function getFilterState(){
   return {
+    project:document.getElementById("filterProject").value,
     nature:document.getElementById("filterNature").value,
     tracking:document.getElementById("filterTracking").value,
     query:document.getElementById('searchInput').value.toLowerCase(),
@@ -39,6 +40,7 @@ function buildSearchHaystack(record){
 }
 
 function recordMatchesFilters(record, state){
+  if(state.project==='__unset__' ? !!record.project_name : state.project && record.project_name!==state.project) return false;
   if(state.nature && record.case_nature!==state.nature) return false;
   if(state.tracking && record.tracking_type!==state.tracking) return false;
   if(state.status && record.status!==state.status) return false;
@@ -68,7 +70,7 @@ function applyFilters(){
 
 function clearFilters(){
   ['searchInput'].forEach(id=>document.getElementById(id).value='');
-  ['filterNature','filterTracking','filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
+  ['filterProject','filterNature','filterTracking','filterStatus','filterCategory','filterWarranty','filterHandler','filterChannel'].forEach(id=>document.getElementById(id).value='');
   ['filterDateFrom','filterDateTo'].forEach(id=>document.getElementById(id).value='');
   showOverdue=false;
   invoiceOnly='';
@@ -176,6 +178,7 @@ function searchByPlateFromEl(element){
 }
 
 function getSubcategoryDisplay(record){
+  if(record.new_subcategory) return record.new_subcategory;
   if((record.category==='其他' || record.subcategory==='其他') && record.subcategoryNote){
     return `${record.subcategory||'其他'}：${record.subcategoryNote}`;
   }
@@ -197,7 +200,7 @@ function renderRecordRow(record, recordIndex, query){
     <td class="col-channel" style="color:var(--text2);white-space:nowrap">${escapeHtml(record.channel||'—')}</td>
     <td class="col-company"><strong style="font-size:15px;cursor:pointer;color:var(--accent);white-space:nowrap" onclick="showCompanyHistoryFromRow(${recordIndex})" title="查看歷史案件">${hl(record.company,query)}</strong></td>
     <td class="col-plate" style="color:var(--text2);white-space:nowrap">${hl(record.plate,query)||'—'}</td>
-    <td class="col-category" style="white-space:nowrap">${hl(record.category,query)}</td>
+    <td class="col-category" style="white-space:nowrap">${hl(record.new_category||record.category,query)}<div style="font-size:11px;color:var(--text3)">${escapeHtml(record.project_name||'專案未填')}／${escapeHtml(record.new_product||record.product||'產品未填')}</div></td>
     <td class="col-subcategory" style="color:var(--text2)"><span class="subcategory-text">${highlightText(getSubcategoryDisplay(record),query)||'—'}</span></td>
     <td>${renderStatusDropdown(recordIndex, record)}</td>
     <td style="white-space:nowrap">${hl(record.handler,query)||'—'}</td>

@@ -219,7 +219,11 @@ function buildActivityDetail(action, record){
   const subcategoryText=hasOtherNote
     ? `${record.subcategory||'其他'}：${record.subcategoryNote}`
     : record.subcategory||'未填次分類';
-  const subject=`${record.company||'未填公司'} - ${subcategoryText}`;
+  const classification=record.classification_code
+    ? `；專案 ${record.project_name||'未填'}；分類 ${record.classification_code}（${record.classification_version||'未填版本'}／${record.classification_status||'未填狀態'}）${action==='編輯'&&v2Original?`；原分類 ${v2Original.classification_code||v2Original.classification_version||'舊分類未填'}`:''}`
+    : '';
+  const metadata=['tracking_type','tracking_topic','classification_note'].filter(key=>Object.prototype.hasOwnProperty.call(record,key)).map(key=>`${key}=${record[key]||'清空'}`).join('；');
+  const subject=`${record.company||'未填公司'} - ${subcategoryText}${classification}${metadata?'；'+metadata:''}`;
   if(action==='新增') return `新增案件：${subject}`;
   if(action==='編輯') return `編輯案件：${subject}`;
   return subject;

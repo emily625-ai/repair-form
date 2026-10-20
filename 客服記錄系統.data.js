@@ -18,6 +18,7 @@ async function sbFetch(path,opt={}){
   });
   if(!res.ok){
     const errorText=await res.text();
+    if(/classification_code|project_name/.test(errorText) && /PGRST204|42703|schema cache|does not exist/i.test(errorText)) throw new Error('專案或分類代碼欄位尚未就緒，案件未儲存。請先完成V3.1資料庫欄位部署。');
     throw new Error(errorText);
   }
   const text=await res.text();

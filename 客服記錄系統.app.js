@@ -1,7 +1,7 @@
 window.onload=()=>{
   initializeHandlerOptions();
   initializeV2Form();
-  v2Options("filterNature",Object.keys(V2_DICTIONARY));
+  v2Options("filterNature",[...V3_NATURES,...Object.keys(V2_DICTIONARY)]);
   v2Options("filterTracking",V2_TRACKING);
   updateSub();
   document.getElementById('fCompany').addEventListener('change',function(){
