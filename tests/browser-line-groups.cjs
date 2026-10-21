@@ -8,14 +8,16 @@ for(const name of ['config','classification-v31','classification','core','form',
 const result=await page.evaluate(async()=>{
  const checks=[];const ok=(v,m)=>{if(!v)throw Error(m);checks.push(m);};
  const message={id:'11111111-1111-4111-8111-111111111111',source:'manual_paste',sender_id:'synthetic',sender_name:'Synthetic group',received_at:'2026-10-21T00:00:00Z',raw_message:'<img src=x onerror="window.bad=true">',status:'pending'};
+ const second={...message,id:'11111111-1111-4111-8111-111111111112',received_at:'2026-10-21T00:05:00Z',raw_message:'Synthetic second message'};
  let paths=[];
- sbFetch=async(path,opt)=>{paths.push(path);if(path.startsWith('line_conversation_queue'))return [{id:'22222222-2222-4222-8222-222222222222',source:message.source,sender_name:message.sender_name,started_at:message.received_at,last_message_at:'2026-10-21T00:05:00Z',message_count:2,combined_message:'Synthetic summary',status:'pending_review',version:1,message_ids:[message.id],has_missing_hash:false}];if(path.startsWith('line_messages'))return [message];throw Error(path);};
+ sbFetch=async(path,opt)=>{paths.push(path);if(path.startsWith('line_conversation_queue'))return [{id:'22222222-2222-4222-8222-222222222222',source:message.source,sender_name:message.sender_name,started_at:message.received_at,last_message_at:'2026-10-21T00:05:00Z',message_count:2,combined_message:'Synthetic summary',status:'pending_review',version:1,message_ids:[message.id,second.id],has_missing_hash:false}];if(path.startsWith('line_messages'))return path.includes('conversation_id=is.null')?[message]:[message,second];throw Error(path);};
  await refreshLineImportPendingRows({silent:true});
  ok(document.querySelectorAll('#linePendingBody tr').length===1,'one conversation per row');
  ok(document.getElementById('linePendingBody').textContent.includes('2 則'),'message count');
  ok(lineImportPendingRows[0].status==='pending','pending_review compatibility');
  await openLineMessageDetail(lineImportPendingRows[0].id);
  ok(document.getElementById('lineDetailBody').textContent.includes(message.raw_message),'original text retained');
+ ok(document.querySelectorAll('input[name="lineSplitMessage"]').length===2,'all raw messages loaded');
  ok(!window.bad&&!document.querySelector('#lineDetailBody img'),'customer text escaped');
  ok(paths.every(x=>!x.includes('ingest')),'queue never backfills');
  document.getElementById('lineQueueScope').value='legacy';await refreshLineImportPendingRows({silent:true});

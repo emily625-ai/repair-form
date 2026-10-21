@@ -42,6 +42,14 @@ if (select count(distinct conversation_id) from line_messages where raw_message 
 r:=line_import_messages('[{"source":"manual_paste","sender_id":"A","raw_message":"first","received_at":"2026-10-05T00:00Z"}]');
 if r->>'duplicates'<>'1' then raise exception 'Duplicate skip'; end if;
 if exists(select 1 from cases) then raise exception 'Automatic case creation'; end if;
+insert into line_messages(source,sender_id,raw_message,received_at,status) values
+ ('line_webhook','mixed-media','synthetic text','2026-10-05T02:00Z','pending'),
+ ('line_webhook','mixed-media','{"message_type":"image","message_id":"synthetic-image"}','2026-10-05T02:05Z','error');
+if (select count(distinct conversation_id) from line_messages where sender_id='mixed-media')<>1 then raise exception 'Mixed media grouping'; end if;
+select * into c from line_conversation_queue where sender_id='mixed-media';
+perform line_conversation_action(c.id,'archive',c.version,c.message_ids);
+if (select count(*) from line_messages where sender_id='mixed-media' and status='archived')<>2 then raise exception 'Mixed media workflow'; end if;
+
 if (select conversation_id from line_messages where id=old_id) is not null then raise exception 'Historical backfill'; end if;
 select * into c from line_conversations where id=a;
 if c.message_count<>3 or c.started_at<>'2026-10-05T00:00Z'::timestamptz or c.last_message_at<>'2026-10-05T00:34Z'::timestamptz or c.combined_message<>E'first\\nsecond\\nsliding' then raise exception 'Aggregate mismatch'; end if;
