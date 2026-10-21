@@ -18,7 +18,7 @@ begin
   if c.status not in ('pending_review','pending','classified','error') then raise exception 'Conversation already processed'; end if;
   perform 1 from public.line_messages where id=any(actual) order by id for update;
   if (select count(*) from public.line_messages where id=any(actual)
-      and status=case when c.status='pending_review' then 'pending' else c.status end and case_id is not distinct from c.primary_case_id)<>cardinality(actual)
+      and status in ('pending','classified','error') and case_id is not distinct from c.primary_case_id)<>cardinality(actual)
   then raise exception 'Message workflow changed; refresh before processing'; end if;
   if p_action='split' then
     if cardinality(p_selected_ids)=0 or cardinality(p_selected_ids)>=cardinality(actual)

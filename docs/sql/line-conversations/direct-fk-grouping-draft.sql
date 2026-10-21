@@ -27,8 +27,8 @@ create function public.line_group_new_message() returns trigger
 language plpgsql security invoker set search_path=pg_catalog,public as $$
 declare c public.line_conversations; identity text;
 begin
- if new.conversation_id is not null or new.case_id is not null or new.status<>'pending' then
-  raise exception 'New LINE messages must be unassigned and pending';
+ if new.conversation_id is not null or new.case_id is not null or new.status not in ('pending','error') then
+  raise exception 'New LINE messages must be unassigned and pending/error';
  end if;
  perform pg_advisory_xact_lock(hashtextextended('line_conversations_v1',0));
  identity:=public.line_grouping_key(new.sender_id,new.raw_message,new.id);
