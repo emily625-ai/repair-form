@@ -1,8 +1,8 @@
 // Product-specific classification dictionary. No customer records.
 const V3_VERSION="v3_1_2026-10";
-const V3_PROJECTS=["FMS"];
+const V3_PROJECTS=["FMS","利澤焚化爐","宜蘭環保局","榮福","SWIFT"];
 const V3_PRODUCTS=["GPS","行車視野","冷鏈","雷達","共通平台","產品待確認"];
-const V3_PROJECT_PRODUCTS={FMS:V3_PRODUCTS};
+const V3_PROJECT_PRODUCTS={FMS:V3_PRODUCTS,"利澤焚化爐":["AI輔助垃圾檢查系統"]};
 const V3_NATURES=["故障/異常","安裝/維修作業","資料/設定異動","帳務/文件","查詢/協助","其他/待確認"];
 const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0001","product":"GPS","nature":"故障/異常","category":"GPS車機/通訊","subcategory":"GPS設備離線","status":"使用中","mergedInto":null,"project":"FMS"}),
@@ -224,7 +224,39 @@ const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0217","project":"FMS","product":"共通平台","nature":"查詢/協助","category":"共通平台－查詢/操作","subcategory":"維修進度查詢","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0218","project":"FMS","product":"GPS","nature":"故障/異常","category":"GPS報表/API","subcategory":"報表匯出緩慢","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0219","project":"FMS","product":"冷鏈","nature":"故障/異常","category":"冷鏈報表/API","subcategory":"報表匯出緩慢","status":"使用中","mergedInto":null}),
- Object.freeze({"code":"V3-0220","project":"FMS","product":"冷鏈","nature":"安裝/維修作業","category":"冷鏈－溫度探棒/校正","subcategory":"探棒校正作業","status":"使用中","mergedInto":null})
+ Object.freeze({"code":"V3-0220","project":"FMS","product":"冷鏈","nature":"安裝/維修作業","category":"冷鏈－溫度探棒/校正","subcategory":"探棒校正作業","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0221","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－系統運作/事件更新","subcategory":"系統未運作","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0222","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－系統運作/事件更新","subcategory":"違規日誌未產生","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0223","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－系統運作/事件更新","subcategory":"現場警示未動作","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0224","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－VPN/平台登入","subcategory":"VPN連線異常","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0225","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－VPN/平台登入","subcategory":"平台頁面無法開啟","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0226","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－VPN/平台登入","subcategory":"平台登入失敗","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0227","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－影像監控","subcategory":"影像無畫面","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":true}),
+ Object.freeze({"code":"V3-0228","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－影像監控","subcategory":"影像未持續更新","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":true}),
+ Object.freeze({"code":"V3-0229","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－辨識事件/日誌資料","subcategory":"廢棄物辨識誤判","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0230","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－辨識事件/日誌資料","subcategory":"安全帽辨識誤判","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0231","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－辨識事件/日誌資料","subcategory":"車斗限高辨識誤判","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0232","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－辨識事件/日誌資料","subcategory":"重複事件","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0233","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－辨識事件/日誌資料","subcategory":"車號關聯錯誤","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0234","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－硬體設備","subcategory":"攝影機異常","status":"使用中","mergedInto":null,"secondLine":"FAE","notifyPM":true}),
+ Object.freeze({"code":"V3-0235","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－硬體設備","subcategory":"NVR異常","status":"使用中","mergedInto":null,"secondLine":"FAE","notifyPM":true}),
+ Object.freeze({"code":"V3-0236","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－硬體設備","subcategory":"AI主機異常","status":"使用中","mergedInto":null,"secondLine":"FAE","notifyPM":true}),
+ Object.freeze({"code":"V3-0237","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"故障/異常","category":"利澤－硬體設備","subcategory":"警示設備異常","status":"使用中","mergedInto":null,"secondLine":"FAE","notifyPM":true}),
+ Object.freeze({"code":"V3-0238","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－連線/影像操作","subcategory":"VPN連線操作協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0239","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－連線/影像操作","subcategory":"影像查閱操作協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0240","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－事件/檢查表操作","subcategory":"事件查詢操作協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0241","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－事件/檢查表操作","subcategory":"檢查表操作協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0242","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－事件/檢查表操作","subcategory":"檢查表PDF輸出/列印協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0243","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－處理進度","subcategory":"維修進度查詢","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0244","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"查詢/協助","category":"利澤－處理進度","subcategory":"辨識改善進度查詢","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0245","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"資料/設定異動","category":"利澤－車籍/通知設定","subcategory":"車籍資料新增/修改","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0246","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"資料/設定異動","category":"利澤－車籍/通知設定","subcategory":"車籍資料匯入協助","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0247","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"資料/設定異動","category":"利澤－車籍/通知設定","subcategory":"郵件通知規則設定","status":"使用中","mergedInto":null,"secondLine":"待確認","notifyPM":false}),
+ Object.freeze({"code":"V3-0248","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"資料/設定異動","category":"利澤－警報設定","subcategory":"特定路別警報暫停申請","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0249","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"資料/設定異動","category":"利澤－警報設定","subcategory":"特定路別警報恢復申請","status":"使用中","mergedInto":null,"secondLine":"RD","notifyPM":true}),
+ Object.freeze({"code":"V3-0250","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"安裝/維修作業","category":"利澤－設備維修","subcategory":"設備維修安排","status":"使用中","mergedInto":null,"secondLine":"FAE","notifyPM":true}),
+ Object.freeze({"code":"V3-0251","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"其他/待確認","category":"利澤－資訊待補","subcategory":"問題資訊不足","status":"使用中","mergedInto":null,"secondLine":"PM","notifyPM":false}),
+ Object.freeze({"code":"V3-0252","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"其他/待確認","category":"利澤－資訊待補","subcategory":"其他需求待確認","status":"使用中","mergedInto":null,"secondLine":"PM","notifyPM":false})
 ]);
 const V3_BY_CODE=new Map(V3_CLASSIFICATIONS.map(item=>[item.code,item]));
 function v3Active(product,nature,project="FMS"){return V3_CLASSIFICATIONS.filter(item=>item.status==="使用中"&&item.project===project&&item.product===product&&(!nature||item.nature===nature));}

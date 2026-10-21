@@ -1,6 +1,7 @@
 window.onload=()=>{
   initializeHandlerOptions();
   initializeV2Form();
+  refreshProjectOptions();
   v2Options("filterNature",[...V3_NATURES,...Object.keys(V2_DICTIONARY)]);
   v2Options("filterTracking",V2_TRACKING);
   updateSub();
@@ -16,6 +17,7 @@ window.onload=()=>{
 };
 
 async function initializeAppAfterAuth(){
+  refreshSharedProjects();
   loadRecords();
 }
 

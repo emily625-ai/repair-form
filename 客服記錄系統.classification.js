@@ -32,6 +32,35 @@ const V2_FIELDS=['case_nature','new_product','new_category','new_subcategory','t
 const V2_LABELS=['案件性質','新版產品別','新版問題大類','新版問題次分類','追蹤類型','追蹤主題','分類版本','分類來源','分類確認狀態','分類備註','分類代碼','專案'];
 const V2_INPUTS={project_name:'fProject',case_nature:'fCaseNature',new_product:'fNewProduct',new_category:'fNewCategory',new_subcategory:'fNewSubcategory',tracking_type:'fTrackingType',tracking_topic:'fTrackingTopic',classification_note:'fClassificationNote',classification_code:'fClassificationCode'};
 let v2Original=null;
+let sharedProjectNames=[];
+function projectNames(){return [...new Set([...V3_PROJECTS,...sharedProjectNames])];}
+function refreshProjectOptions(){
+  const selected=document.getElementById('fProject').value;
+  v2Options('fProject',projectNames(),selected);
+  const filter=document.getElementById('filterProject');
+  if(filter){const value=filter.value;filter.replaceChildren(new Option('全部',''),...projectNames().map(name=>new Option(name,name)),new Option('未填專案','__unset__'));setPreservedSelect('filterProject',value);}
+}
+async function refreshSharedProjects(){
+  try{const rows=await sbFetch('case_projects?select=name&order=name.asc');sharedProjectNames=rows.map(row=>row.name);refreshProjectOptions();}
+  catch(e){document.getElementById('projectCreateMessage').textContent='專案清單尚未同步；內建專案仍可選擇。';}
+}
+function toggleProjectCreate(){
+  const box=document.getElementById('projectCreateBox');box.hidden=!box.hidden;
+}
+async function createSharedProject(){
+  const input=document.getElementById('newProjectName'),message=document.getElementById('projectCreateMessage'),button=document.getElementById('saveProjectButton');
+  const name=input.value.normalize('NFKC').trim();
+  if(!name||name.length>80||/[\x00-\x1f\x7f]/.test(name)){message.textContent='請輸入 1–80 字的專案名稱。';return;}
+  if(projectNames().some(value=>value.normalize('NFKC').toLocaleLowerCase()===name.toLocaleLowerCase())){message.textContent='專案名稱已存在，請直接選擇。';return;}
+  button.disabled=true;message.textContent='儲存中…';
+  try{
+    await sbFetch('case_projects',{method:'POST',body:JSON.stringify({name})});
+    sharedProjectNames.push(name);refreshProjectOptions();document.getElementById('fProject').value=name;updateV3Project();
+    input.value='';message.textContent='已新增並選取專案；請先設定此專案的產品分類。';
+    await logActivity(null,'新增專案',name);
+  }catch(e){message.textContent=/409|duplicate|unique/i.test(e.message)?'專案名稱已存在，請重新載入專案清單。':'新增失敗，請稍後重試；專案尚未新增。';}
+  finally{button.disabled=false;}
+}
 function v2Fields(record){
   return Object.fromEntries(V2_FIELDS.filter(k=>Object.prototype.hasOwnProperty.call(record,k)).map(k=>[k,record[k]]));
 }
@@ -48,6 +77,7 @@ function v2Options(id,values,value=''){
 // Function names are retained for existing form callers; new selections use V3.1.
 function updateV3Project(){
   const project=document.getElementById('fProject').value;
+  document.getElementById('projectClassificationStatus').textContent=project&&!V3_PROJECT_PRODUCTS[project]?'此專案的產品與問題分類尚待設定，暫時無法新增分類案件。':'';
   v2Options('fNewProduct',V3_PROJECT_PRODUCTS[project]||[]);
   updateV2Categories();
 }
@@ -65,8 +95,19 @@ function updateV2Subcategories(){
 }
 function syncClassificationCode(){
   const selected={project_name:document.getElementById('fProject').value,new_product:document.getElementById('fNewProduct').value,case_nature:document.getElementById('fCaseNature').value,new_category:document.getElementById('fNewCategory').value,new_subcategory:document.getElementById('fNewSubcategory').value};
-  document.getElementById('fClassificationCode').value=v3Match(selected)?.code||'';
+  const item=v3Match(selected);
+  document.getElementById('fClassificationCode').value=item?.code||'';
+  updateClassificationRouting(item);
   document.getElementById('fV2Confirm').checked=false;
+}
+function updateClassificationRouting(item){
+  const hint=document.getElementById('classificationRouting');
+  if(!hint) return;
+  if(!item?.secondLine){hint.textContent='';return;}
+  const route=item.secondLine==='待確認'?'承接窗口需依實際原因確認':`第二線：${item.secondLine}`;
+  let note=item.category==='利澤－硬體設備'?'；僅在已確認設備異常時選用，原因不明先記錄症狀':'';
+  if(item.subcategory.includes('警報暫停')||item.subcategory.includes('警報恢復')) note+='；僅記錄申請，須經業主與承接窗口確認後執行';
+  hint.textContent=`分流參考：客服受理${item.notifyPM?'，副知 PM':''}；${route}${note}。不會自動派工或變更設備。`;
 }
 function suggestV2Classification(){
   // Do not convert a mention of a technician or a temperature into a diagnosis.
@@ -78,7 +119,7 @@ function initializeV2Form(record=null,editing=false){
   v2Original=editing?record:null;
   const hint=document.getElementById('fClassificationSuggestion');
   if(hint) hint.textContent='先選專案、產品與案件類型，再依實際症狀分類；追蹤類型獨立填寫。';
-  v2Options('fProject',V3_PROJECTS,record?.project_name||'');
+  v2Options('fProject',projectNames(),record?.project_name||'');
   updateV3Project();
   setPreservedSelect('fNewProduct',record?.new_product);
   v2Options('fCaseNature',V3_NATURES,record?.case_nature);
@@ -90,6 +131,7 @@ function initializeV2Form(record=null,editing=false){
   // Display the stored code only. Inferring a missing code here would turn an
   // unrelated edit into an implicit classification migration.
   document.getElementById('fClassificationCode').value=record?.classification_code||'';
+  updateClassificationRouting(V3_BY_CODE.get(record?.classification_code));
   document.getElementById('fV2Confirm').checked=false;
   for(const [id,key] of [['fProduct','product'],['fCategory','category'],['fSubcategory','subcategory'],['fHandler','handler']]){
     if(record) setPreservedSelect(id,record[key]);
@@ -100,7 +142,8 @@ function initializeV2Form(record=null,editing=false){
 function validateV2Classification(r){
   if(r.classification_version && ![V2_VERSION,V3_VERSION].includes(r.classification_version)) throw new Error('不支援的分類版本');
   if(r.classification_version===V3_VERSION){
-    if(!V3_PROJECTS.includes(r.project_name)) throw new Error('請選擇有效專案');
+    if(!projectNames().includes(r.project_name)) throw new Error('請選擇有效專案');
+    if(!V3_PROJECT_PRODUCTS[r.project_name]) throw new Error('此專案的產品分類尚待設定，請先完成分類設定');
     const item=V3_BY_CODE.get(r.classification_code);
     if(!item || item.status!=='使用中' || item.project!==r.project_name || item.product!==r.new_product || item.nature!==r.case_nature || item.category!==r.new_category || item.subcategory!==r.new_subcategory) throw new Error('請選擇有效的V3.1產品、案件類型、大類與次分類，分類代碼必須一致');
     if(r.case_nature==='其他/待確認'&&!r.classification_note?.trim()) throw new Error('資訊待補案件請填寫缺少的資訊或待確認事項');
@@ -164,5 +207,5 @@ function v3LegacyCompatibility(r){
   const products={GPS:'FMS-GPS(系統平台)',冷鏈:'FMS-冷鏈(系統平台)',行車視野:'FMS-DMVR(純行車視野)',雷達:'FMS-雷達','共通平台':'','產品待確認':''};
   const category=r.case_nature==='帳務/文件'?'帳務問題':{GPS:'GPS設備',冷鏈:'冷鏈',行車視野:'行車視野',雷達:'雷達設備'}[r.new_product]||'其他';
   const subcategory=SUBMAP[category]?.includes(r.new_subcategory)?r.new_subcategory:'其他';
-  return {product:products[r.new_product],category,subcategory,subcategoryNote:`V3.1 ${r.classification_code}：${r.case_nature}／${r.new_category}／${r.new_subcategory}`};
+  return {product:products[r.new_product]||'',category,subcategory,subcategoryNote:`V3.1 ${r.classification_code}：${r.case_nature}／${r.new_category}／${r.new_subcategory}`};
 }

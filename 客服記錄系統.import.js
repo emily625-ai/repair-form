@@ -46,8 +46,8 @@ function mapImportRow(row){
     if(!['manual','line_rule','ai_suggested','historical_migration'].includes(mapped.classification_source)) throw new Error('分類來源無效');
     if(!['confirmed','pending_review'].includes(mapped.classification_status)) throw new Error('分類確認狀態無效');
     // V2 exports keep their original legacy values. Do not infer over them.
-    const commonV3=mapped.classification_version===V3_VERSION&&['共通平台','產品待確認'].includes(mapped.new_product);
-    if((!mapped.product&&!commonV3) || !mapped.category || !mapped.subcategory) throw new Error('匯入須保留舊產品／大類／次分類相容值；V3.1共通平台案件的舊產品別可留空');
+    const commonV3=mapped.classification_version===V3_VERSION&&(mapped.project_name!=='FMS'||['共通平台','產品待確認'].includes(mapped.new_product));
+    if((!mapped.product&&!commonV3) || !mapped.category || !mapped.subcategory) throw new Error('匯入須保留舊產品／大類／次分類相容值；V3.1非FMS或共通平台案件的舊產品別可留空');
   }
   return mapped;
 }
