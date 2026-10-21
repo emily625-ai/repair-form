@@ -21,11 +21,11 @@
 - JavaScript 語法與 git diff --check 通過。
 - tests/browser-line-groups.cjs：已備妥離線瀏覽器驗證，所有請求攔截、不碰正式資料。此次本機 Chromium 未安裝，系統 Chrome 啟動後 SIGABRT／EPERM，未完成瀏覽器驗收。需在可用環境安裝 Playwright 並執行，預設 channel=chrome，可用 LINE_BROWSER_CHANNEL 指定已安裝的瀏覽器。
 - tests/build-direct-fk-validation.cjs：產生 rollback-only、獨立 schema 的完整資料庫測試，包含指定六種情境、彙總、拆分／合併／封存、V3.1 人工建案、錯誤專案拒絕、稽核拒絕回滾、anon 拒絕。
-- **本次最新版 SQL 尚未重驗成功**：staging 連續兩次 connection timeout；管理查詢確認 repair-form-staging 狀態 INACTIVE。不能把 10/05 舊版的通過結果當作這次 V3.1 的驗證。未對 production 執行測試 SQL。
+- **最新版 SQL 已完成重驗**：恢復 staging 後，於獨立 schema 執行 rollback-only 測試通過，包含 V3.1 人工建案與錯誤專案拒絕。執行後唯讀確認 test_schema_removed=true。staging 原表與正式環境均未修改；這是合成資料／RLS fixture 測試，不代表實際 PostgREST 或 webhook 端到端驗收完成。
 
 ## 上線前仍需完成
 
-1. 恢復／使用可用的 staging，執行獨立交易測試；確認逾時交易未留下 codex_line_direct_validation schema，檢查真實 RLS／activity_log 序列／PostgREST 權限。
+1. 已完成 staging 獨立交易測試及清理驗證；仍須在真實整合環境核對 RLS／activity_log 序列／PostgREST 權限。
 2. 執行 browser-line-groups.cjs 與登入實測，含歷史範圍、人工建案、合併／拆分、雙客服競爭與匯入失敗。
 3. 核對實際 LINE webhook：本地沒有 report-api 原始碼；尚未確認其插入狀態、簽章、事件 hash、sender_id 與有無自動建案。只要使用 pending、無 case_id／conversation_id 的 INSERT，就走共用 trigger；其他狀態會明確拒絕，不能未驗就啟用。
 4. 依 AGENTS.md「Supabase schema, RLS, and policy changes should be stored as SQL references or migration drafts only.」本次只提供草案；正式 SQL 安裝與發版需另行明確執行。先備份 schema metadata、grants、policies，不匯出客戶原文。
@@ -42,6 +42,6 @@
 
 ## 發佈阻擋與交付
 
-GitHub connector 的 create_branch/create_tree 仍回應 403 Resource not accessible by integration；改用已登入的 GitHub 網頁，已成功建立 feature/line-conversations-release 分支並提交修改。後續以草稿 PR 審核，不修改 main。staging 仍為 INACTIVE；不要把分支提交誤認為正式上線。
+GitHub connector 的 create_branch/create_tree 仍回應 403 Resource not accessible by integration；改用已登入的 GitHub 網頁，已成功建立 feature/line-conversations-release 分支並提交修改。後續以草稿 PR 審核，不修改 main。staging 經使用者恢復後已可連線，隔離交易測試通過；不要把分支提交誤認為正式上線。
 
 交付提供以 a8770d93 為基底的 git 修補檔與僅含本次 13 個檔案的 ZIP；原 repair-form-deploy 目錄及同步參考資料未被修改。正式部署前仍須完成以上 staging／瀏覽器與 webhook 驗收。
