@@ -26,6 +26,12 @@ async function sbFetch(path,opt={}){
 }
 
 async function createCaseRecord(record){
+  if (window._lineImportContext?.conversationId) {
+    const context = window._lineImportContext;
+    return lineConversationRpc(context.conversationId, 'create', {
+      expectedVersion: context.expectedVersion, expectedMessageIds: context.expectedMessageIds, record: toRow(record)
+    });
+  }
   return sbFetch('cases',{method:'POST',body:JSON.stringify(toRow(record))});
 }
 
@@ -129,3 +135,4 @@ async function loadActivityLog(){
     tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px">載入失敗</td></tr>';
   }
 }
+

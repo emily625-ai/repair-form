@@ -1,0 +1,26 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const ctx={document:{getElementById:()=>null},Date,Map,JSON,console,normalizeStoredDateTime:x=>x,formatLineMessagePreview:x=>x,normalizeLineMessageText:x=>x,mapLineMessageRecordToUiRow:x=>x};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,'../客服記錄系統.line-conversations.js'),'utf8'),ctx);
+const m=(id,minute,sender='A',raw=id)=>({id,source:'manual_paste',sender_id:sender,raw_message:raw,received_at:`2026-10-05T00:${String(minute).padStart(2,'0')}:00Z`,status:'pending'});
+assert.equal(ctx.groupLineMessages([m('1',0),m('2',5)]).length,1);
+assert.equal(ctx.groupLineMessages([m('1',0),m('2',35)]).length,2);
+assert.equal(ctx.groupLineMessages([m('1',0),m('2',0,'B')]).length,2);
+assert.equal(ctx.groupLineMessages([m('1',0),m('2',25),m('3',50)]).length,1);
+assert.equal(ctx.groupLineMessages([m('1',0,''),m('2',5,'')]).length,2);
+assert.equal(ctx.groupLineMessages([m('1',0,'','{"source":{"groupId":"G"}}'),m('2',5,'','{"source":{"groupId":"G"}}')]).length,1);
+assert.equal(ctx.groupLineMessages([m('1',0),m('1',0)]).length,1);
+assert.equal(ctx.groupLineMessages([m('1',0),{...m('2',5),source:'line_webhook'}]).length,2);
+const input=[m('1',0),m('2',5)],before=JSON.stringify(input);ctx.groupLineMessages(input);assert.equal(JSON.stringify(input),before);
+(async()=>{
+let request;ctx.sbFetch=async (url,opt)=>{request={url,body:JSON.parse(opt.body)};return {inserted:1,duplicates:0};};
+await ctx.importLineMessageRecords([{...m('x',0),case_id:'forbidden',conversation_id:'forbidden',status:'linked'}]);
+assert.equal(request.url,'rpc/line_import_messages');assert.equal(request.body.p_rows[0].status,'pending');
+assert(!('case_id' in request.body.p_rows[0]));assert(!('conversation_id' in request.body.p_rows[0]));
+await assert.rejects(ctx.importLineMessageRecords([{source:'manual_paste',raw_message:'text',received_at:'bad'}]));
+let paths=[];ctx.sbFetch=async url=>{paths.push(url);return [];};await ctx.loadLineConversationQueue();
+assert(paths.every(url=>!url.includes('ingest')));
+ctx.document.getElementById=()=>({value:'legacy'});
+ctx.sbFetch=async url=>{assert(url.includes('conversation_id=is.null'));return [m('legacy-message',0)];};
+const legacy=await ctx.loadLineConversationQueue();assert.equal(legacy.mode,'legacy');assert.equal(legacy.rows[0].messages[0].id,'legacy-message');
+console.log('PASS frontend checks: timing,sliding,source/sender isolation,fallback,missing ID,duplicate IDs,immutable input,import whitelist,validation,no read-time ingestion');
+})().catch(e=>{console.error(e);process.exitCode=1;});

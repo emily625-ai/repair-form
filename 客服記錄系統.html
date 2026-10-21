@@ -393,6 +393,15 @@ textarea.fi{resize:vertical;min-height:68px;}
       </div>
 
       <div class="line-alert" id="lineImportAlert"></div>
+      <details class="line-panel" style="margin-bottom:14px">
+        <summary class="line-panel-head">手動匯入 LINE 原始訊息</summary>
+        <div class="line-panel-body">
+          <p>貼上 JSON 陣列，每則包含 source、raw_message，建議提供 sender_id、received_at（含時區）。只匯入訊息，不自動建案。</p>
+          <textarea id="lineManualInput" class="fi" rows="5" aria-label="LINE 訊息 JSON" placeholder='[{"source":"manual_paste","sender_id":"穩定來源ID","received_at":"2026-10-05T09:00:00+08:00","raw_message":"原始訊息"}]'></textarea>
+          <button id="lineManualSubmit" class="btn btn-primary" onclick="submitManualLineMessages()">確認匯入訊息</button>
+        </div>
+      </details>
+
 
       <div class="line-import-grid">
         <div style="display:flex;flex-direction:column;gap:14px">
@@ -417,6 +426,7 @@ textarea.fi{resize:vertical;min-height:68px;}
               <div class="line-panel-title"><span id="linePendingListTitle">待分類</span>訊息列表</div>
               <div class="line-panel-sub">Webhook 收進來的 LINE 訊息</div>
               <div class="line-import-actions">
+                <select id="lineQueueScope" class="fi" aria-label="LINE 佇列範圍" onchange="refreshLineImportPendingRows()"><option value="conversations">新進對話群組</option><option value="legacy">歷史單則訊息（唯讀）</option></select>
                 <select id="lineStatusFilter" onchange="refreshLineImportPendingRows()" style="width:auto">
                   <option value="pending">待分類</option>
                   <option value="error">需處理</option>
@@ -430,7 +440,7 @@ textarea.fi{resize:vertical;min-height:68px;}
             <div class="table-container" style="max-height:360px">
               <table class="line-preview-table">
                 <thead><tr>
-                  <th>發話者</th><th>訊息摘要</th><th>進線時間</th><th>狀態</th><th>重複警示</th><th>操作</th>
+                  <th>群組／來源</th><th>對話摘要</th><th>起訖時間／訊息數</th><th>狀態</th><th>重複警示</th><th>操作</th>
                 </tr></thead>
                 <tbody id="linePendingBody"></tbody>
               </table>
@@ -455,6 +465,8 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="mf">
       <button class="btn btn-outline" onclick="closeLineMessageDetail()">關閉</button>
       <button class="btn btn-outline" onclick="updateLinePendingStatus(window._currentLineDetailId,'archived')">封存</button>
+      <button class="btn btn-outline" onclick="mergeLineConversation(window._currentLineDetailId)">合併既有案件</button>
+      <button class="btn btn-outline" onclick="splitLineConversation(window._currentLineDetailId)">拆分勾選訊息</button>
       <button class="btn btn-outline" onclick="createChildCaseFromLineMessage(window._currentLineDetailId)">建立子案</button>
       <button class="btn btn-primary" onclick="createCaseFromLineMessage(window._currentLineDetailId)">建立案件</button>
     </div>
@@ -616,7 +628,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.classification-v31.js?v=20261020-v31b"></script>
 <script src="./客服記錄系統.classification.js?v=20261020-v31b"></script>
 <script src="./客服記錄系統.core.js?v=20261020-v31b"></script>
-<script src="./客服記錄系統.data.js?v=20261020-v31b"></script>
+<script src="./客服記錄系統.data.js?v=20261021-line-groups"></script>
 <script src="./客服記錄系統.auth.js?v=20260725-2"></script>
 <script src="./客服記錄系統.form.js?v=20260928-v2"></script>
 <script src="./客服記錄系統.list.js?v=20261020-v31b"></script>
@@ -624,11 +636,13 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.app.js?v=20261020-v31b"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
 <script src="./客服記錄系統.import.js?v=20261020-v31b"></script>
-<script src="./客服記錄系統.line-import.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.line-conversations.js?v=20261021-line-groups"></script>
+<script src="./客服記錄系統.line-import.js?v=20261021-line-groups"></script>
 <script src="./客服記錄系統.todo.js?v=20260603-1"></script>
 <script src="./客服記錄系統.batch.js?v=20260513-1"></script>
 <script src="./客服記錄系統.actions.js?v=20260725-3"></script>
 <script src="./客服記錄系統.report-tools.js?v=20260928-v2"></script>
 </body>
 </html>
+
 

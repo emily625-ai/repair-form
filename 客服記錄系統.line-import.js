@@ -19,45 +19,8 @@ let lineImportBootstrapped = false;
 let lineImportStorageMode = 'local';
 let lineImportStatusFilter = 'pending';
 
-let lineImportPendingRows = [
-  {
-    id: 'mock-line-001',
-    source: 'csv',
-    sender_name: 'Wang',
-    sender_id: 'mock-u001',
-    raw_message: 'Vehicle cannot locate. Please check KPC-5270.',
-    normalized_message: 'vehicle cannot locate please check kpc-5270',
-    received_at: '2026-05-16 09:30:00',
-    status: 'pending',
-    case_id: '',
-    duplicate_warning: 'none'
-  },
-  {
-    id: 'mock-line-002',
-    source: 'manual_paste',
-    sender_name: 'Chen',
-    sender_id: '',
-    raw_message: 'Login failed. Screen keeps showing loading.',
-    normalized_message: 'login failed screen keeps showing loading',
-    received_at: '2026-05-16 10:12:00',
-    status: 'error',
-    case_id: '',
-    duplicate_warning: 'hash_missing'
-  },
-  {
-    id: 'mock-line-003',
-    source: 'csv',
-    sender_name: 'Harbor',
-    sender_id: 'mock-u003',
-    raw_message: 'Camera is foggy, black screen, blue screen, unclear image.',
-    normalized_message: 'camera is foggy black screen blue screen unclear image',
-    received_at: '2026-05-16 11:18:00',
-    status: 'pending',
-    case_id: '',
-    duplicate_warning: 'possible_duplicate'
-  }
-];
-
+let lineImportPendingRows = [];
+let lineImportAllRows = [];
 async function renderLineImport() {
   if (!lineImportBootstrapped) {
     await refreshLineImportPendingRows({ silent: true });
@@ -75,16 +38,23 @@ async function refreshLineImportPendingRows(options = {}) {
   setLineImportLoading(true, '重新讀取 LINE 訊息中...');
   try {
     lineImportStatusFilter = getLineImportStatusFilter();
-    const rows = await loadLineMessageRecords(lineImportStatusFilter);
-    lineImportPendingRows = Array.isArray(rows) ? rows.map(mapLineMessageRecordToUiRow) : [];
-    lineImportStorageMode = 'remote';
+    const result = await loadLineConversationQueue();
+    lineImportAllRows = result.rows;
+    lineImportStorageMode = result.mode;
+    lineImportPendingRows = lineImportAllRows.filter(row => lineImportStatusFilter === 'all' || row.status === lineImportStatusFilter);
+    if (result.mode === 'legacy') showLineImportAlert('歷史單則訊息唯讀顯示；原始資料保留，不進行群組回填。', 'info');
+    if (result.mode === 'preview') showLineImportAlert('對話串唯讀預覽：尚未安裝 conversation schema，建案／合併／封存／拆分暫停。', 'info');
     renderLinePendingMessages();
     updateLineImportStats();
-    if (!options.silent) showLineImportAlert(`已重新讀取 ${lineImportPendingRows.length} 筆 LINE 訊息。`, 'success');
+    if (!options.silent && lineImportStorageMode === 'remote') showLineImportAlert(`已重新讀取 ${lineImportPendingRows.length} 個 LINE 對話串。`, 'success');
   } catch (error) {
-    lineImportStorageMode = 'local';
+    lineImportStorageMode = 'unavailable';
+    lineImportPendingRows = [];
+    lineImportAllRows = [];
+    renderLinePendingMessages();
+    updateLineImportStats();
     console.warn('LINE import refresh failed:', error);
-    if (!options.silent) showLineImportAlert(`LINE 訊息讀取失敗：${error.message || error}`, 'error');
+    showLineImportAlert(`LINE 訊息讀取失敗：${error.message || error}`, 'error');
   } finally {
     setLineImportLoading(false);
   }
@@ -210,12 +180,12 @@ function buildLineImportRow(row) {
   ].filter(Boolean).join(' ');
   return `
     <tr>
-      <td>${escapeHtml(row.sender_name)}</td>
+      <td>${escapeHtml(row.source)} / ${escapeHtml(row.sender_name)}</td>
       <td>${escapeHtml(messagePreview)}</td>
-      <td>${escapeHtml(row.received_at || '-')}</td>
+      <td>${escapeHtml(row.started_at || row.received_at || '-')}<br>～ ${escapeHtml(row.last_message_at || '-')}<br>${row.message_count || 1} 則</td>
       <td>${buildLineStatusBadge(row.status)}</td>
       <td>${buildLineWarningBadge(row.duplicate_warning)}</td>
-      <td>${actions}</td>
+      <td>${lineImportStorageMode === 'remote' ? actions : actions.replace(/<button /g, '<button disabled ').replace('<button disabled ', '<button ')}</td>
     </tr>
   `;
 }
@@ -243,9 +213,9 @@ function buildLineWarningBadge(warning) {
 }
 
 function updateLineImportStats() {
-  setText('linePendingCount', lineImportPendingRows.filter(row => row.status === 'pending').length);
-  setText('lineDuplicateCount', lineImportPendingRows.filter(row => row.duplicate_warning && row.duplicate_warning !== 'none').length);
-  setText('lineErrorCount', lineImportPendingRows.filter(row => row.status === 'error').length);
+  setText('linePendingCount', lineImportAllRows.filter(row => row.status === 'pending').length);
+  setText('lineDuplicateCount', lineImportAllRows.filter(row => row.duplicate_warning && row.duplicate_warning !== 'none').length);
+  setText('lineErrorCount', lineImportAllRows.filter(row => row.status === 'error').length);
 }
 
 function setText(id, value) {
@@ -253,10 +223,13 @@ function setText(id, value) {
   if (element) element.textContent = value;
 }
 
-function openLineMessageDetail(id) {
+async function openLineMessageDetail(id) {
   const row = lineImportPendingRows.find(item => item.id === id);
   if (!row) return;
   window._currentLineDetailId = id;
+  try { row.messages = row.messages || await loadLineConversationMessages(id); }
+  catch (error) { showLineImportAlert('原始訊息載入失敗：' + error.message, 'error'); return; }
+  if (window._currentLineDetailId !== id) return;
 
   setText('lineDetailTitle', row.sender_name || 'LINE 訊息明細');
   setText('lineDetailMeta', `${row.source || '-'} | ${row.received_at || '-'}`);
@@ -290,7 +263,7 @@ function openLineMessageDetail(id) {
         </div>
         <div class="di">
           <div class="dl">建議分類</div>
-          <div class="dv">${escapeHtml(formatLineClassificationSuggestion(row))}</div>
+          <div class="dv">建案時再確認 V2 分類</div>
         </div>
       </div>
       <div class="line-import-actions" style="margin-bottom:14px">
@@ -298,40 +271,26 @@ function openLineMessageDetail(id) {
       </div>
       <div class="dst">訊息內容</div>
       <div class="line-detail-message">${escapeHtml(row.raw_message || '-')}</div>
+      <details><summary>展開原始訊息（${row.message_count} 則）</summary>${(row.messages || []).map((message, index) => `<div class="line-detail-message"><label><input type="checkbox" name="lineSplitMessage" value="${escapeHtml(message.id)}"> ${index + 1}. ${escapeHtml(message.sender_name || "-")} / ${escapeHtml(normalizeStoredDateTime(message.received_at))}</label><pre style="white-space:pre-wrap">${escapeHtml(message.raw_message)}</pre></div>`).join('')}</details>
       <div class="dst">搜尋用文字</div>
       <div class="line-detail-message">${escapeHtml(row.normalized_message || '-')}</div>
     `;
   }
 
   const modal = document.getElementById('lineDetailModal');
-  if (modal) modal.classList.add('open');
+  if (modal) {
+    modal.classList.add('open');
+    modal.querySelectorAll?.('.mf button').forEach(button => { button.disabled = !button.getAttribute('onclick')?.includes('closeLineMessageDetail') && lineImportStorageMode !== 'remote'; });
+  }
 }
 
 async function updateLinePendingStatus(id, nextStatus) {
-  const row = lineImportPendingRows.find(item => item.id === id);
-  if (!row) return;
-  const previousStatus = row.status;
-  row.status = nextStatus;
-  renderLinePendingMessages();
-  updateLineImportStats();
-  const saved = await persistLinePendingPatch(row.id, { status: nextStatus });
-  if (!saved) {
-    row.status = previousStatus;
-    renderLinePendingMessages();
-    updateLineImportStats();
-    showLineImportAlert('LINE 訊息狀態未能儲存，請稍後再試。', 'error');
-  }
+  if (nextStatus !== 'archived') return;
+  await performLineConversationAction(id, 'archive');
 }
 
-async function persistLinePendingPatch(id, patch) {
-  if (lineImportStorageMode !== 'remote' || typeof updateLineMessageRecord !== 'function') return true;
-  try {
-    await updateLineMessageRecord(id, patch);
-    return true;
-  } catch (error) {
-    console.warn('LINE import patch failed:', error);
-    return false;
-  }
+async function persistLinePendingPatch() {
+  throw new Error('逐筆 LINE 更新已停用，請使用 conversation 交易');
 }
 
 const LINE_CLASSIFY_EXCLUDED_SUBCATEGORIES = new Set(['其他', '進度追蹤', '問題進度追蹤', '報修進度追蹤', '資料提供']);
@@ -414,7 +373,7 @@ function applyLineClassificationSuggestion(row) {
 
 function createCaseFromLineMessage(id) {
   const row = lineImportPendingRows.find(item => item.id === id);
-  if (!row) return;
+  if (!row || !canProcessLineConversation(row)) return;
   if (typeof openNewForm === 'function') openNewForm();
 
   const dateInput = document.getElementById('fDate');
@@ -441,7 +400,7 @@ function createCaseFromLineMessage(id) {
   const descriptionInput = document.getElementById('fDescription');
   if (descriptionInput) descriptionInput.value = buildLineCaseDescription(row);
 
-  window._lineImportContext = { lineMessageId: row.id };
+  window._lineImportContext = { lineMessageId: row.id, conversationId: row.id, expectedVersion: row.version, expectedMessageIds: row.message_ids.slice() };
 
   showLineImportAlert(
     suggestion
@@ -453,7 +412,7 @@ function createCaseFromLineMessage(id) {
 
 function createChildCaseFromLineMessage(id) {
   const row = lineImportPendingRows.find(item => item.id === id);
-  if (!row) return;
+  if (!row || !canProcessLineConversation(row)) return;
   if (!Array.isArray(records) || !records.length) {
     alert('目前沒有案件資料，請先回到案件列表重新整理。');
     return;
@@ -499,7 +458,7 @@ function createChildCaseFromLineMessage(id) {
   setLineFormValue('fResult', '');
 
   window._customId = childId;
-  window._lineImportContext = { lineMessageId: row.id };
+  window._lineImportContext = { lineMessageId: row.id, conversationId: row.id, expectedVersion: row.version, expectedMessageIds: row.message_ids.slice() };
   showLineImportAlert(`已準備建立子案 ${childId}，請確認內容後按儲存。`, 'success');
 }
 
@@ -647,25 +606,11 @@ function applyLineSenderMappingToRows(senderId) {
 }
 
 async function handleLineCaseCreated(caseId) {
-  const lineMessageId = window._lineImportContext?.lineMessageId;
-  if (!lineMessageId) return;
-  const row = lineImportPendingRows.find(item => item.id === lineMessageId);
-  if (!row) return;
-  const previousStatus = row.status;
-  const previousCaseId = row.case_id;
-  row.case_id = caseId;
-  row.status = 'linked';
-  const saved = await persistLinePendingPatch(row.id, { case_id: caseId, status: 'linked' });
-  if (!saved) {
-    row.case_id = previousCaseId;
-    row.status = previousStatus;
-    showLineImportAlert(`案件 ${caseId} 已建立，但 LINE 待分類狀態未能儲存。`, 'error');
-    return;
-  }
-  renderLinePendingMessages();
-  updateLineImportStats();
-  showLineImportAlert(`已將 LINE 訊息連結到案件 ${caseId}。`, 'success');
+  if (!window._lineImportContext?.conversationId) return;
+  // createCaseRecord has already inserted the case and linked the whole
+  // conversation in one transaction. Refresh errors must not retry creation.
   window._lineImportContext = null;
+  await refreshLineImportPendingRows({ silent: true });
 }
 
 function toFormDateTimeValue(value) {
@@ -693,3 +638,4 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
