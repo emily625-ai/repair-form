@@ -259,7 +259,8 @@ const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0252","project":"利澤焚化爐","product":"AI輔助垃圾檢查系統","nature":"其他/待確認","category":"利澤－資訊待補","subcategory":"其他需求待確認","status":"使用中","mergedInto":null,"secondLine":"PM","notifyPM":false}),
  Object.freeze({"code":"V3-0253","project":"FMS","product":"GPS","nature":"帳務/文件","category":"GPS－帳務/文件","subcategory":"匯款資訊確認","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0254","project":"FMS","product":"GPS","nature":"帳務/文件","category":"GPS－帳務/文件","subcategory":"請款","status":"使用中","mergedInto":null}),
- Object.freeze({"code":"V3-0255","project":"FMS","product":"GPS","nature":"帳務/文件","category":"GPS－帳務/文件","subcategory":"匯款明細","status":"使用中","mergedInto":null})
+ Object.freeze({"code":"V3-0255","project":"FMS","product":"GPS","nature":"帳務/文件","category":"GPS－帳務/文件","subcategory":"匯款明細","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0256","project":"FMS","product":"GPS","nature":"故障/異常","category":"GPS平台資料","subcategory":"GPS車輛狀態未顯示","status":"使用中","mergedInto":null})
 ]);
 const V3_BY_CODE=new Map(V3_CLASSIFICATIONS.map(item=>[item.code,item]));
 function v3Active(product,nature,project="FMS"){return V3_CLASSIFICATIONS.filter(item=>item.status==="使用中"&&item.project===project&&item.product===product&&(!nature||item.nature===nature));}
