@@ -203,10 +203,10 @@ const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0196","product":"共通平台","nature":"故障/異常","category":"共通平台登入/連線","subcategory":"共通平台/其他平台無法連線","status":"停用","mergedInto":"V3-0061","project":"FMS"}),
  Object.freeze({"code":"V3-0197","product":"冷鏈","nature":"故障/異常","category":"冷鏈－登入/連線","subcategory":"平台無法登入","status":"使用中","mergedInto":null,"project":"FMS"}),
  Object.freeze({"code":"V3-0198","product":"GPS","nature":"故障/異常","category":"GPS－登入/連線","subcategory":"平台速度慢","status":"使用中","mergedInto":null,"project":"FMS"}),
- Object.freeze({"code":"V3-0199","project":"FMS","product":"GPS","nature":"安裝/維修作業","category":"GPS－施工/維修","subcategory":"購料","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0199","project":"FMS","product":"GPS","nature":"安裝/維修作業","category":"GPS－施工/維修","subcategory":"購料","status":"停用","mergedInto":null}),
  Object.freeze({"code":"V3-0200","project":"FMS","product":"GPS","nature":"安裝/維修作業","category":"GPS－施工/維修","subcategory":"寄送","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0201","project":"FMS","product":"GPS","nature":"安裝/維修作業","category":"GPS－施工/維修","subcategory":"歸還","status":"使用中","mergedInto":null}),
- Object.freeze({"code":"V3-0202","project":"FMS","product":"行車視野","nature":"安裝/維修作業","category":"行車視野－施工/維修","subcategory":"購料","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0202","project":"FMS","product":"行車視野","nature":"安裝/維修作業","category":"行車視野－施工/維修","subcategory":"購料","status":"停用","mergedInto":null}),
  Object.freeze({"code":"V3-0203","project":"FMS","product":"行車視野","nature":"安裝/維修作業","category":"行車視野－施工/維修","subcategory":"寄送","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0204","project":"FMS","product":"行車視野","nature":"安裝/維修作業","category":"行車視野－施工/維修","subcategory":"歸還","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0205","project":"FMS","product":"行車視野","nature":"帳務/文件","category":"行車視野－帳務/文件","subcategory":"請款","status":"使用中","mergedInto":null}),
@@ -263,7 +263,15 @@ const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0256","project":"FMS","product":"GPS","nature":"故障/異常","category":"GPS平台資料","subcategory":"GPS車輛狀態未顯示","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0257","project":"FMS","product":"GPS","nature":"資料/設定異動","category":"GPS－資料/設定","subcategory":"駕駛人資料新增/修改","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0258","project":"FMS","product":"GPS","nature":"資料/設定異動","category":"GPS－資料/設定","subcategory":"平台車輛停用/移除","status":"使用中","mergedInto":null}),
- Object.freeze({"code":"V3-0259","project":"FMS","product":"行車視野","nature":"故障/異常","category":"行車螢幕/影像症狀","subcategory":"行車影像方向相反","status":"使用中","mergedInto":null})
+ Object.freeze({"code":"V3-0259","project":"FMS","product":"行車視野","nature":"故障/異常","category":"行車螢幕/影像症狀","subcategory":"行車影像方向相反","status":"使用中","mergedInto":null}) ,
+ Object.freeze({"code":"V3-0260","project":"FMS","product":"GPS","nature":"帳務/文件","category":"GPS－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0261","project":"FMS","product":"GPS","nature":"查詢/協助","category":"GPS－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0262","project":"FMS","product":"行車視野","nature":"帳務/文件","category":"行車視野－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0263","project":"FMS","product":"行車視野","nature":"查詢/協助","category":"行車視野－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0264","project":"FMS","product":"冷鏈","nature":"帳務/文件","category":"冷鏈－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0265","project":"FMS","product":"冷鏈","nature":"查詢/協助","category":"冷鏈－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0266","project":"FMS","product":"雷達","nature":"帳務/文件","category":"雷達－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0267","project":"FMS","product":"雷達","nature":"查詢/協助","category":"雷達－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null})
 ]);
 const V3_BY_CODE=new Map(V3_CLASSIFICATIONS.map(item=>[item.code,item]));
 function v3Active(product,nature,project="FMS"){return V3_CLASSIFICATIONS.filter(item=>item.status==="使用中"&&item.project===project&&item.product===product&&(!nature||item.nature===nature));}

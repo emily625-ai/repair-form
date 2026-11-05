@@ -27,7 +27,7 @@ const V2_DICTIONARY={
  '其他／待確認':{'資訊不足':['待客戶補充','待內部確認'],'其他':['無法歸類']}
 };
 
-const V2_TRACKING=['維修進度追蹤','派工進度追蹤','完修確認','客戶催辦','其他追蹤'];
+const V2_TRACKING=['維修進度追蹤','派工進度追蹤','備料進度追蹤','完修確認','客戶催辦','其他追蹤'];
 const V2_FIELDS=['case_nature','new_product','new_category','new_subcategory','tracking_type','tracking_topic','classification_version','classification_source','classification_status','classification_note','classification_code','project_name'];
 const V2_LABELS=['案件性質','新版產品別','新版問題大類','新版問題次分類','追蹤類型','追蹤主題','分類版本','分類來源','分類確認狀態','分類備註','分類代碼','專案'];
 const V2_INPUTS={project_name:'fProject',case_nature:'fCaseNature',new_product:'fNewProduct',new_category:'fNewCategory',new_subcategory:'fNewSubcategory',tracking_type:'fTrackingType',tracking_topic:'fTrackingTopic',classification_note:'fClassificationNote',classification_code:'fClassificationCode'};
