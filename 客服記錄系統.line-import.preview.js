@@ -790,6 +790,7 @@ function buildLineCompanyCell(row) {
 
 // ===== 建議處理（建議建案／建議封存／待看） =====
 const LINE_COURTESY_PATTERN = /^(好的?|好喔|好唷|好滴|ok|okay|有?收到了?|謝謝|感謝|謝啦|辛苦了?|了解|瞭解|沒問題|不客氣|麻煩了?|再麻煩|早安|午安|晚安|你好|您好|嗯+|喔+|哦+|對|是的?|讚|👍|🙏|[!！。.~～、，,\s])+$/i;
+const LINE_ROUTINE_LOG_PATTERN = /^@?[^\d]{0,12}\d{3,4}(開始|結束)(丟|清運|作業|進場|倒)?[^\d]{0,8}$/;
 const LINE_CASE_KEYWORDS = /(故障|異常|不能|無法|沒有?(訊號|定位|畫面|資料|溫度|回傳|上傳)|壞|離線|斷線|不動|不亮|黑屏|藍屏|報修|維修|叫修|拆機|拆除|安裝|新裝|移機|換車|定位|鏡頭|主機|溫度|GPS|行車|影像|畫面|登入|帳號|密碼|發票|報價|雷達|監控|數據|冷凍|冷藏|顯示器|螢幕)/i;
 
 function suggestLineIntake(rawMessage) {
@@ -798,6 +799,7 @@ function suggestLineIntake(rawMessage) {
   if (text.startsWith('{')) return 'review'; // 圖片／貼圖等非文字訊息：可能是報修照片，先待看
   const compact = text.replace(/\s+/g, '');
   if (compact.length <= 20 && LINE_COURTESY_PATTERN.test(compact)) return 'archive';
+  if (LINE_ROUTINE_LOG_PATTERN.test(compact)) return 'archive'; // 例：1400開始丟回收物、1130結束（利澤等現場作業回報）
   if (extractLinePlate(text) || findLineCompanyByPlate(text)) return 'case';
   if (LINE_CASE_KEYWORDS.test(text) || classifyLineMessageText(text)) return 'case';
   return 'review';
