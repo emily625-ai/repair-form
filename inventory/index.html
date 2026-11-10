@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>總倉進出紀錄</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--dark:#143642;--teal:#0F8B8D;--bg:#F6F7F8;--line:#DDE2E5;--text:#1d2a30;--muted:#66757c;--in:#1E7F4F;--inbg:#E3F4EC;--out:#C0392B;--outbg:#FDECEA}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+header{background:var(--dark);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+header h1{font-size:18px;margin:0}
+header .who{margin-left:auto;font-size:13px;opacity:.85}
+header button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font:inherit;font-size:13px}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--text);min-width:0}
+.btn{background:var(--teal);color:#fff;border:0;border-radius:6px;padding:9px 18px;font:inherit;font-weight:500;cursor:pointer}
+.btn.sec{background:#fff;color:var(--dark);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}
+.dir{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.dir button{border:0;background:#fff;padding:8px 22px;font:inherit;font-weight:700;cursor:pointer;color:var(--muted)}
+.dir button.on[data-d="進"]{background:var(--in);color:#fff}
+.dir button.on[data-d="出"]{background:var(--out);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#EEF3F4;color:var(--dark);font-weight:500}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--muted)}
+.tag{display:inline-block;padding:1px 10px;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap}
+.t-進{background:var(--inbg);color:var(--in)}.t-出{background:var(--outbg);color:var(--out)}
+.msg{padding:10px 12px;border-radius:6px;margin-top:10px;font-size:14px}
+.msg.ok{background:var(--inbg);color:var(--in)}.msg.err{background:var(--outbg);color:var(--out)}
+.muted{color:var(--muted)}
+.hide{display:none!important}
+.wrap{overflow-x:auto}
+#login{max-width:360px;margin:60px auto}
+@media (max-width:640px){
+  main{padding:10px}
+  #logTable thead{display:none}
+  #logTable tr{display:grid;grid-template-columns:auto auto 1fr auto;grid-template-areas:"d t q x" "i i i i" "n n n n" "w w w w";gap:4px 10px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:center}
+  #logTable td{border:0;padding:0}
+  #logTable td:nth-child(1){grid-area:d;font-weight:700}#logTable td:nth-child(2){grid-area:t}
+  #logTable td:nth-child(4){grid-area:q;text-align:left}#logTable td:nth-child(7){grid-area:x}
+  #logTable td.c-item{grid-area:i}#logTable td.c-note{grid-area:n}#logTable td.c-who{grid-area:w}
+  #logTable td.c-note,#logTable td.c-who{font-size:13px;color:var(--muted)}
+  #logTable td:empty{display:none}
+}
+nav{display:flex;gap:4px;padding:0 16px;background:var(--dark)}
+nav button{background:transparent;border:0;color:#cfe3e4;padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font:inherit}
+nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
+.printlist{columns:2;column-gap:24px}
+.printlist label{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-size:14px;padding:3px 0;break-inside:avoid}
+@media (max-width:640px){.printlist{columns:1}}
+#printArea{display:none}
+@media print{
+  @page{size:A4 portrait;margin:8mm}
+  body{background:#fff}
+  header,nav,main{display:none!important}
+  #printArea{display:block}
+  .sheet{display:flex;gap:6mm;page-break-after:always;height:279mm}
+  .sheet:last-child{page-break-after:auto}
+  .card{flex:1;border:1.2px solid #000;display:flex;flex-direction:column;font-size:10pt;color:#000}
+  .card h2{margin:0;padding:2mm;text-align:center;font-size:13pt;border-bottom:1.2px solid #000}
+  .card .hd{display:grid;grid-template-columns:auto 1fr;border-bottom:1.2px solid #000}
+  .card .hd div{padding:1.2mm 2mm;border-bottom:.5px solid #000;font-size:9pt}
+  .card .hd div:nth-child(odd){border-right:.5px solid #000;white-space:nowrap}
+  .card .hd div:nth-last-child(-n+2){border-bottom:0}
+  .card table{border-collapse:collapse;width:100%;flex:1;font-size:9pt}
+  .card th,.card td{border:.5px solid #000;padding:0 1mm;height:6.2mm;background:none;color:#000;text-align:center}
+  .card th{font-weight:700;background:#eee}
+  .card tr.first td{font-weight:700}
+  .card .ft{font-size:7.5pt;padding:1.2mm 2mm;border-top:1.2px solid #000}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>總倉進出紀錄</h1>
+  <span class="who" id="who"></span>
+  <button id="logoutBtn" class="hide">登出</button>
+</header>
+<nav id="tabs" class="hide">
+  <button data-t="log" class="on">進出紀錄</button>
+  <button data-t="print">列印庫存卡</button>
+</nav>
+<main>
+  <section id="login" class="panel hide">
+    <h2 style="margin-top:0">登入</h2>
+    <p class="muted" style="font-size:13px">使用客服系統同一組帳號密碼</p>
+    <form id="loginForm">
+      <label>Email<input type="email" id="lgEmail" required autocomplete="username"></label><br>
+      <label>密碼<input type="password" id="lgPw" required autocomplete="current-password"></label><br>
+      <button class="btn" style="width:100%">登入</button>
+    </form>
+    <div id="lgMsg"></div>
+  </section>
+
+  <section id="noaccess" class="panel hide">此帳號尚未開通，請洽 Emily。</section>
+
+  <section id="t-print" class="hide">
+    <div class="panel">
+      <div class="row">
+        <label>盤點日期<input type="date" id="prDate"></label>
+        <button class="btn sec" type="button" id="prAll">全選</button>
+        <button class="btn sec" type="button" id="prNone">全不選</button>
+        <button class="btn" type="button" id="prGo">列印</button>
+      </div>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">已選 <b id="prCount">0</b> 張，共 <b id="prPages">0</b> 頁（A4 直式，一頁兩張）。列印時選「A4、直向、縮放 100%」，並關閉頁首頁尾。盤點結存請手寫在第一行。</p>
+    </div>
+    <div class="panel"><div class="printlist" id="prList"></div></div>
+  </section>
+
+  <section id="app" class="hide">
+    <div class="panel">
+      <form id="mvForm">
+        <div class="row">
+          <label>日期<input type="date" id="mvDate" required></label>
+          <div><div style="font-size:13px;color:var(--muted);margin-bottom:4px">進／出</div>
+            <div class="dir" id="mvDir"><button type="button" data-d="進">進</button><button type="button" data-d="出" class="on">出</button></div></div>
+          <label style="width:110px">數量<input type="number" id="mvQty" min="1" step="1" required inputmode="numeric"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label style="flex:1;min-width:260px">品項<select id="mvItem" required></select></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label style="flex:2;min-width:200px">備註<input id="mvNote" placeholder="車號、技師、用途…"></label>
+          <label style="width:140px">經手人<input id="mvWho" required placeholder="你的名字"></label>
+        </div>
+        <div style="margin-top:14px"><button class="btn" id="mvSubmit">送出</button></div>
+        <div id="mvMsg"></div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <label>起<input type="date" id="fFrom"></label>
+        <label>迄<input type="date" id="fTo"></label>
+        <label>進／出<select id="fDir"><option value="">全部</option><option>進</option><option>出</option></select></label>
+        <label style="flex:1;min-width:160px">搜尋<input id="fQ" placeholder="品號、品名、備註"></label>
+        <button class="btn sec" id="csvBtn">匯出 CSV</button>
+      </div>
+      <p class="muted" style="font-size:13px;margin:10px 0 0" id="sum"></p>
+    </div>
+    <div class="panel wrap" style="padding:0">
+      <table id="logTable"><thead><tr>
+        <th>日期</th><th>進／出</th><th>品號／品名</th><th class="n">數量</th><th>備註</th><th>經手人</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+</main>
+<div id="printArea"></div>
+
+<script>
+const SUPABASE_URL = 'https://cbnrcwujxgopuglngdlb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ld8EyFOJ4Ed8vIBfgHvh6g_4L1cBANC';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today = () => new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Taipei'});
+const fmtD = d => d ? d.slice(5).replace('-', '/') : '';
+const num = v => String(+v);
+let me, myName = '', isAdmin = false, items = {}, dir = '出', rows = [];
+
+async function boot(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ $('#login').classList.remove('hide'); return; }
+  me = session.user;
+  $('#logoutBtn').classList.remove('hide');
+  const {data:m} = await sb.from('inv_members').select('display_name,is_admin').eq('user_id', me.id).maybeSingle();
+  if(!m){ $('#noaccess').classList.remove('hide'); $('#who').textContent = me.email; return; }
+  myName = m.display_name; isAdmin = m.is_admin;
+  $('#who').textContent = myName;
+  const {data:it} = await sb.from('inv_items').select('code,name,unit,category').eq('active', true).order('sort');
+  let html = '<option value="">— 選擇品項 —</option>', cat = null;
+  for(const r of it || []){
+    items[r.code] = r;
+    if(r.category !== cat){ if(cat !== null) html += '</optgroup>'; html += `<optgroup label="${esc(r.category)}">`; cat = r.category; }
+    html += `<option value="${esc(r.code)}">${esc(r.name)}（${esc(r.code)}）</option>`;
+  }
+  $('#mvItem').innerHTML = html + '</optgroup>';
+  const p = new URLSearchParams(location.search).get('item'); if(p) $('#mvItem').value = p;
+  $('#mvDate').value = today();
+  try{ $('#mvWho').value = localStorage.getItem('inv_who') || ''; }catch(_){}
+  const d = new Date(); d.setDate(d.getDate() - 30);
+  $('#fFrom').value = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Taipei'}); $('#fTo').value = today();
+  $('#app').classList.remove('hide'); $('#tabs').classList.remove('hide');
+  $('#prDate').value = today(); buildPrintList(it || []);
+  load();
+}
+
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const {error} = await sb.auth.signInWithPassword({email:$('#lgEmail').value.trim(), password:$('#lgPw').value});
+  if(error){ $('#lgMsg').innerHTML = '<div class="msg err">帳號或密碼錯誤</div>'; return; }
+  $('#login').classList.add('hide'); boot();
+};
+$('#logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href = location.pathname; };
+
+$('#mvDir').onclick = e => {
+  const b = e.target.closest('button'); if(!b) return;
+  dir = b.dataset.d;
+  $('#mvDir').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+};
+
+$('#mvForm').onsubmit = async e => {
+  e.preventDefault();
+  const code = $('#mvItem').value, qty = Math.abs(+$('#mvQty').value);
+  if(!code || !qty) return;
+  $('#mvSubmit').disabled = true;
+  const {error} = await sb.from('inv_moves').insert({
+    move_date:$('#mvDate').value, item_code:code, direction:dir, qty,
+    note:$('#mvNote').value.trim() || null, created_by_name:$('#mvWho').value.trim()});
+  try{ localStorage.setItem('inv_who', $('#mvWho').value.trim()); }catch(_){}
+  $('#mvSubmit').disabled = false;
+  if(error){ $('#mvMsg').innerHTML = `<div class="msg err">送出失敗：${esc(error.message)}</div>`; return; }
+  const it = items[code];
+  $('#mvMsg').innerHTML = `<div class="msg ok">已登記：${dir} ${qty} ${esc(it.unit)}　${esc(it.name)}</div>`;
+  $('#mvQty').value = ''; $('#mvNote').value = '';
+  load();
+};
+
+async function load(){
+  let q = sb.from('inv_moves').select('*').order('move_date', {ascending:false}).order('id', {ascending:false}).limit(3000);
+  if($('#fFrom').value) q = q.gte('move_date', $('#fFrom').value);
+  if($('#fTo').value) q = q.lte('move_date', $('#fTo').value);
+  if($('#fDir').value) q = q.eq('direction', $('#fDir').value);
+  const {data, error} = await q;
+  if(error){ $('#sum').textContent = '讀取失敗：' + error.message; return; }
+  const k = $('#fQ').value.trim().toLowerCase();
+  rows = (data || []).filter(m => !k || [m.item_code, items[m.item_code]?.name, m.note].join(' ').toLowerCase().includes(k));
+  const tIn = rows.filter(r => r.direction === '進').reduce((a, r) => a + +r.qty, 0);
+  const tOut = rows.filter(r => r.direction === '出').reduce((a, r) => a + +r.qty, 0);
+  $('#sum').textContent = `共 ${rows.length} 筆　進 ${tIn}　出 ${tOut}`;
+  $('#logTable tbody').innerHTML = rows.map(m => {
+    const it = items[m.item_code] || {name:'', unit:''};
+    const canDel = isAdmin || (m.created_by === me.id && m.move_date === today());
+    return `<tr><td>${fmtD(m.move_date)}</td><td><span class="tag t-${m.direction}">${m.direction}</span></td>
+      <td class="c-item">${esc(it.name)}<div class="code">${esc(m.item_code)}</div></td>
+      <td class="n"><b>${num(m.qty)}</b> <span class="muted">${esc(it.unit)}</span></td>
+      <td class="c-note">${esc(m.note)}</td><td class="c-who">${esc(m.created_by_name)}</td>
+      <td>${canDel ? `<button class="btn sec" style="padding:3px 8px;font-size:13px" onclick="del(${m.id})">刪除</button>` : ''}</td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="muted">這段期間沒有紀錄</td></tr>';
+}
+let t; ['#fFrom','#fTo','#fDir','#fQ'].forEach(s => $(s).oninput = () => { clearTimeout(t); t = setTimeout(load, 300); });
+
+window.del = async id => {
+  if(!confirm('確定刪除這筆紀錄？')) return;
+  const {error} = await sb.from('inv_moves').delete().eq('id', id);
+  if(error) return alert('刪除失敗：' + error.message);
+  load();
+};
+
+$('#csvBtn').onclick = () => {
+  const out = [['日期','進/出','品號','品名','數量','單位','備註','經手人','登記時間'],
+    ...rows.map(m => [m.move_date, m.direction, m.item_code, items[m.item_code]?.name, m.qty, items[m.item_code]?.unit, m.note, m.created_by_name, m.created_at])];
+  const csv = '﻿' + out.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `總倉進出紀錄_${today()}.csv`; a.click();
+};
+
+// ====== 分頁 ======
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('#app').classList.toggle('hide', b.dataset.t !== 'log');
+  $('#t-print').classList.toggle('hide', b.dataset.t !== 'print');
+});
+
+// ====== 列印庫存卡 ======
+const ROWS_PER_CARD = 33;
+function buildPrintList(list){
+  let html = '', cat = null;
+  for(const r of list){
+    if(r.category !== cat){ html += `<div style="font-weight:700;color:var(--dark);margin:8px 0 2px">${esc(r.category)}</div>`; cat = r.category; }
+    html += `<label><input type="checkbox" value="${esc(r.code)}" checked> <span>${esc(r.name)} <span class="code">${esc(r.code)}</span></span></label>`;
+  }
+  $('#prList').innerHTML = html;
+  $('#prList').onchange = prUpd; prUpd();
+}
+const prSel = () => [...$('#prList').querySelectorAll('input:checked')].map(i => i.value);
+function prUpd(){ const n = prSel().length; $('#prCount').textContent = n; $('#prPages').textContent = Math.ceil(n / 2); }
+$('#prAll').onclick = () => { $('#prList').querySelectorAll('input').forEach(i => i.checked = true); prUpd(); };
+$('#prNone').onclick = () => { $('#prList').querySelectorAll('input').forEach(i => i.checked = false); prUpd(); };
+$('#prGo').onclick = () => {
+  const codes = prSel(); if(!codes.length) return alert('請先勾選品項');
+  const date = $('#prDate').value ? $('#prDate').value.replaceAll('-', '/') : '';
+  const card = r => {
+    let body = '<tr class="first"><td></td><td></td><td></td><td></td><td>盤點結存</td></tr>';
+    for(let k = 0; k < ROWS_PER_CARD; k++) body += '<tr><td></td><td></td><td></td><td></td><td></td></tr>';
+    return `<div class="card"><h2>庫存卡</h2><div class="hd">
+      <div>品號</div><div>${esc(r.code)}</div><div>品名</div><div>${esc(r.name)}</div>
+      <div>單位</div><div>${esc(r.unit)}</div><div>儲位</div><div></div>
+      <div>盤點日期</div><div>${esc(date)}</div><div>安全存量</div><div></div></div>
+      <table><colgroup><col style="width:18%"><col style="width:16%"><col style="width:16%"><col style="width:18%"><col></colgroup>
+      <thead><tr><th>日期</th><th>入庫</th><th>出庫</th><th>結存</th><th>經手人</th></tr></thead><tbody>${body}</tbody></table>
+      <div class="ft">結存＝上一行結存＋入庫－出庫；月底與 ERP 核對。</div></div>`;
+  };
+  let html = '';
+  for(let i = 0; i < codes.length; i += 2){
+    html += '<div class="sheet">' + card(items[codes[i]]) + (codes[i+1] ? card(items[codes[i+1]]) : '<div style="flex:1"></div>') + '</div>';
+  }
+  $('#printArea').innerHTML = html;
+  setTimeout(() => window.print(), 100);
+};
+
+boot();
+</script>
+</body>
+</html>
