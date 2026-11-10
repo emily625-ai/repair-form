@@ -237,6 +237,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const today = () => new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Taipei'});
+const weekAgo = () => { const d = new Date(today() + 'T00:00:00'); d.setDate(d.getDate() - 7); return d.toLocaleDateString('sv-SE'); };
 const fmtD = d => d ? d.slice(5).replace('-', '/') : '';
 const num = v => String(+v);
 let me, myName = '', isAdmin = false, items = {}, dir = '出', rows = [];
@@ -507,7 +508,7 @@ $('#mvForm').onsubmit = async e => {
   if(!wasEdit){ try{ localStorage.setItem('inv_who', who); }catch(_){} }
   $('#mvSubmit').disabled = false;
   if(error){
-    const msg = /row-level security|policy/i.test(error.message) ? '沒有權限（一般帳號只能修改自己當天登記的紀錄，日期也不能改成別天）' : error.message;
+    const msg = /row-level security|policy/i.test(error.message) ? '沒有權限（一般帳號只能修改自己一週內登記的紀錄，日期也要在一週內、不能是未來）' : error.message;
     $('#mvMsg').innerHTML = `<div class="msg err">${wasEdit ? '修改' : '送出'}失敗：${esc(msg)}</div>`; return;
   }
   const it = items[code];
@@ -530,7 +531,7 @@ async function load(){
   $('#sum').textContent = `共 ${rows.length} 筆　進 ${tIn}　出 ${tOut}`;
   $('#logTable tbody').innerHTML = rows.map(m => {
     const it = items[m.item_code] || {name:'', unit:''};
-    const canDel = isAdmin || (m.created_by === me.id && m.move_date === today());
+    const canDel = isAdmin || (m.created_by === me.id && m.move_date >= weekAgo());
     return `<tr><td>${fmtD(m.move_date)}</td><td><span class="tag t-${m.direction}">${m.direction}</span></td>
       <td class="c-item">${esc(it.name)}<div class="code">${esc(m.item_code)}</div></td>
       <td class="n"><b>${num(m.qty)}</b> <span class="muted">${esc(it.unit)}</span></td>
