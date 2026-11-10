@@ -6,6 +6,7 @@
 <title>總倉進出紀錄</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--dark:#143642;--teal:#0F8B8D;--bg:#F6F7F8;--line:#DDE2E5;--text:#1d2a30;--muted:#66757c;--in:#1E7F4F;--inbg:#E3F4EC;--out:#C0392B;--outbg:#FDECEA}
 *{box-sizing:border-box}
@@ -87,6 +88,8 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
 <nav id="tabs" class="hide">
   <button data-t="log" class="on">進出紀錄</button>
   <button data-t="print">列印庫存卡</button>
+  <button data-t="erp">ERP庫存</button>
+  <button data-t="items" class="hide" id="tabItems">品項管理</button>
 </nav>
 <main>
   <section id="login" class="panel hide">
@@ -113,6 +116,50 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
       <p class="muted" style="font-size:13px;margin:10px 0 0">已選 <b id="prCount">0</b> 張，共 <b id="prPages">0</b> 頁（A4 直式，一頁兩張）。列印時選「A4、直向、縮放 100%」，並關閉頁首頁尾。盤點結存請手寫在第一行。</p>
     </div>
     <div class="panel"><div class="printlist" id="prList"></div></div>
+  </section>
+
+  <section id="t-erp" class="hide">
+    <div class="panel">
+      <div class="muted" style="font-size:14px" id="erpInfo">尚未匯入 ERP 庫存</div>
+      <div id="erpAdmin" class="hide" style="margin-top:12px">
+        <div class="row">
+          <label style="flex:1;min-width:240px">匯入 ERP「倉庫存量表」（.xlsx）<input type="file" id="erpFile" accept=".xlsx,.xls"></label>
+        </div>
+        <div id="erpPreview"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <label style="flex:1;min-width:180px">搜尋<input id="eQ" placeholder="品號、品名"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="eStock" checked> 只看有庫存</label>
+        <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="eNew"> 只看未納入</label>
+      </div>
+      <p class="muted" style="font-size:13px;margin:10px 0 0" id="eSum"></p>
+    </div>
+    <div class="panel wrap" style="padding:0">
+      <table id="erpTable"><thead><tr><th>品號／品名</th><th>單位</th><th class="n">ERP 在庫量</th><th>系統品項</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="t-items" class="hide">
+    <div class="panel">
+      <h3 style="margin:0 0 10px;font-size:16px">新增品項</h3>
+      <form id="itForm">
+        <div class="row">
+          <label style="width:220px">品號<input id="itCode" required></label>
+          <label style="flex:1;min-width:220px">品名<input id="itName" required></label>
+          <label style="width:90px">單位<input id="itUnit" value="PCS" required></label>
+          <label style="width:180px">分類<input id="itCat" list="catList" required placeholder="選或輸入"></label>
+          <datalist id="catList"></datalist>
+          <button class="btn" id="itSubmit">新增</button>
+        </div>
+        <div id="itMsg"></div>
+      </form>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">也可以到「ERP庫存」分頁，在品項後面按「加入」，會自動帶入品號、品名、單位。</p>
+    </div>
+    <div class="panel wrap" style="padding:0">
+      <table id="itTable"><thead><tr><th>分類</th><th>品號／品名</th><th>單位</th><th>狀態</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
   </section>
 
   <section id="app" class="hide">
@@ -175,22 +222,157 @@ async function boot(){
   if(!m){ $('#noaccess').classList.remove('hide'); $('#who').textContent = me.email; return; }
   myName = m.display_name; isAdmin = m.is_admin;
   $('#who').textContent = myName;
-  const {data:it} = await sb.from('inv_items').select('code,name,unit,category').eq('active', true).order('sort');
-  let html = '<option value="">— 選擇品項 —</option>', cat = null;
-  for(const r of it || []){
-    items[r.code] = r;
-    if(r.category !== cat){ if(cat !== null) html += '</optgroup>'; html += `<optgroup label="${esc(r.category)}">`; cat = r.category; }
-    html += `<option value="${esc(r.code)}">${esc(r.name)}（${esc(r.code)}）</option>`;
-  }
-  $('#mvItem').innerHTML = html + '</optgroup>';
+  if(isAdmin){ $('#tabItems').classList.remove('hide'); $('#erpAdmin').classList.remove('hide'); }
+  await loadItems();
   const p = new URLSearchParams(location.search).get('item'); if(p) $('#mvItem').value = p;
   $('#mvDate').value = today();
   try{ $('#mvWho').value = localStorage.getItem('inv_who') || ''; }catch(_){}
   const d = new Date(); d.setDate(d.getDate() - 30);
   $('#fFrom').value = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Taipei'}); $('#fTo').value = today();
   $('#app').classList.remove('hide'); $('#tabs').classList.remove('hide');
-  $('#prDate').value = today(); buildPrintList(it || []);
+  $('#prDate').value = today();
   load();
+}
+
+// ====== 品項 ======
+let allItems = [];
+async function loadItems(){
+  const {data, error} = await sb.from('inv_items').select('code,name,unit,category,sort,active').order('sort');
+  if(error){ alert('讀取品項失敗：' + error.message); return; }
+  allItems = data || [];
+  // 同分類排在一起（新增的品項接在原分類後面）
+  const catPos = {}; allItems.forEach(r => { if(!(r.category in catPos)) catPos[r.category] = r.sort ?? 0; });
+  allItems.sort((x, y) => (catPos[x.category] - catPos[y.category]) || ((x.sort ?? 0) - (y.sort ?? 0)));
+  items = {};
+  const act = allItems.filter(r => r.active);
+  for(const r of allItems) items[r.code] = r;
+  const keep = $('#mvItem').value;
+  let html = '<option value="">— 選擇品項 —</option>', cat = null;
+  for(const r of act){
+    if(r.category !== cat){ if(cat !== null) html += '</optgroup>'; html += `<optgroup label="${esc(r.category)}">`; cat = r.category; }
+    html += `<option value="${esc(r.code)}">${esc(r.name)}（${esc(r.code)}）</option>`;
+  }
+  $('#mvItem').innerHTML = html + '</optgroup>';
+  if(keep) $('#mvItem').value = keep;
+  buildPrintList(act);
+  $('#catList').innerHTML = [...new Set(allItems.map(r => r.category).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
+  renderItems();
+}
+function renderItems(){
+  $('#itTable tbody').innerHTML = allItems.map(r => `<tr${r.active ? '' : ' style="opacity:.5"'}>
+    <td>${esc(r.category)}</td><td>${esc(r.name)}<div class="code">${esc(r.code)}</div></td><td>${esc(r.unit)}</td>
+    <td>${r.active ? '使用中' : '已停用'}</td>
+    <td><button class="btn sec" style="padding:3px 10px;font-size:13px" onclick="toggleItem('${esc(r.code)}', ${!r.active})">${r.active ? '停用' : '啟用'}</button></td></tr>`).join('');
+}
+window.toggleItem = async (code, on) => {
+  if(!on && !confirm('停用後，登記和列印的清單就不會出現這個品項（舊紀錄保留）。確定停用？')) return;
+  const {error} = await sb.from('inv_items').update({active:on}).eq('code', code);
+  if(error) return alert('更新失敗：' + error.message);
+  await loadItems(); renderErp();
+};
+$('#itForm').onsubmit = async e => {
+  e.preventDefault();
+  const code = $('#itCode').value.trim(), name = $('#itName').value.trim();
+  const unit = $('#itUnit').value.trim() || 'PCS', category = $('#itCat').value.trim();
+  if(!code || !name || !category) return;
+  const ex = items[code];
+  if(ex && ex.active){ $('#itMsg').innerHTML = `<div class="msg err">品號 ${esc(code)} 已經在清單裡了</div>`; return; }
+  $('#itSubmit').disabled = true;
+  const sort = ex ? ex.sort : Math.max(0, ...allItems.map(r => r.sort || 0)) + 1;
+  const {error} = await sb.from('inv_items').upsert({code, name, unit, category, sort, active:true});
+  $('#itSubmit').disabled = false;
+  if(error){ $('#itMsg').innerHTML = `<div class="msg err">新增失敗：${esc(error.message)}</div>`; return; }
+  $('#itMsg').innerHTML = `<div class="msg ok">已新增：${esc(name)}（${esc(code)}）。登記和列印庫存卡的清單已經可以選到。</div>`;
+  $('#itCode').value = ''; $('#itName').value = ''; $('#itUnit').value = 'PCS';
+  await loadItems(); renderErp();
+};
+
+// ====== ERP 庫存 ======
+let erp = [];
+async function loadErp(){
+  const all = [];
+  for(let from = 0; ; from += 1000){
+    const {data, error} = await sb.from('inv_erp_stock').select('*').order('code').range(from, from + 999);
+    if(error){ $('#erpInfo').textContent = '讀取失敗：' + error.message; return; }
+    all.push(...data); if(data.length < 1000) break;
+  }
+  erp = all;
+  if(erp.length){
+    const r = erp[0];
+    $('#erpInfo').innerHTML = `ERP 資料日期 <b>${esc((r.data_date || '').replaceAll('-', '/'))}</b>　倉庫 ${esc(r.warehouse || '')}　共 ${erp.length} 個品號　<span class="muted">（${esc(new Date(r.imported_at).toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false}))} 由 ${esc(r.imported_by_name || '')} 匯入）</span>`;
+  } else $('#erpInfo').textContent = isAdmin ? '尚未匯入 ERP 庫存，請選擇 ERP 匯出的「倉庫存量表」' : '尚未匯入 ERP 庫存';
+  renderErp();
+}
+function renderErp(){
+  const k = $('#eQ').value.trim().toLowerCase(), onlyStock = $('#eStock').checked, onlyNew = $('#eNew').checked;
+  const list = erp.filter(r => (!k || (r.code + r.name).toLowerCase().includes(k))
+    && (!onlyStock || +r.qty !== 0) && (!onlyNew || !(items[r.code]?.active)));
+  $('#eSum').textContent = `顯示 ${list.length} 筆`;
+  $('#erpTable tbody').innerHTML = list.slice(0, 1000).map(r => {
+    const it = items[r.code];
+    const st = it?.active ? '<span class="tag t-進">已納入</span>'
+      : isAdmin ? `<button class="btn" style="padding:3px 10px;font-size:13px" onclick="addFromErp('${esc(r.code)}')">加入</button>` : '<span class="muted">未納入</span>';
+    return `<tr><td>${esc(r.name)}<div class="code">${esc(r.code)}</div></td><td>${esc(r.unit)}</td><td class="n"><b>${num(r.qty)}</b></td><td>${st}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="muted">沒有符合的品項</td></tr>';
+}
+['#eQ','#eStock','#eNew'].forEach(s => $(s).oninput = renderErp);
+window.addFromErp = code => {
+  const r = erp.find(x => x.code === code); if(!r) return;
+  $('#itCode').value = r.code; $('#itName').value = r.name; $('#itUnit').value = r.unit || 'PCS';
+  openTab('items'); $('#itCat').focus();
+};
+
+// 解析 ERP「倉庫存量表」
+const rocDate = s => { const m = String(s || '').match(/(\d{2,3})\/(\d{1,2})\/(\d{1,2})/); return m ? `${+m[1] + 1911}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null; };
+function parseErp(rows){
+  const nextVal = (r, i) => { for(let j = i + 1; j < r.length; j++) if(r[j] != null && String(r[j]).trim() !== '') return String(r[j]).trim(); return ''; };
+  let dataDate = null, hdr = -1, col = {}; const whs = new Set();
+  rows.forEach((r, i) => {
+    r.forEach((v, j) => {
+      const t = String(v ?? '').trim();
+      if(t === '資料日期：') dataDate = rocDate(nextVal(r, j));
+      if(t === '倉庫：') whs.add(nextVal(r, j));
+    });
+    if(hdr < 0 && r.some(v => String(v ?? '').trim() === '實際在庫量')){
+      hdr = i; r.forEach((v, j) => { const t = String(v ?? '').trim(); if(t && col[t] === undefined) col[t] = j; });
+    }
+  });
+  if(hdr < 0 || col['品號'] === undefined || col['實際在庫量'] === undefined) throw new Error('看不懂這個檔案：找不到「品號」「實際在庫量」欄位，請確認是 ERP 匯出的「倉庫存量表」');
+  if(whs.size > 1) throw new Error('這個檔案包含多個倉庫（' + [...whs].join('、') + '），請只匯出總倉(001)');
+  const out = new Map();
+  for(const r of rows.slice(hdr + 1)){
+    const code = String(r[col['品號']] ?? '').trim(), q = r[col['實際在庫量']];
+    if(!code || ['合計：','總計：','<<結束>>','品號'].includes(code) || q === null || q === undefined || q === '' || isNaN(+q)) continue;
+    out.set(code, {code, name:String(r[col['品名']] ?? '').trim() || code, unit:String(r[col['單位']] ?? '').trim() || null, qty:+q});
+  }
+  return {dataDate, warehouse:[...whs][0] || '', list:[...out.values()]};
+}
+let erpPending = null;
+$('#erpFile').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const wb = XLSX.read(await f.arrayBuffer(), {type:'array'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:null, raw:true});
+    erpPending = parseErp(rows);
+    if(!erpPending.list.length) throw new Error('檔案裡沒有讀到任何品號');
+    const n0 = erpPending.list.filter(r => r.qty !== 0).length;
+    $('#erpPreview').innerHTML = `<div class="msg ok">讀到 <b>${erpPending.list.length}</b> 個品號（有庫存 ${n0} 個），資料日期 ${esc((erpPending.dataDate || '未標示').replaceAll('-', '/'))}，倉庫 ${esc(erpPending.warehouse || '未標示')}。<br>按「確認匯入」會取代目前的 ERP 庫存資料（不影響進出紀錄和品項清單）。</div>
+      <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="erpGo">確認匯入</button><button class="btn sec" id="erpCancel">取消</button></div>`;
+    $('#erpGo').onclick = doErpImport;
+    $('#erpCancel').onclick = () => { erpPending = null; $('#erpPreview').innerHTML = ''; $('#erpFile').value = ''; };
+  }catch(err){ erpPending = null; $('#erpPreview').innerHTML = `<div class="msg err">${esc(err.message)}</div>`; }
+};
+async function doErpImport(){
+  if(!erpPending) return;
+  $('#erpGo').disabled = true; $('#erpGo').textContent = '匯入中…';
+  const stamp = new Date().toISOString();
+  const rows = erpPending.list.map(r => ({...r, warehouse:erpPending.warehouse, data_date:erpPending.dataDate, imported_at:stamp, imported_by_name:myName}));
+  let {error} = await sb.from('inv_erp_stock').delete().neq('code', '');
+  for(let i = 0; !error && i < rows.length; i += 500) ({error} = await sb.from('inv_erp_stock').insert(rows.slice(i, i + 500)));
+  if(error){ $('#erpPreview').innerHTML = `<div class="msg err">匯入失敗：${esc(error.message)}（請重新匯入一次）</div>`; return; }
+  $('#erpPreview').innerHTML = `<div class="msg ok">匯入完成，共 ${rows.length} 個品號。</div>`;
+  erpPending = null; $('#erpFile').value = '';
+  loadErp();
 }
 
 $('#loginForm').onsubmit = async e => {
@@ -264,11 +446,14 @@ $('#csvBtn').onclick = () => {
 };
 
 // ====== 分頁 ======
-document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
-  $('#app').classList.toggle('hide', b.dataset.t !== 'log');
-  $('#t-print').classList.toggle('hide', b.dataset.t !== 'print');
-});
+let erpLoaded = false;
+function openTab(t){
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+  $('#app').classList.toggle('hide', t !== 'log');
+  ['print','erp','items'].forEach(k => $('#t-' + k).classList.toggle('hide', t !== k));
+  if(t === 'erp' && !erpLoaded){ erpLoaded = true; loadErp(); }
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => openTab(b.dataset.t));
 
 // ====== 列印庫存卡 ======
 const ROWS_PER_CARD = 33;
