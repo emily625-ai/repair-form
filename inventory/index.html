@@ -37,6 +37,10 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .msg{padding:10px 12px;border-radius:6px;margin-top:10px;font-size:14px}
 .msg.ok{background:var(--inbg);color:var(--in)}.msg.err{background:var(--outbg);color:var(--out)}
 .muted{color:var(--muted)}
+.low{color:var(--out);font-weight:700}
+.it-in{width:76px;padding:4px 6px}
+.it-in.d{width:136px}
+#lowBox{background:#FFF4DC;border:1px solid #F0D9A8;color:#8A5A00}
 .hide{display:none!important}
 .wrap{overflow-x:auto}
 #login{max-width:360px;margin:60px auto}
@@ -133,11 +137,12 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
         <label style="flex:1;min-width:180px">搜尋<input id="eQ" placeholder="品號、品名"></label>
         <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="eStock" checked> 只看有庫存</label>
         <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="eNew"> 只看未納入</label>
+        <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="eDiff"> 只看有差異</label>
       </div>
       <p class="muted" style="font-size:13px;margin:10px 0 0" id="eSum"></p>
     </div>
     <div class="panel wrap" style="padding:0">
-      <table id="erpTable"><thead><tr><th>品號／品名</th><th>單位</th><th class="n">ERP 在庫量</th><th>系統品項</th></tr></thead><tbody></tbody></table>
+      <table id="erpTable"><thead><tr><th>品號／品名</th><th>單位</th><th class="n">ERP 在庫量</th><th class="n">系統結存</th><th class="n">差異<br><span style="font-weight:400;font-size:12px">系統－ERP</span></th><th>系統品項</th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -151,18 +156,24 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
           <label style="width:90px">單位<input id="itUnit" value="PCS" required></label>
           <label style="width:180px">分類<input id="itCat" list="catList" required placeholder="選或輸入"></label>
           <datalist id="catList"></datalist>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label style="width:110px">期初數<input id="itOpen" type="number" min="0" step="1" placeholder="盤點數"></label>
+          <label style="width:160px">期初日期<input id="itOpenDate" type="date"></label>
+          <label style="width:110px">安全庫存<input id="itSafe" type="number" min="0" step="1"></label>
           <button class="btn" id="itSubmit">新增</button>
         </div>
         <div id="itMsg"></div>
       </form>
-      <p class="muted" style="font-size:13px;margin:10px 0 0">也可以到「ERP庫存」分頁，在品項後面按「加入」，會自動帶入品號、品名、單位。</p>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">也可以到「ERP庫存」分頁，在品項後面按「加入」，會自動帶入品號、品名、單位。<br>期初數＝期初日期當天盤點的數量；系統結存＝期初數＋期初日期之後的進－出。期初數空白表示尚未盤點，不計算結存。</p>
     </div>
     <div class="panel wrap" style="padding:0">
-      <table id="itTable"><thead><tr><th>分類</th><th>品號／品名</th><th>單位</th><th>狀態</th><th></th></tr></thead><tbody></tbody></table>
+      <table id="itTable"><thead><tr><th>分類</th><th>品號／品名</th><th>單位</th><th>期初數</th><th>期初日期</th><th>安全庫存</th><th class="n">系統結存</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
   <section id="app" class="hide">
+    <div class="panel hide" id="lowBox"></div>
     <div class="panel">
       <form id="mvForm">
         <div class="row">
@@ -178,7 +189,7 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
           <label style="flex:2;min-width:200px">備註<input id="mvNote" placeholder="車號、技師、用途…"></label>
           <label style="width:140px">經手人<input id="mvWho" required placeholder="你的名字"></label>
         </div>
-        <div style="margin-top:14px"><button class="btn" id="mvSubmit">送出</button></div>
+        <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="mvSubmit">送出</button><span id="mvPreview" class="muted"></span></div>
         <div id="mvMsg"></div>
       </form>
     </div>
@@ -222,7 +233,7 @@ async function boot(){
   if(!m){ $('#noaccess').classList.remove('hide'); $('#who').textContent = me.email; return; }
   myName = m.display_name; isAdmin = m.is_admin;
   $('#who').textContent = myName;
-  if(isAdmin){ $('#tabItems').classList.remove('hide'); $('#erpAdmin').classList.remove('hide'); }
+  if(isAdmin){ $('#tabItems').classList.remove('hide'); $('#erpAdmin').classList.remove('hide'); $('#itOpenDate').value = today(); }
   await loadItems();
   const p = new URLSearchParams(location.search).get('item'); if(p) $('#mvItem').value = p;
   $('#mvDate').value = today();
@@ -237,7 +248,7 @@ async function boot(){
 // ====== 品項 ======
 let allItems = [];
 async function loadItems(){
-  const {data, error} = await sb.from('inv_items').select('code,name,unit,category,sort,active').order('sort');
+  const {data, error} = await sb.from('inv_balance').select('*').order('sort');
   if(error){ alert('讀取品項失敗：' + error.message); return; }
   allItems = data || [];
   // 同分類排在一起（新增的品項接在原分類後面）
@@ -256,14 +267,44 @@ async function loadItems(){
   if(keep) $('#mvItem').value = keep;
   buildPrintList(act);
   $('#catList').innerHTML = [...new Set(allItems.map(r => r.category).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
-  renderItems();
+  renderItems(); renderLow(); updPreview();
+}
+const fmtQ = v => v == null ? '' : num(v);
+const isLow = r => r.balance != null && (r.balance < 0 || (r.safety_qty != null && +r.balance <= +r.safety_qty));
+function renderLow(){
+  const lows = allItems.filter(r => r.active && isLow(r));
+  $('#lowBox').classList.toggle('hide', !lows.length);
+  $('#lowBox').innerHTML = `<b>低於安全庫存（${lows.length} 項）</b>：` + lows.map(r => `${esc(r.name)} 結存 ${fmtQ(r.balance)}／安全 ${fmtQ(r.safety_qty)}`).join('；');
+}
+function updPreview(){
+  const r = items[$('#mvItem').value], q = Math.abs(+$('#mvQty').value || 0);
+  if(!r){ $('#mvPreview').innerHTML = ''; return; }
+  if(r.balance == null){ $('#mvPreview').textContent = '此品項尚未設定期初數，不計算結存'; return; }
+  const after = +r.balance + (dir === '進' ? q : -q);
+  const safe = r.safety_qty != null ? `（安全庫存 ${fmtQ(r.safety_qty)}）` : '';
+  const cls = after < 0 || (r.safety_qty != null && after <= +r.safety_qty) ? 'low' : '';
+  $('#mvPreview').innerHTML = `目前結存 <b>${fmtQ(r.balance)}</b>` + (q ? ` → 登記後 <b class="${cls}">${num(after)}</b>` : '') + ` ${esc(r.unit)}${safe}`;
 }
 function renderItems(){
-  $('#itTable tbody').innerHTML = allItems.map(r => `<tr${r.active ? '' : ' style="opacity:.5"'}>
+  $('#itTable tbody').innerHTML = allItems.map((r, i) => `<tr${r.active ? '' : ' style="opacity:.5"'}>
     <td>${esc(r.category)}</td><td>${esc(r.name)}<div class="code">${esc(r.code)}</div></td><td>${esc(r.unit)}</td>
-    <td>${r.active ? '使用中' : '已停用'}</td>
-    <td><button class="btn sec" style="padding:3px 10px;font-size:13px" onclick="toggleItem('${esc(r.code)}', ${!r.active})">${r.active ? '停用' : '啟用'}</button></td></tr>`).join('');
+    <td><input class="it-in" type="number" min="0" step="1" id="io${i}" value="${fmtQ(r.opening_qty)}" placeholder="未盤"></td>
+    <td><input class="it-in d" type="date" id="id${i}" value="${esc(r.opening_date || '')}"></td>
+    <td><input class="it-in" type="number" min="0" step="1" id="is${i}" value="${fmtQ(r.safety_qty)}"></td>
+    <td class="n ${isLow(r) ? 'low' : ''}"><b>${r.balance == null ? '—' : fmtQ(r.balance)}</b></td>
+    <td style="white-space:nowrap"><button class="btn" style="padding:3px 10px;font-size:13px" onclick="saveItem(${i})">儲存</button>
+      <button class="btn sec" style="padding:3px 10px;font-size:13px" onclick="toggleItem('${esc(r.code)}', ${!r.active})">${r.active ? '停用' : '啟用'}</button></td></tr>`).join('');
 }
+const numOrNull = v => v === '' ? null : +v;
+window.saveItem = async i => {
+  const r = allItems[i];
+  const opening_qty = numOrNull($('#io' + i).value), safety_qty = numOrNull($('#is' + i).value);
+  let opening_date = $('#id' + i).value || null;
+  if(opening_qty != null && !opening_date) return alert('有填期初數，請一併填期初日期（盤點那天）');
+  const {error} = await sb.from('inv_items').update({opening_qty, opening_date, safety_qty}).eq('code', r.code);
+  if(error) return alert('儲存失敗：' + error.message);
+  await loadItems(); renderErp();
+};
 window.toggleItem = async (code, on) => {
   if(!on && !confirm('停用後，登記和列印的清單就不會出現這個品項（舊紀錄保留）。確定停用？')) return;
   const {error} = await sb.from('inv_items').update({active:on}).eq('code', code);
@@ -279,11 +320,13 @@ $('#itForm').onsubmit = async e => {
   if(ex && ex.active){ $('#itMsg').innerHTML = `<div class="msg err">品號 ${esc(code)} 已經在清單裡了</div>`; return; }
   $('#itSubmit').disabled = true;
   const sort = ex ? ex.sort : Math.max(0, ...allItems.map(r => r.sort || 0)) + 1;
-  const {error} = await sb.from('inv_items').upsert({code, name, unit, category, sort, active:true});
+  const opening_qty = numOrNull($('#itOpen').value), safety_qty = numOrNull($('#itSafe').value);
+  const opening_date = opening_qty == null ? null : ($('#itOpenDate').value || today());
+  const {error} = await sb.from('inv_items').upsert({code, name, unit, category, sort, active:true, opening_qty, opening_date, safety_qty});
   $('#itSubmit').disabled = false;
   if(error){ $('#itMsg').innerHTML = `<div class="msg err">新增失敗：${esc(error.message)}</div>`; return; }
   $('#itMsg').innerHTML = `<div class="msg ok">已新增：${esc(name)}（${esc(code)}）。登記和列印庫存卡的清單已經可以選到。</div>`;
-  $('#itCode').value = ''; $('#itName').value = ''; $('#itUnit').value = 'PCS';
+  $('#itCode').value = ''; $('#itName').value = ''; $('#itUnit').value = 'PCS'; $('#itOpen').value = ''; $('#itSafe').value = '';
   await loadItems(); renderErp();
 };
 
@@ -304,18 +347,23 @@ async function loadErp(){
   renderErp();
 }
 function renderErp(){
-  const k = $('#eQ').value.trim().toLowerCase(), onlyStock = $('#eStock').checked, onlyNew = $('#eNew').checked;
+  const k = $('#eQ').value.trim().toLowerCase(), onlyStock = $('#eStock').checked, onlyNew = $('#eNew').checked, onlyDiff = $('#eDiff').checked;
+  const diffOf = r => { const b = items[r.code]?.balance; return b == null ? null : +b - +r.qty; };
   const list = erp.filter(r => (!k || (r.code + r.name).toLowerCase().includes(k))
-    && (!onlyStock || +r.qty !== 0) && (!onlyNew || !(items[r.code]?.active)));
+    && (!onlyStock || +r.qty !== 0 || (diffOf(r) ?? 0) !== 0) && (!onlyNew || !(items[r.code]?.active))
+    && (!onlyDiff || (diffOf(r) != null && diffOf(r) !== 0)));
   $('#eSum').textContent = `顯示 ${list.length} 筆`;
   $('#erpTable tbody').innerHTML = list.slice(0, 1000).map(r => {
     const it = items[r.code];
     const st = it?.active ? '<span class="tag t-進">已納入</span>'
       : isAdmin ? `<button class="btn" style="padding:3px 10px;font-size:13px" onclick="addFromErp('${esc(r.code)}')">加入</button>` : '<span class="muted">未納入</span>';
-    return `<tr><td>${esc(r.name)}<div class="code">${esc(r.code)}</div></td><td>${esc(r.unit)}</td><td class="n"><b>${num(r.qty)}</b></td><td>${st}</td></tr>`;
-  }).join('') || '<tr><td colspan="4" class="muted">沒有符合的品項</td></tr>';
+    const d = diffOf(r);
+    return `<tr><td>${esc(r.name)}<div class="code">${esc(r.code)}</div></td><td>${esc(r.unit)}</td><td class="n"><b>${num(r.qty)}</b></td>
+      <td class="n">${it?.balance == null ? '<span class="muted">—</span>' : fmtQ(it.balance)}</td>
+      <td class="n ${d ? 'low' : ''}">${d == null ? '' : (d > 0 ? '+' : '') + d}</td><td>${st}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">沒有符合的品項</td></tr>';
 }
-['#eQ','#eStock','#eNew'].forEach(s => $(s).oninput = renderErp);
+['#eQ','#eStock','#eNew','#eDiff'].forEach(s => $(s).oninput = renderErp);
 window.addFromErp = code => {
   const r = erp.find(x => x.code === code); if(!r) return;
   $('#itCode').value = r.code; $('#itName').value = r.name; $('#itUnit').value = r.unit || 'PCS';
@@ -387,12 +435,16 @@ $('#mvDir').onclick = e => {
   const b = e.target.closest('button'); if(!b) return;
   dir = b.dataset.d;
   $('#mvDir').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  updPreview();
 };
+$('#mvItem').onchange = updPreview; $('#mvQty').oninput = updPreview;
 
 $('#mvForm').onsubmit = async e => {
   e.preventDefault();
   const code = $('#mvItem').value, qty = Math.abs(+$('#mvQty').value);
   if(!code || !qty) return;
+  const cur = items[code];
+  if(cur?.balance != null && dir === '出' && +cur.balance - qty < 0 && !confirm(`登記後結存會變成 ${+cur.balance - qty}（負數），確定要送出？`)) return;
   $('#mvSubmit').disabled = true;
   const {error} = await sb.from('inv_moves').insert({
     move_date:$('#mvDate').value, item_code:code, direction:dir, qty,
@@ -403,7 +455,7 @@ $('#mvForm').onsubmit = async e => {
   const it = items[code];
   $('#mvMsg').innerHTML = `<div class="msg ok">已登記：${dir} ${qty} ${esc(it.unit)}　${esc(it.name)}</div>`;
   $('#mvQty').value = ''; $('#mvNote').value = '';
-  load();
+  load(); loadItems();
 };
 
 async function load(){
@@ -434,7 +486,7 @@ window.del = async id => {
   if(!confirm('確定刪除這筆紀錄？')) return;
   const {error} = await sb.from('inv_moves').delete().eq('id', id);
   if(error) return alert('刪除失敗：' + error.message);
-  load();
+  load(); loadItems();
 };
 
 $('#csvBtn').onclick = () => {
@@ -479,7 +531,7 @@ $('#prGo').onclick = () => {
     return `<div class="card"><h2>庫存卡</h2><div class="hd">
       <div>品號</div><div>${esc(r.code)}</div><div>品名</div><div>${esc(r.name)}</div>
       <div>單位</div><div>${esc(r.unit)}</div><div>儲位</div><div></div>
-      <div>盤點日期</div><div>${esc(date)}</div><div>安全存量</div><div></div></div>
+      <div>盤點日期</div><div>${esc(date)}</div><div>安全存量</div><div>${r.safety_qty == null ? '' : esc(num(r.safety_qty))}</div></div>
       <table><colgroup><col style="width:18%"><col style="width:16%"><col style="width:16%"><col style="width:18%"><col></colgroup>
       <thead><tr><th>日期</th><th>入庫</th><th>出庫</th><th>結存</th><th>經手人</th></tr></thead><tbody>${body}</tbody></table>
       <div class="ft">結存＝上一行結存＋入庫－出庫；月底與 ERP 核對。</div></div>`;
