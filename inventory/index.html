@@ -190,6 +190,7 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
   <section id="app" class="hide">
     <div class="panel hide" id="lowBox"></div>
     <div class="panel">
+      <div id="mvEditing" class="msg hide" style="margin:0 0 12px;background:#FFF4DC;color:#8A5A00"></div>
       <form id="mvForm">
         <div class="row">
           <label>日期<input type="date" id="mvDate" required></label>
@@ -205,7 +206,7 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
           <label style="flex:2;min-width:200px">備註<input id="mvNote" placeholder="車號、技師、用途…"></label>
           <label style="width:140px">經手人<input id="mvWho" required placeholder="你的名字"></label>
         </div>
-        <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="mvSubmit">送出</button><span id="mvPreview" class="muted"></span></div>
+        <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="mvSubmit">送出</button><button class="btn sec hide" type="button" id="mvCancel">取消修改</button><span id="mvPreview" class="muted"></span></div>
         <div id="mvMsg"></div>
       </form>
     </div>
@@ -303,10 +304,10 @@ function updPreview(){
   const r = items[$('#mvItem').value], q = Math.abs(+$('#mvQty').value || 0);
   if(!r){ $('#mvPreview').innerHTML = ''; return; }
   if(r.balance == null){ $('#mvPreview').textContent = '此品項尚未設定期初數，不計算結存'; return; }
-  const after = +r.balance + (dir === '進' ? q : -q);
+  const after = baseBalance(r) + (dir === '進' ? q : -q);
   const safe = r.safety_qty != null ? `（安全庫存 ${fmtQ(r.safety_qty)}）` : '';
   const cls = after < 0 || (r.safety_qty != null && after <= +r.safety_qty) ? 'low' : '';
-  $('#mvPreview').innerHTML = `目前結存 <b>${fmtQ(r.balance)}</b>` + (q ? ` → 登記後 <b class="${cls}">${num(after)}</b>` : '') + ` ${esc(r.unit)}${safe}`;
+  $('#mvPreview').innerHTML = (editing ? '不含這筆的結存' : '目前結存') + ` <b>${num(baseBalance(r))}</b>` + (q ? ` → 登記後 <b class="${cls}">${num(after)}</b>` : '') + ` ${esc(r.unit)}${safe}`;
 }
 function renderItems(){
   $('#itTable tbody').innerHTML = allItems.map((r, i) => `<tr${r.active ? '' : ' style="opacity:.5"'}>
@@ -463,22 +464,55 @@ $('#mvDir').onclick = e => {
 $('#mvItem').onchange = updPreview; $('#mvQty').oninput = updPreview;
 $('#mvFind').oninput = () => { buildItemSelect(); updPreview(); };
 
+// ====== 修改 ======
+let editing = null;   // 正在修改的那筆紀錄
+const signed = m => m.direction === '進' ? +m.qty : -m.qty;
+// 修改時，結存要先扣掉這筆原本的數量
+const baseBalance = r => +r.balance - (editing && editing.item_code === r.code && items[r.code]?.opening_date && editing.move_date > items[r.code].opening_date ? signed(editing) : 0);
+function setDir(d){ dir = d; $('#mvDir').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.d === d)); }
+window.editMove = id => {
+  const m = rows.find(x => x.id === id); if(!m) return;
+  editing = m;
+  $('#mvFind').value = ''; buildItemSelect();
+  $('#mvDate').value = m.move_date; setDir(m.direction); $('#mvQty').value = num(m.qty);
+  $('#mvItem').value = m.item_code; $('#mvNote').value = m.note || ''; $('#mvWho').value = m.created_by_name || '';
+  $('#mvEditing').classList.remove('hide');
+  $('#mvEditing').innerHTML = `正在修改：${fmtD(m.move_date)}　${m.direction} ${num(m.qty)}　${esc(items[m.item_code]?.name || m.item_code)}（${esc(m.created_by_name || '')} 登記）`;
+  $('#mvSubmit').textContent = '儲存修改'; $('#mvCancel').classList.remove('hide'); $('#mvMsg').innerHTML = '';
+  updPreview();
+  $('#mvForm').scrollIntoView({behavior:'smooth', block:'start'});
+};
+function endEdit(){
+  editing = null;
+  $('#mvEditing').classList.add('hide'); $('#mvSubmit').textContent = '送出'; $('#mvCancel').classList.add('hide');
+  $('#mvDate').value = today(); $('#mvQty').value = ''; $('#mvNote').value = '';
+  try{ $('#mvWho').value = localStorage.getItem('inv_who') || ''; }catch(_){}
+  updPreview();
+}
+$('#mvCancel').onclick = endEdit;
+
 $('#mvForm').onsubmit = async e => {
   e.preventDefault();
   const code = $('#mvItem').value, qty = Math.abs(+$('#mvQty').value);
   if(!code || !qty) return;
   const cur = items[code];
-  if(cur?.balance != null && dir === '出' && +cur.balance - qty < 0 && !confirm(`登記後結存會變成 ${+cur.balance - qty}（負數），確定要送出？`)) return;
+  if(cur?.balance != null && dir === '出' && baseBalance(cur) - qty < 0 && !confirm(`登記後結存會變成 ${baseBalance(cur) - qty}（負數），確定要送出？`)) return;
+  const who = $('#mvWho').value.trim();
+  const row = {move_date:$('#mvDate').value, item_code:code, direction:dir, qty, note:$('#mvNote').value.trim() || null};
   $('#mvSubmit').disabled = true;
-  const {error} = await sb.from('inv_moves').insert({
-    move_date:$('#mvDate').value, item_code:code, direction:dir, qty,
-    note:$('#mvNote').value.trim() || null, created_by_name:$('#mvWho').value.trim()});
-  try{ localStorage.setItem('inv_who', $('#mvWho').value.trim()); }catch(_){}
+  const wasEdit = !!editing;
+  const {error} = wasEdit
+    ? await sb.from('inv_moves').update({...row, created_by_name:who, updated_at:new Date().toISOString(), updated_by_name:who}).eq('id', editing.id)
+    : await sb.from('inv_moves').insert({...row, created_by_name:who});
+  if(!wasEdit){ try{ localStorage.setItem('inv_who', who); }catch(_){} }
   $('#mvSubmit').disabled = false;
-  if(error){ $('#mvMsg').innerHTML = `<div class="msg err">送出失敗：${esc(error.message)}</div>`; return; }
+  if(error){
+    const msg = /row-level security|policy/i.test(error.message) ? '沒有權限（一般帳號只能修改自己當天登記的紀錄，日期也不能改成別天）' : error.message;
+    $('#mvMsg').innerHTML = `<div class="msg err">${wasEdit ? '修改' : '送出'}失敗：${esc(msg)}</div>`; return;
+  }
   const it = items[code];
-  $('#mvMsg').innerHTML = `<div class="msg ok">已登記：${dir} ${qty} ${esc(it.unit)}　${esc(it.name)}</div>`;
-  $('#mvQty').value = ''; $('#mvNote').value = '';
+  $('#mvMsg').innerHTML = `<div class="msg ok">${wasEdit ? '已修改' : '已登記'}：${dir} ${qty} ${esc(it.unit)}　${esc(it.name)}</div>`;
+  if(wasEdit) endEdit(); else { $('#mvQty').value = ''; $('#mvNote').value = ''; }
   load(); loadItems();
 };
 
@@ -500,22 +534,24 @@ async function load(){
     return `<tr><td>${fmtD(m.move_date)}</td><td><span class="tag t-${m.direction}">${m.direction}</span></td>
       <td class="c-item">${esc(it.name)}<div class="code">${esc(m.item_code)}</div></td>
       <td class="n"><b>${num(m.qty)}</b> <span class="muted">${esc(it.unit)}</span></td>
-      <td class="c-note">${esc(m.note)}</td><td class="c-who">${esc(m.created_by_name)}</td>
-      <td>${canDel ? `<button class="btn sec" style="padding:3px 8px;font-size:13px" onclick="del(${m.id})">刪除</button>` : ''}</td></tr>`;
+      <td class="c-note">${esc(m.note)}</td><td class="c-who">${esc(m.created_by_name)}${m.updated_at ? `<div class="muted" style="font-size:12px" title="${esc(new Date(m.updated_at).toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false}))}">（已修改）</div>` : ''}</td>
+      <td style="white-space:nowrap">${canDel ? `<button class="btn sec" style="padding:3px 8px;font-size:13px" onclick="editMove(${m.id})">修改</button> <button class="btn sec" style="padding:3px 8px;font-size:13px" onclick="del(${m.id})">刪除</button>` : ''}</td></tr>`;
   }).join('') || '<tr><td colspan="7" class="muted">這段期間沒有紀錄</td></tr>';
 }
 let t; ['#fFrom','#fTo','#fDir','#fQ'].forEach(s => $(s).oninput = () => { clearTimeout(t); t = setTimeout(load, 300); });
 
 window.del = async id => {
-  if(!confirm('確定刪除這筆紀錄？')) return;
+  const m = rows.find(x => x.id === id);
+  if(!confirm(`確定刪除這筆紀錄？\n${m ? `${fmtD(m.move_date)} ${m.direction} ${num(m.qty)} ${items[m.item_code]?.name || m.item_code}` : ''}`)) return;
+  if(editing && editing.id === id) endEdit();
   const {error} = await sb.from('inv_moves').delete().eq('id', id);
   if(error) return alert('刪除失敗：' + error.message);
   load(); loadItems();
 };
 
 $('#csvBtn').onclick = () => {
-  const out = [['日期','進/出','品號','品名','數量','單位','備註','經手人','登記時間'],
-    ...rows.map(m => [m.move_date, m.direction, m.item_code, items[m.item_code]?.name, m.qty, items[m.item_code]?.unit, m.note, m.created_by_name, m.created_at])];
+  const out = [['日期','進/出','品號','品名','數量','單位','備註','經手人','登記時間','最後修改時間'],
+    ...rows.map(m => [m.move_date, m.direction, m.item_code, items[m.item_code]?.name, m.qty, items[m.item_code]?.unit, m.note, m.created_by_name, m.created_at, m.updated_at || ''])];
   const csv = '﻿' + out.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = `總倉進出紀錄_${today()}.csv`; a.click();
