@@ -468,6 +468,7 @@ function createCaseFromLineMessage(id) {
   if (plateInput) plateInput.value = extractLinePlate(row.raw_message || '');
 
   const suggestion = applyLineClassificationSuggestion(row);
+  const v3Suggestion = applyLineV3Suggestion(row, companyName);
 
   const statusInput = document.getElementById('fStatus');
   if (statusInput) statusInput.value = '客服處理中';
@@ -478,9 +479,11 @@ function createCaseFromLineMessage(id) {
   window._lineImportContext = { lineMessageId: row.id };
 
   showLineImportAlert(
-    suggestion
-      ? `已依關鍵字「${suggestion.matchedKeyword}」自動帶入分類「${suggestion.category} / ${suggestion.subcategory}」，請確認是否正確。`
-      : '無法自動判斷分類，請完整選擇並人工確認 V2 分類。',
+    v3Suggestion
+      ? `已帶入建議分類：${v3Suggestion.label}（${v3Suggestion.reason}）。請確認後勾選「已人工確認 V3.1 分類」。`
+      : (suggestion
+        ? `已依關鍵字「${suggestion.matchedKeyword}」帶入舊分類，V3.1 分類請人工選擇。`
+        : '無法自動判斷分類，請人工選擇 V3.1 分類。'),
     'info'
   );
 }
@@ -888,8 +891,177 @@ function toFormDateTimeValue(value) {
 }
 
 function extractLinePlate(message) {
-  const match = String(message || '').match(/\b([A-Z0-9]{2,4}[-\s][A-Z0-9]{2,4})\b/i);
-  return match ? match[1].toUpperCase().replace(/\s+/g, '-') : '';
+  // 車號必須同時有英文字母和數字，避免把電話（02-8648）、統編當成車號
+  const text = String(message || '').toUpperCase();
+  const pattern = /(^|[^A-Z0-9])([A-Z0-9]{2,4})(-?)([A-Z0-9]{2,4})(?=$|[^A-Z0-9])/g;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const left = match[2];
+    const right = match[4];
+    const joined = left + right;
+    if (joined.length < 5 || joined.length > 7) continue;
+    if (!/[A-Z]/.test(joined) || !/\d/.test(joined)) continue;
+    if (/^(GPS|DVR|API|SD|LINE|PDF|ID)/.test(joined)) continue;
+    if (match[3]) return `${left}-${right}`;
+    // 沒有 dash：KLF0903 → KLF-0903、KPD0935 → KPD-0935
+    const noDash = joined.match(/^([A-Z]{2,3})(\d{4})$/) || joined.match(/^(\d{3,4})([A-Z]{1,2}\d?)$/);
+    if (noDash) return `${noDash[1]}-${noDash[2]}`;
+  }
+  return '';
+}
+
+// ===== V3.1 建議分類（只帶入建議，仍需人工勾選確認） =====
+const LINE_V3_PRODUCT_RULES = [
+  { product: '雷達', re: /(雷達|盲點|A柱|燈盒|毫米波|亳米波)/i },
+  { product: '冷鏈', re: /(溫度|溫層|冷凍|冷藏|庫溫|探棒|感溫|溫度計|冷鏈|壓縮機)/ },
+  { product: '行車視野', re: /(鏡頭|螢幕|顯示器|畫面|黑屏|藍屏|DVR|SD卡|記憶卡|硬碟|錄影|倒車顯影|行車視野|行車紀錄|影像)/i },
+  { product: 'GPS', re: /(定位|GPS|軌跡|衛星|位置錯|車機|訊號)/i }
+];
+
+// 依序比對，第一個符合的就用；subcategory 必須是 V3.1 表裡「使用中」的名稱
+const LINE_V3_INTENT_RULES = [
+  // 帳務／文件
+  { re: /(發票|統編|抬頭)/, nature: '帳務/文件', subs: ['發票'] },
+  { re: /(匯款|轉帳|收款帳戶|匯這個帳號)/, nature: '帳務/文件', subs: ['匯款明細', '匯款資訊確認'] },
+  { re: /(請款|月租)/, nature: '帳務/文件', subs: ['請款'] },
+  { re: /(訂購|購買|要訂|備料|可以買)/, nature: '帳務/文件', subs: ['設備/零配件訂購'] },
+  { re: /(報價|估價|費用|價格|多少錢|價錢|付款|支票|付現)/, nature: '帳務/文件', subs: ['報價/費用確認'] },
+  // 資料／設定異動
+  { re: /(更改車號|車號修改|改車號|更改為)/, nature: '資料/設定異動', subs: ['車號修改'] },
+  { re: /(車群|點部|站所調整)/, nature: '資料/設定異動', subs: ['站所/車群調整'] },
+  { re: /(帳號|權限|帳密)/, nature: '查詢/協助', subs: ['登入網址/軟體提供', '操作協助'] },
+  // 安裝／維修作業
+  { re: /(拆機|拆除|拆下)/, nature: '安裝/維修作業', subs: ['拆機'] },
+  { re: /(移機|安裝在新車|裝到新車)/, nature: '安裝/維修作業', subs: ['移機', '新安裝'] },
+  { re: /(取消報修|取消維修)/, nature: '安裝/維修作業', subs: ['取消維修', '維修派工'] },
+  // 查詢進度
+  { re: /(有來維修嗎|什麼時候會來|何時會來|還沒來修|都還沒來|進度|今天來嗎|有後續|安排了嗎|還沒安排)/, nature: '查詢/協助', subs: ['維修進度查詢'] },
+  { re: /(是你們家安裝|是你們的嗎|有紀錄嗎|設備歸屬)/, nature: '查詢/協助', subs: ['設備歸屬查詢', '拆裝狀態查詢'] },
+  { re: /(保固)/, nature: '查詢/協助', subs: ['保固查詢', '維修進度查詢'] },
+  // 故障症狀（依產品）
+  { re: /(無法登入|不能登入|登入失敗|登不進)/, nature: '故障/異常', subs: ['平台無法登入', '平台無法連線'] },
+  { re: /(網頁.*跑不動|連不上|無法連線)/, nature: '故障/異常', subs: ['平台無法連線'] },
+  { re: /(推播)/, nature: '故障/異常', subs: ['GPS推播未收到', '冷鏈推播未收到'] },
+  { re: /(A柱)/, nature: '故障/異常', subs: ['雷達A柱偵測異常'] },
+  { re: /(右前|左前|右側|左側|右後|左後).*雷達|雷達.*(右|左)/, nature: '故障/異常', subs: ['雷達左右側偵測異常'] },
+  { re: /(燈盒)/, nature: '故障/異常', subs: ['雷達燈盒異常'] },
+  { re: /(沒有數據|無數據|無溫度|沒溫度|n\/a|偵測不到溫度)/i, nature: '故障/異常', subs: ['冷鏈無溫度/n/a'] },
+  { re: /(沒.{0,4}上傳|未上傳|未回傳|沒回傳)/, nature: '故障/異常', subs: ['溫度資料未回傳'] },
+  { re: /(同步)/, nature: '故障/異常', subs: ['冷鏈溫度資料不同步'] },
+  { re: /(溫度.{0,6}(異常|不對|錯))/, nature: '故障/異常', subs: ['冷鏈溫度值異常'] },
+  { re: /(黑屏|黑了|變黑)/, nature: '故障/異常', subs: ['行車影像黑屏'] },
+  { re: /(藍屏)/, nature: '故障/異常', subs: ['行車影像藍屏'] },
+  { re: /(無畫面|沒畫面|沒有畫面|畫面跳掉|顯示器故障|螢幕.{0,4}(故障|壞))/, nature: '故障/異常', subs: ['行車影像無畫面'] },
+  { re: /(模糊|不清|無法辨識)/, nature: '故障/異常', subs: ['行車鏡頭模糊'] },
+  { re: /(霧)/, nature: '故障/異常', subs: ['行車鏡頭霧化'] },
+  { re: /(鬆脫|脫落|角度)/, nature: '故障/異常', subs: ['行車鏡頭脫落/角度偏移'] },
+  { re: /(錄影|記憶卡|硬碟)/, nature: '故障/異常', subs: ['DVR記憶卡/硬碟異常', 'DVR無法錄影'] },
+  { re: /(定位.{0,4}(錯誤|偏)|位置錯)/, nature: '故障/異常', subs: ['GPS定位偏移'] },
+  { re: /(定位.{0,6}(異常|卡住|未更新|沒更新|停留)|沒更新|無更新|停留在|卡住)/, nature: '故障/異常', subs: ['GPS定位未更新'] },
+  { re: /(軌跡)/, nature: '故障/異常', subs: ['GPS軌跡缺漏'] },
+  { re: /(離線|沒訊號|無訊號)/, nature: '故障/異常', subs: ['GPS設備離線', 'GPS主機離線'] },
+  // 一般報修
+  { re: /(報修|維修|壞|故障|異常|不能用|無作用|事故)/, nature: '安裝/維修作業', subs: ['維修派工'] },
+  { re: /(新裝|安裝)/, nature: '安裝/維修作業', subs: ['新安裝'] }
+];
+
+function lineV3ActiveItems(project, product) {
+  if (typeof V3_CLASSIFICATIONS === 'undefined') return [];
+  return V3_CLASSIFICATIONS.filter(item => item.status === '使用中' && item.project === project && item.product === product);
+}
+
+function getLineCompanyDefaultProduct(company) {
+  if (!company) return '';
+  const list = typeof records !== 'undefined' && Array.isArray(records) ? records : [];
+  const counts = {};
+  list.forEach(record => {
+    if (record && record.company === company && record.new_product && record.new_product !== '產品待確認') {
+      counts[record.new_product] = (counts[record.new_product] || 0) + 1;
+    }
+  });
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return best ? best[0] : '';
+}
+
+function suggestLineV3Classification(text, company) {
+  const message = String(text || '');
+  if (!message || message.startsWith('{')) return null;
+
+  // 專案
+  let project = 'FMS';
+  if (/利澤/.test(company || '')) project = '利澤焚化爐';
+  if (/^(榮福|大園)$/.test(company || '')) return null; // 這兩個專案尚未設定 V3.1 分類
+
+  // 產品
+  let product = '';
+  let productReason = '';
+  if (project === '利澤焚化爐') {
+    product = 'AI輔助垃圾檢查系統';
+    productReason = '利澤專案';
+  } else {
+    const hit = LINE_V3_PRODUCT_RULES.find(rule => rule.re.test(message));
+    if (hit) {
+      product = hit.product;
+      productReason = `訊息提到「${message.match(hit.re)[0]}」`;
+    } else {
+      product = getLineCompanyDefaultProduct(company);
+      productReason = product ? `${company} 過去案件多為${product}` : '';
+    }
+  }
+  if (!product) product = '產品待確認';
+
+  // 案件類型＋次分類
+  const items = lineV3ActiveItems(project, product);
+  for (const rule of LINE_V3_INTENT_RULES) {
+    const matched = message.match(rule.re);
+    if (!matched) continue;
+    for (const sub of rule.subs) {
+      const item = items.find(entry => entry.nature === rule.nature && entry.subcategory === sub);
+      if (item) {
+        return {
+          project, product, nature: item.nature, category: item.category, subcategory: item.subcategory, code: item.code,
+          label: `${product}／${item.nature}／${item.subcategory}`,
+          reason: [productReason, `關鍵字「${matched[0]}」`].filter(Boolean).join('、')
+        };
+      }
+    }
+  }
+  // 只知道產品：帶到「問題資訊不足」讓使用者補
+  const fallback = items.find(entry => entry.nature === '其他/待確認');
+  if (fallback) {
+    return {
+      project, product, nature: fallback.nature, category: fallback.category, subcategory: fallback.subcategory, code: fallback.code,
+      label: `${product}／${fallback.nature}／${fallback.subcategory}`,
+      reason: [productReason, '沒有明確症狀關鍵字'].filter(Boolean).join('、')
+    };
+  }
+  return null;
+}
+
+function applyLineV3Suggestion(row, company) {
+  const suggestion = suggestLineV3Classification(row.raw_message || row.original_raw_message, company || row.mapped_company);
+  if (!suggestion) return null;
+  const setSelect = (id, value, after) => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if (![...el.options].some(option => option.value === value)) return false;
+    el.value = value;
+    if (typeof after === 'function') after();
+    return true;
+  };
+  try {
+    if (!setSelect('fProject', suggestion.project, typeof updateV3Project === 'function' ? updateV3Project : null)) return null;
+    if (!setSelect('fNewProduct', suggestion.product, typeof updateV2Categories === 'function' ? updateV2Categories : null)) return null;
+    if (!setSelect('fCaseNature', suggestion.nature, typeof updateV2Categories === 'function' ? updateV2Categories : null)) return null;
+    if (!setSelect('fNewCategory', suggestion.category, typeof updateV2Subcategories === 'function' ? updateV2Subcategories : null)) return null;
+    if (!setSelect('fNewSubcategory', suggestion.subcategory, typeof syncClassificationCode === 'function' ? syncClassificationCode : null)) return null;
+  } catch (error) {
+    console.warn('V3 suggestion apply failed:', error);
+    return null;
+  }
+  const hint = document.getElementById('fClassificationSuggestion');
+  if (hint) hint.textContent = `建議分類：${suggestion.label}（${suggestion.reason}）。這是依關鍵字推測，請確認後勾選「已人工確認 V3.1 分類」。`;
+  return suggestion;
 }
 
 function closeLineMessageDetail() {
