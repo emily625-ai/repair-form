@@ -119,7 +119,22 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
       </div>
       <p class="muted" style="font-size:13px;margin:10px 0 0">已選 <b id="prCount">0</b> 張，共 <b id="prPages">0</b> 頁（A4 直式，一頁兩張）。列印時選「A4、直向、縮放 100%」，並關閉頁首頁尾。盤點結存請手寫在第一行。</p>
     </div>
-    <div class="panel"><div class="printlist" id="prList"></div></div>
+    <div class="panel">
+      <h3 style="margin:0 0 6px;font-size:15px">加印其他品項</h3>
+      <p class="muted" style="font-size:13px;margin:0 0 10px">清單裡沒有的料，可以從 ERP 品號搜尋，或直接輸入品號、品名，加到這次列印。只會印卡，不會加入系統品項（要記錄進出請到「品項管理」新增）。</p>
+      <div class="row">
+        <label style="flex:2;min-width:240px">從 ERP 搜尋（打品號或品名）<input id="prSearch" list="prErpList" placeholder="例：側燈、106-1000"></label>
+        <datalist id="prErpList"></datalist>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label style="width:200px">品號<input id="prCode"></label>
+        <label style="flex:1;min-width:200px">品名<input id="prName"></label>
+        <label style="width:90px">單位<input id="prUnit" value="PCS"></label>
+        <button class="btn" type="button" id="prAdd">加入列印</button>
+      </div>
+      <div id="prAddMsg"></div>
+    </div>
+    <div class="panel"><div class="printlist" id="prList"></div><div class="printlist" id="prExtra" style="margin-top:6px;columns:1"></div></div>
   </section>
 
   <section id="t-erp" class="hide">
@@ -504,6 +519,7 @@ function openTab(t){
   $('#app').classList.toggle('hide', t !== 'log');
   ['print','erp','items'].forEach(k => $('#t-' + k).classList.toggle('hide', t !== k));
   if(t === 'erp' && !erpLoaded){ erpLoaded = true; loadErp(); }
+  if(t === 'print') loadPrErp();
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => openTab(b.dataset.t));
 
@@ -518,10 +534,41 @@ function buildPrintList(list){
   $('#prList').innerHTML = html;
   $('#prList').onchange = prUpd; prUpd();
 }
-const prSel = () => [...$('#prList').querySelectorAll('input:checked')].map(i => i.value);
+const prSel = () => [...$('#prList').querySelectorAll('input:checked'), ...$('#prExtra').querySelectorAll('input:checked')].map(i => i.value);
+// 加印其他品項（只列印，不存進系統）
+const extra = {};
+let prErpLoaded = false;
+async function loadPrErp(){
+  if(prErpLoaded) return; prErpLoaded = true;
+  if(!erp.length) await loadErp();
+  $('#prErpList').innerHTML = erp.map(r => `<option value="${esc(r.code)}｜${esc(r.name)}">`).join('');
+}
+$('#prSearch').oninput = () => {
+  const code = $('#prSearch').value.split('｜')[0].trim();
+  const r = erp.find(x => x.code === code);
+  if(r){ $('#prCode').value = r.code; $('#prName').value = r.name; $('#prUnit').value = r.unit || 'PCS'; }
+};
+function renderExtra(){
+  const list = Object.values(extra);
+  $('#prExtra').innerHTML = list.length ? `<div style="font-weight:700;color:var(--dark);margin:8px 0 2px">其他品項（只列印）</div>` +
+    list.map(r => `<label><input type="checkbox" value="${esc(r.code)}" checked> <span>${esc(r.name)} <span class="code">${esc(r.code)}</span></span>
+      <button type="button" class="btn sec" style="padding:0 8px;font-size:12px" onclick="rmExtra('${esc(r.code)}')">移除</button></label>`).join('') : '';
+  prUpd();
+}
+window.rmExtra = code => { delete extra[code]; renderExtra(); };
+$('#prAdd').onclick = () => {
+  const code = $('#prCode').value.trim(), name = $('#prName').value.trim(), unit = $('#prUnit').value.trim();
+  if(!code || !name){ $('#prAddMsg').innerHTML = '<div class="msg err">請填品號和品名</div>'; return; }
+  if(items[code]?.active){ $('#prAddMsg').innerHTML = '<div class="msg err">這個品項已經在上面的清單裡，直接勾選就好</div>'; return; }
+  extra[code] = {code, name, unit, safety_qty:null};
+  $('#prAddMsg').innerHTML = `<div class="msg ok">已加入列印：${esc(name)}</div>`;
+  $('#prSearch').value = ''; $('#prCode').value = ''; $('#prName').value = ''; $('#prUnit').value = 'PCS';
+  renderExtra();
+};
 function prUpd(){ const n = prSel().length; $('#prCount').textContent = n; $('#prPages').textContent = Math.ceil(n / 2); }
-$('#prAll').onclick = () => { $('#prList').querySelectorAll('input').forEach(i => i.checked = true); prUpd(); };
-$('#prNone').onclick = () => { $('#prList').querySelectorAll('input').forEach(i => i.checked = false); prUpd(); };
+$('#prAll').onclick = () => { document.querySelectorAll('#prList input,#prExtra input').forEach(i => i.checked = true); prUpd(); };
+$('#prNone').onclick = () => { document.querySelectorAll('#prList input,#prExtra input').forEach(i => i.checked = false); prUpd(); };
+$('#prExtra').onchange = prUpd;
 $('#prGo').onclick = () => {
   const codes = prSel(); if(!codes.length) return alert('請先勾選品項');
   const date = $('#prDate').value ? $('#prDate').value.replaceAll('-', '/') : '';
@@ -538,7 +585,8 @@ $('#prGo').onclick = () => {
   };
   let html = '';
   for(let i = 0; i < codes.length; i += 2){
-    html += '<div class="sheet">' + card(items[codes[i]]) + (codes[i+1] ? card(items[codes[i+1]]) : '<div style="flex:1"></div>') + '</div>';
+    const pick = c => items[c]?.active ? items[c] : (extra[c] || items[c]);
+    html += '<div class="sheet">' + card(pick(codes[i])) + (codes[i+1] ? card(pick(codes[i+1])) : '<div style="flex:1"></div>') + '</div>';
   }
   $('#printArea').innerHTML = html;
   setTimeout(() => window.print(), 100);
