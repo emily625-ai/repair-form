@@ -198,6 +198,7 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
           <label style="width:110px">數量<input type="number" id="mvQty" min="1" step="1" required inputmode="numeric"></label>
         </div>
         <div class="row" style="margin-top:10px">
+          <label style="width:240px">料號搜尋<input id="mvFind" placeholder="打料號或品名，例：C03、20M" autocomplete="off"></label>
           <label style="flex:1;min-width:260px">品項<select id="mvItem" required></select></label>
         </div>
         <div class="row" style="margin-top:10px">
@@ -272,17 +273,24 @@ async function loadItems(){
   items = {};
   const act = allItems.filter(r => r.active);
   for(const r of allItems) items[r.code] = r;
+  buildItemSelect();
+  buildPrintList(act);
+  $('#catList').innerHTML = [...new Set(allItems.map(r => r.category).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
+  renderItems(); renderLow(); updPreview();
+}
+// 依料號搜尋篩選品項下拉
+function buildItemSelect(){
   const keep = $('#mvItem').value;
-  let html = '<option value="">— 選擇品項 —</option>', cat = null;
+  const k = ($('#mvFind').value || '').trim().toLowerCase();
+  const act = allItems.filter(r => r.active && (!k || (r.code + ' ' + r.name).toLowerCase().includes(k)));
+  let html = `<option value="">${k ? (act.length ? `— 找到 ${act.length} 項，請選擇 —` : '— 找不到符合的品項 —') : '— 選擇品項 —'}</option>`, cat = null;
   for(const r of act){
     if(r.category !== cat){ if(cat !== null) html += '</optgroup>'; html += `<optgroup label="${esc(r.category)}">`; cat = r.category; }
     html += `<option value="${esc(r.code)}">${esc(r.name)}（${esc(r.code)}）</option>`;
   }
-  $('#mvItem').innerHTML = html + '</optgroup>';
-  if(keep) $('#mvItem').value = keep;
-  buildPrintList(act);
-  $('#catList').innerHTML = [...new Set(allItems.map(r => r.category).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
-  renderItems(); renderLow(); updPreview();
+  $('#mvItem').innerHTML = html + (cat !== null ? '</optgroup>' : '');
+  if(act.length === 1 && k) $('#mvItem').value = act[0].code;
+  else if(keep && act.some(r => r.code === keep)) $('#mvItem').value = keep;
 }
 const fmtQ = v => v == null ? '' : num(v);
 const isLow = r => r.balance != null && (r.balance < 0 || (r.safety_qty != null && +r.balance <= +r.safety_qty));
@@ -453,6 +461,7 @@ $('#mvDir').onclick = e => {
   updPreview();
 };
 $('#mvItem').onchange = updPreview; $('#mvQty').oninput = updPreview;
+$('#mvFind').oninput = () => { buildItemSelect(); updPreview(); };
 
 $('#mvForm').onsubmit = async e => {
   e.preventDefault();
