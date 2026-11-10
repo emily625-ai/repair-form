@@ -1,0 +1,647 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【預覽】客服案件管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/themes/dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/zh-tw.js"></script>
+<style>
+:root{--bg:#1d2331;--surface:#283043;--surface2:#34405a;--border:#465473;--accent:#7da2ff;--accent2:#98b4ff;--green:#34d399;--yellow:#fbbf24;--red:#f87171;--orange:#fb923c;--purple:#b194ff;--text:#f7f9fd;--text2:#d5deed;--text3:#a5b1c9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:linear-gradient(180deg,#202738 0%,#1a2030 100%);color:var(--text);min-height:100vh;line-height:1.6;}
+body.auth-locked .app{display:none;}
+.auth-gate{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top left,rgba(125,162,255,.18),transparent 34%),linear-gradient(180deg,#202738 0%,#1a2030 100%);}
+body.auth-locked .auth-gate{display:flex;}
+.auth-card{width:min(430px,100%);background:rgba(40,48,67,.98);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.34);}
+.auth-title{font-size:24px;font-weight:800;color:var(--accent);margin-bottom:6px;}
+.auth-sub{font-size:14px;color:var(--text3);margin-bottom:20px;line-height:1.7;}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-message{display:none;padding:10px 12px;border-radius:10px;font-size:14px;border:1px solid var(--border);background:#1b2230;color:var(--text2);}
+.auth-message[data-type="error"]{border-color:rgba(248,113,113,.45);color:#fecaca;background:rgba(248,113,113,.1);}
+.auth-message[data-type="info"]{border-color:rgba(125,162,255,.35);color:var(--text2);background:rgba(125,162,255,.1);}
+.auth-user{font-size:12px;color:var(--text3);white-space:nowrap;}
+.app{display:flex;flex-direction:column;height:100vh;}
+.topbar{background:rgba(40,48,67,.97);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:14px;height:66px;flex-shrink:0;}
+.topbar-logo{font-size:20px;font-weight:700;color:var(--accent);letter-spacing:1px;white-space:nowrap;}
+.topbar-tabs{display:flex;gap:2px;margin-left:auto;}
+.tab-btn{padding:9px 18px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-size:15px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;font-weight:600;}
+.tab-btn.active{background:var(--accent);color:#fff;}
+.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
+.view{display:none;flex:1;min-height:0;min-width:0;overflow:hidden;}
+.view.active{display:flex;flex-direction:column;}
+.toolbar{padding:8px 14px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
+.toolbar-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.toolbar-row.meta-row{justify-content:space-between;}
+.toolbar-row.action-row{align-items:flex-start;}
+.toolbar-primary-filters{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1 1 100%;min-width:0;}
+.toolbar-primary-filters select{flex:0 1 112px;min-width:112px;}
+.toolbar-secondary-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;}
+.toolbar-secondary-group .btn,
+.toolbar-secondary-group .overdue-toggle,
+.toolbar-secondary-group select{font-size:14px;}
+.toolbar-secondary-group .btn{padding:7px 11px;}
+.toolbar-secondary-group .overdue-toggle{padding:7px 11px;}
+.toolbar-secondary-group #perPageSelect{width:92px;}
+.filter-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.action-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.toolbar-spacer{flex:1 1 auto;}
+.search-box{flex:0 0 220px;min-width:220px;max-width:220px;position:relative;}
+.search-box input{width:100%;background:#1b2230;border:1px solid var(--border);color:var(--text);padding:8px 12px 8px 34px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s, box-shadow .2s;}
+.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,162,255,.16);}
+.si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
+select,input[type=date],input[type=datetime-local]{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:8px 9px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;cursor:pointer;}
+select:focus,input[type=date]:focus,input[type=datetime-local]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,162,255,.16);}
+.fl{font-size:12px;color:var(--text3);white-space:nowrap;}
+.overdue-toggle{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text2);font-size:14px;font-family:inherit;cursor:pointer;transition:all .2s;}
+.overdue-toggle.active{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.1);}
+.btn{padding:8px 12px;border-radius:10px;border:none;font-size:14px;font-family:inherit;cursor:pointer;font-weight:700;transition:all .2s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-green{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:var(--green);}
+.btn-green:hover{background:rgba(52,211,153,.25);}
+.btn-sm{padding:7px 10px;font-size:14px;}
+.table-container{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:16px;}
+.records-table{min-width:1540px;}
+thead{position:sticky;top:0;z-index:10;}
+th{background:#3a4764;color:#e4ebf7;font-weight:700;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:14px;letter-spacing:.2px;}
+td{padding:6px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:15px;line-height:1.2;}
+.records-table th{font-size:14px;padding:10px 12px;}
+.records-table td{padding:7px 16px;font-size:15px;}
+.records-table th.col-id,
+.records-table th.col-channel,
+.records-table th.col-company,
+.records-table th.col-plate,
+.records-table th.col-category,
+.records-table td.col-id,
+.records-table td.col-date,
+.records-table td.col-channel,
+.records-table td.col-company,
+.records-table td.col-plate,
+.records-table td.col-category{white-space:nowrap;}
+.records-table th.col-subcategory{min-width:220px;width:220px;}
+.records-table td.col-subcategory{white-space:normal;}
+.records-table .subcategory-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.12;max-width:220px;}
+.records-table th.col-duration,
+.records-table td.col-duration{white-space:nowrap;min-width:112px;width:112px;}
+tr:hover td{background:rgba(62,74,102,.32);}
+.mono{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text2);font-weight:600;}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:15px;font-weight:700;white-space:nowrap;line-height:1;}
+.badge-結案{background:rgba(52,211,153,.15);color:var(--green);}
+.badge-轉派技師{background:rgba(251,191,36,.12);color:var(--yellow);}
+.badge-轉派工程師{background:rgba(167,139,250,.12);color:var(--purple);}
+.badge-客服處理中{background:rgba(91,140,255,.15);color:var(--accent);}
+.badge-待派工{background:rgba(251,191,36,.15);color:#fbbf24;}
+.badge-待客戶確認{background:rgba(56,189,248,.14);color:#7dd3fc;}
+.badge-待客戶寄回{background:rgba(248,113,113,.12);color:var(--red);}
+.badge-保固內{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.3);}
+.badge-保固外{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);}
+.overdue-row td{background:rgba(251,146,60,.04)!important;}
+.overdue-row td:first-child{border-left:3px solid var(--orange);}
+.row-actions{display:flex;gap:6px;}
+.pagination{padding:8px 14px;display:flex;gap:6px;align-items:center;background:rgba(40,48,67,.95);border-top:1px solid var(--border);}
+.pi{font-size:13px;color:var(--text3);margin-right:auto;}
+.page-btn{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;}
+.page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.page-btn:disabled{opacity:.3;cursor:not-allowed;}
+.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:92%;max-width:760px;max-height:92vh;overflow-y:auto;}
+.mh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1;}
+.mt{font-size:22px;font-weight:700;}
+.mc{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;}
+.mc:hover{background:var(--surface2);}
+.mb{padding:18px 20px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.fgr{display:flex;flex-direction:column;gap:4px;}
+.fgr[hidden]{display:none;}
+.fgr.full{grid-column:1/-1;}
+.flb{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.fi{background:#1b2230;border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:16px;font-family:inherit;outline:none;transition:border-color .2s;width:100%;}
+.fi:focus{border-color:var(--accent);}
+textarea.fi{resize:vertical;min-height:68px;}
+.mf{padding:13px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.detail-meta{font-size:15px;color:var(--text3);margin-top:4px;line-height:1.6;}
+.di{background:var(--bg);padding:12px 14px;border-radius:8px;}
+.dl{font-size:15px;color:var(--text3);margin-bottom:6px;font-weight:600;}
+.dv{font-size:16px;color:var(--text);font-weight:600;line-height:1.7;}
+.dst{font-size:17px;letter-spacing:.2px;color:var(--text3);margin-bottom:10px;margin-top:16px;font-weight:700;}
+.dd{background:#1b2230;padding:16px;border-radius:10px;font-size:16px;line-height:1.9;color:var(--text2);white-space:pre-wrap;}
+.pt{background:rgba(91,140,255,.1);border:1px solid rgba(91,140,255,.22);padding:9px 13px;border-radius:8px;display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.ptv{font-size:18px;font-weight:700;color:var(--accent);}
+.ptl{font-size:15px;color:var(--text3);line-height:1.6;}
+.analytics-toolbar{padding:13px 22px;background:rgba(40,48,67,.95);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;flex-shrink:0;}
+.at-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.at-right{display:flex;gap:8px;}
+.analytics{flex:1;overflow-y:auto;padding:20px;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px;}
+.sc{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.slb{font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.sv{font-size:32px;font-weight:700;line-height:1;}
+.ss{font-size:13px;color:var(--text3);margin-top:5px;}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.cc{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.cc.wide{grid-column:1/-1;}
+.ct{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text2);}
+.bc{display:flex;flex-direction:column;gap:8px;}
+.br{display:flex;align-items:center;gap:7px;}
+.bla{font-size:13px;color:var(--text2);width:125px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bt{flex:1;height:19px;background:var(--bg);border-radius:4px;overflow:hidden;}
+.bf{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:13px;font-weight:700;color:rgba(255,255,255,.95);}
+.dw{display:flex;gap:18px;align-items:center;}
+.leg{display:flex;flex-direction:column;gap:6px;flex:1;}
+.li{display:flex;align-items:center;gap:6px;font-size:13px;}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.occ{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.rpt-section-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:8px;padding-left:2px;}
+.occ td{padding:9px 12px;border-bottom:1px solid var(--border);}
+.occ tr:last-child td{border-bottom:none;}
+.occ tr:hover td{background:rgba(34,38,58,.5);}
+.och{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text2);}
+.ocr{display:flex;align-items:center;gap:9px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;}
+.ocr:last-child{border-bottom:none;}
+.oci{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);width:120px;flex-shrink:0;}
+.highlight{background:rgba(91,140,255,.3);border-radius:2px;}
+.es{padding:50px;text-align:center;color:var(--text3);font-size:15px;}
+.todo-chip{background:rgba(255,255,255,.1);border-radius:8px;padding:7px 13px;font-size:14px;}
+.filter-summary{font-size:16px !important;color:var(--accent2) !important;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
+.import-summary{padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;display:flex;gap:16px;}
+.import-preview-table{width:100%;border-collapse:collapse;font-size:11px;}
+.import-preview-table thead tr{background:var(--surface2);}
+.import-preview-table th{padding:7px 10px;text-align:left;color:var(--text3);}
+.import-preview-table td{padding:7px 10px;}
+.import-row-duplicate{background:rgba(100,116,139,.08);}
+.import-row-even{background:var(--surface);}
+.import-row-odd{background:var(--surface2);}
+.import-status-duplicate{color:var(--text3);font-size:10px;}
+.import-status-new{color:var(--green);font-size:10px;}
+.import-code{font-family:monospace;font-size:10px;}
+.import-muted{color:var(--text2);}
+.import-company{font-weight:500;}
+.line-import-shell{flex:1;min-height:0;overflow:auto;padding:18px 22px;background:linear-gradient(180deg,rgba(40,48,67,.74),rgba(29,35,49,.96));}
+.line-import-grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:14px;align-items:start;}
+.line-panel{background:rgba(40,48,67,.97);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.line-panel-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+.line-panel-title{font-size:15px;font-weight:800;color:var(--text);}
+.line-panel-sub{font-size:12px;color:var(--text3);margin-top:3px;}
+.line-panel-body{padding:14px 16px;}
+.line-import-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.line-state-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.line-state-card{background:rgba(27,34,48,.86);border:1px solid var(--border);border-radius:12px;padding:13px 14px;}
+.line-state-label{font-size:12px;color:var(--text3);}
+.line-state-value{font-size:24px;font-weight:800;line-height:1.2;margin-top:3px;}
+.line-preview-table{min-width:920px;}
+.line-message-preview{max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.line-warning{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;}
+.line-warning-none{color:var(--text3);background:rgba(165,177,201,.09);}
+.line-warning-duplicate{color:var(--yellow);background:rgba(251,191,36,.13);border:1px solid rgba(251,191,36,.25);}
+.line-warning-hash{color:var(--orange);background:rgba(251,146,60,.13);border:1px solid rgba(251,146,60,.25);}
+.line-status-pending{background:rgba(125,162,255,.15);color:var(--accent2);}
+.line-status-classified{background:rgba(177,148,255,.14);color:var(--purple);}
+.line-status-linked{background:rgba(52,211,153,.14);color:var(--green);}
+.line-status-archived{background:rgba(165,177,201,.14);color:var(--text3);}
+.line-status-error{background:rgba(248,113,113,.14);color:var(--red);}
+.line-alert{border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.1);color:#fed7aa;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:none;}
+.line-alert.show{display:block;}
+.line-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.line-detail-message{background:#1b2230;border:1px solid var(--border);border-radius:10px;padding:13px;white-space:pre-wrap;color:var(--text2);font-size:14px;line-height:1.7;}
+
+
+
+
+
+
+
+
+
+
+/* Light theme limited to the analytics view. */
+#view-analytics{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--border:#cbd5e1;--accent:#2457c5;--accent2:#19449e;--green:#047857;--yellow:#854d0e;--red:#b91c1c;--orange:#9a3412;--purple:#6d28d9;--text:#172033;--text2:#334155;--text3:#526174;background:var(--bg);color:var(--text);color-scheme:light;}
+#view-analytics .analytics{background:var(--bg);}
+#view-analytics .analytics-toolbar,#view-analytics .sc,#view-analytics .cc,#view-analytics .occ{background:var(--surface);}
+#view-analytics .occ tbody td{background:var(--surface);color:var(--text);}
+#view-analytics input,#view-analytics select{background:var(--surface);color:var(--text);}
+#view-analytics th{background:var(--surface2);color:var(--text2);}
+#view-analytics tr:hover td{background:#eef4ff;}
+#view-analytics .badge-待派工{color:var(--yellow);}
+#view-analytics .badge-待客戶確認{color:#075985;}
+#view-analytics .bf{color:#172033;}
+</style>
+</head>
+<body class="auth-locked">
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-title">客服案件管理系統</div>
+    <div class="auth-sub">請使用 Supabase Auth 帳號登入。此版本不執行 RLS migration，完整資料權限仍需後續搭配 Supabase RLS 收斂。</div>
+    <form class="auth-form" id="authForm">
+      <div class="fgr">
+        <div class="flb">Email</div>
+        <input type="email" id="authEmail" class="fi" autocomplete="username" placeholder="name@example.com">
+      </div>
+      <div class="fgr">
+        <div class="flb">密碼</div>
+        <input type="password" id="authPassword" class="fi" autocomplete="current-password" placeholder="請輸入密碼">
+      </div>
+      <div class="auth-message" id="authMessage"></div>
+      <button class="btn btn-primary" id="authLoginBtn" type="submit">登入系統</button>
+    </form>
+  </div>
+</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-logo">⚡ 售服案件系統</div>
+    <div style="font-size:12px;color:var(--text3)">共 <span id="totalCount">0</span> 筆<span id="caseLimitNotice" style="display:none;color:var(--orange);margin-left:6px" title="系統一次最多載入 1000 筆最新案件，較舊案件與部分統計可能未納入。">⚠ 已達載入上限</span></div>
+    <div class="topbar-tabs">
+      <button class="tab-btn active" onclick="switchView('records',this)">📋 案件列表</button>
+      <button class="tab-btn" onclick="switchView('analytics',this)">📊 分析報表</button>
+      <button class="tab-btn" onclick="switchView('line-import',this)">💬 LINE 匯入</button>
+    </div>
+    <div class="auth-user" id="authUserLabel"></div>
+    <button class="btn btn-outline btn-sm" onclick="logout()">登出</button>
+  </div>
+
+  <div id="dailyTodo" style="display:none;background:linear-gradient(135deg,#1e2235,#22263a);border-bottom:1px solid var(--border);padding:10px 20px">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="todoItems"></div>
+</div>
+<div class="view active" id="view-records">
+    <div class="toolbar">
+      <div class="toolbar-row">
+        <div class="toolbar-primary-filters">
+          <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
+          <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
+          <label>專案 <select id="filterProject" onchange="applyFilters()"><option value="">全部</option><option>FMS</option><option value="__unset__">未填專案</option></select></label>
+          <label>案件類型 <select id="filterNature" onchange="applyFilters()"></select></label>
+<label>追蹤類型 <select id="filterTracking" onchange="applyFilters()"></select></label>
+<select id="filterCategory" onchange="applyFilters()"><option value="">所有類別</option><option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option><option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option></select>
+          <select id="filterWarranty" onchange="applyFilters()"><option value="">保固狀態</option><option>保固內</option><option>保固外</option></select>
+          <select id="filterHandler" onchange="applyFilters()"><option value="">所有處理人</option></select>
+          <select id="filterChannel" onchange="applyFilters()"><option value="">所有管道</option><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select>
+          <select id="perPageSelect" onchange="changePerPage()">
+            <option value="25">25筆/頁</option>
+            <option value="50" selected>50筆/頁</option>
+            <option value="100">100筆/頁</option>
+            <option value="9999">全部</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearFilters()">清除</button>
+          <button class="btn btn-green btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+        </div>
+      </div>
+      <div class="toolbar-row meta-row">
+        <div class="toolbar-secondary-group">
+          <span class="fl">進線日期時間：</span>
+          <input type="date" id="filterDateFrom" onchange="applyFilters()">
+          <span class="fl">～</span>
+          <input type="date" id="filterDateTo" onchange="applyFilters()">
+          <span id="filterResultInfo" class="filter-summary"></span>
+        </div>
+        <div class="action-group">
+          <button class="btn btn-outline btn-sm" onclick="openQuickForm()">⚡ 快速新增</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewForm()">＋ 新增案件</button>
+        </div>
+      </div>
+    </div>
+    <div id="batchBar" style="display:none;background:var(--accent);padding:8px 16px;border-radius:8px;margin-bottom:8px;display:none;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="batchCount" style="color:#fff;font-size:14px;font-weight:600"></span>
+      <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff">
+        <option value="">選擇新狀態…</option>
+        <option value="客服處理中">客服處理中</option>
+              <option value="待派工">待派工</option>
+        <option value="待客戶確認">待客戶確認</option>
+        <option value="轉派技師">轉派技師</option>
+        <option value="轉派工程師">轉派工程師</option>
+        <option value="待客戶寄回">待客戶寄回</option>
+        <option value="結案">結案</option>
+      </select>
+      <select id="batchHandler" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff"><option value="">選擇負責人…</option></select>
+      <button class="btn btn-sm" style="background:#fff;color:var(--accent);font-weight:600" onclick="applyBatch()">✅ 套用</button>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="clearSelection()">取消</button>
+    </div>
+<div class="table-container">
+      <table class="records-table">
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" style="cursor:pointer"></th>
+          <th class="col-id">編號</th><th>進線日期時間</th><th class="col-channel">管道</th><th class="col-company">公司名稱</th><th class="col-plate">車牌</th>
+          <th class="col-category">問題大類</th><th class="col-subcategory">問題次分類</th><th>處理狀態</th><th>負責人員</th><th class="col-duration">處理時間</th><th>發票</th><th>操作</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="es" style="display:none">沒有符合條件的記錄</div>
+    </div>
+    <div class="pagination">
+      <div class="pi" id="pageInfo"></div>
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← 上頁</button>
+      <div id="pageNums" style="display:flex;gap:3px"></div>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)">下頁 →</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-analytics">
+    <div class="analytics-toolbar">
+      <div class="at-left">
+        <span class="fl">報表期間：</span>
+        <input type="date" id="rptFrom" onchange="renderAnalytics()">
+        <span class="fl">～</span>
+        <input type="date" id="rptTo" onchange="renderAnalytics()">
+        <button class="btn btn-outline btn-sm" onclick="setThisWeek()">本週</button>
+        <button class="btn btn-outline btn-sm" onclick="setLastWeek()">上週</button>
+        <button class="btn btn-outline btn-sm" onclick="setThisMonth()">本月</button>
+        <button class="btn btn-outline btn-sm" onclick="setLastMonth()">上月</button>
+        <button class="btn btn-outline btn-sm" onclick="clearRptRange()">全部</button>
+      </div>
+      <div class="at-right">
+        <button class="btn btn-green btn-sm" onclick="exportWeeklyReport()">⬇ 下載週報</button>
+        <button class="btn btn-primary btn-sm" onclick="exportMonthlyReport()">⬇ 下載月報</button>
+      </div>
+    </div>
+    <div class="analytics" id="analyticsContent"></div>
+  </div>
+
+  <!-- ACTIVITY LOG VIEW -->
+  <div class="view" id="view-actlog">
+    <div class="toolbar" style="justify-content:space-between">
+      <div style="font-size:14px;color:var(--text2)">最近 200 筆操作記錄</div>
+      <button class="btn btn-outline btn-sm" onclick="loadActivityLog()">🔄 重新整理</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr>
+          <th>時間</th><th>操作</th><th>案件編號</th><th>操作人員</th><th>說明</th>
+        </tr></thead>
+        <tbody id="actlogBody"></tbody>
+      </table>
+      <div id="actlogEmpty" class="es" style="display:none">尚無操作記錄</div>
+    </div>
+  </div>
+
+  <!-- LINE IMPORT VIEW -->
+  <div class="view" id="view-line-import">
+    <div class="line-import-shell">
+      <div class="line-state-row">
+        <div class="line-state-card"><div class="line-state-label">待分類</div><div class="line-state-value" id="linePendingCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">建議建案</div><div class="line-state-value" id="lineSuggestCaseCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">待歸戶</div><div class="line-state-value" id="lineUnmappedCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">重複警示</div><div class="line-state-value" id="lineDuplicateCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">錯誤</div><div class="line-state-value" id="lineErrorCount">0</div></div>
+      </div>
+
+      <div class="line-alert" id="lineImportAlert"></div>
+
+      <div class="line-import-grid">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title">狀態說明</div>
+              <div class="line-panel-sub">各狀態代表訊息目前所在的處理階段</div>
+            </div>
+            <div class="line-panel-body" style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="badge line-status-pending">待分類</span>
+              <span class="badge line-status-classified">已分類</span>
+              <span class="badge line-status-linked">已連結</span>
+              <span class="badge line-status-archived">已封存</span>
+              <span class="badge line-status-error">需處理</span>
+            </div>
+          </section>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <section class="line-panel">
+            <div class="line-panel-head">
+              <div class="line-panel-title"><span id="linePendingListTitle">待分類</span>訊息列表</div>
+              <div class="line-panel-sub">Webhook 收進來的 LINE 訊息</div>
+              <div class="line-import-actions">
+                <select id="lineStatusFilter" onchange="refreshLineImportPendingRows()" style="width:auto">
+                  <option value="pending">待分類</option>
+                  <option value="error">需處理</option>
+                  <option value="linked">已連結</option>
+                  <option value="archived">已封存</option>
+                  <option value="all">全部</option>
+                </select>
+                <select id="lineSuggestFilter" onchange="renderLinePendingMessages()" style="width:auto">
+                  <option value="all">全部建議</option>
+                  <option value="case">建議建案</option>
+                  <option value="review">待看</option>
+                  <option value="archive">建議封存</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="refreshLineImportPendingRows()">重新整理 LINE 訊息</button>
+                <button class="btn btn-outline btn-sm" onclick="archiveSuggestedLineMessages()">封存全部「建議封存」</button>
+              </div>
+            </div>
+            <div class="table-container" style="max-height:360px">
+              <table class="line-preview-table">
+                <thead><tr>
+                  <th>發話者</th><th>公司</th><th>訊息摘要</th><th>建議</th><th>進線時間</th><th>狀態</th><th>重複警示</th><th>操作</th>
+                </tr></thead>
+                <tbody id="linePendingBody"></tbody>
+              </table>
+              <div id="linePendingEmpty" class="es" style="display:none">目前沒有待分類訊息</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .app: keep all switchable views inside the viewport shell -->
+
+<!-- LINE Message Detail Modal -->
+<div class="modal-overlay" id="lineDetailModal">
+  <div class="modal" style="max-width:720px">
+    <div class="mh">
+      <div><div class="mt" id="lineDetailTitle">LINE 訊息明細</div><div class="detail-meta" id="lineDetailMeta"></div></div>
+      <button class="mc" onclick="closeLineMessageDetail()">✕</button>
+    </div>
+    <div class="mb" id="lineDetailBody"></div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeLineMessageDetail()">關閉</button>
+      <button class="btn btn-outline" onclick="updateLinePendingStatus(window._currentLineDetailId,'archived')">封存</button>
+      <button class="btn btn-outline" onclick="createChildCaseFromLineMessage(window._currentLineDetailId)">建立子案</button>
+      <button class="btn btn-primary" onclick="createCaseFromLineMessage(window._currentLineDetailId)">建立案件</button>
+    </div>
+  </div>
+</div>
+
+<!-- Status Menu -->
+<div id="statusMenu" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;min-width:130px;overflow:hidden">
+  <div style="padding:6px 0">
+    <div class="smItem" onclick="setStatus('客服處理中')"><span class="badge badge-客服處理中">客服處理中</span></div>
+    <div class="smItem" onclick="setStatus('待派工')"><span class="badge badge-待派工">待派工</span></div>
+    <div class="smItem" onclick="setStatus('待客戶確認')"><span class="badge badge-待客戶確認">待客戶確認</span></div>
+    <div class="smItem" onclick="setStatus('轉派技師')"><span class="badge badge-轉派技師">轉派技師</span></div>
+    <div class="smItem" onclick="setStatus('轉派工程師')"><span class="badge badge-轉派工程師">轉派工程師</span></div>
+    <div class="smItem" onclick="setStatus('待客戶寄回')"><span class="badge badge-待客戶寄回">待客戶寄回</span></div>
+    <div class="smItem" onclick="setStatus('結案')"><span class="badge badge-結案">結案</span></div>
+  </div>
+</div>
+
+<!-- Import Preview Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal" style="max-width:800px">
+    <div class="mh">
+      <div><div class="mt">📥 匯入 Excel 預覽</div><div style="font-size:12px;color:var(--text3);margin-top:2px" id="importMeta"></div></div>
+      <button class="mc" onclick="closeImport()">✕</button>
+    </div>
+    <div class="mb" style="padding:0">
+      <div id="importPreview" style="overflow:auto;max-height:400px"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeImport()">取消</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()">✅ 確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Company History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal" style="max-width:700px">
+    <div class="mh">
+      <div><div class="mt" id="historyTitle">客戶歷史案件</div><div style="font-size:12px;color:var(--text3);margin-top:2px" id="historyMeta"></div></div>
+      <button class="mc" onclick="closeHistory()">✕</button>
+    </div>
+    <div class="mb" id="historyBody" style="padding:0"></div>
+  </div>
+</div>
+
+<!-- Quick Form Modal -->
+<div class="modal-overlay" id="quickModal">
+  <div class="modal" style="max-width:520px">
+    <div class="mh">
+      <div><div class="mt">⚡ 快速新增</div><div style="font-size:12px;color:var(--text3);margin-top:2px">貼上 LINE 訊息，系統自動解析欄位</div></div>
+      <button class="mc" onclick="closeQuickForm()">✕</button>
+    </div>
+    <div class="mb" style="padding:16px">
+      <div style="margin-bottom:12px">
+        <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">貼上 LINE 訊息內容</label>
+        <textarea id="quickText" style="width:100%;height:140px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;resize:vertical;font-family:inherit" placeholder="例如：
+桃園所
+599-XM
+倒車顯影沒畫面
+聯絡人：方韋榮
+電話：0975041573"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="parseQuickText()">🔍 自動解析</button>
+      <div id="quickResult" style="display:none;background:var(--surface2);border-radius:8px;padding:12px;font-size:13px">
+        <div style="font-weight:600;color:var(--text2);margin-bottom:8px">解析結果（可在下一步修改）：</div>
+        <div id="quickResultContent"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="applyQuickResult()">✅ 套用並開啟表單</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="formTitle">新增案件</div><button class="mc" onclick="closeForm()">✕</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fgr"><div class="flb">進線日期時間 *</div><input type="datetime-local" id="fDate" class="fi" step="1"></div>
+        <div class="fgr"><div class="flb">進線管道</div>
+          <select id="fChannel" class="fi"><option>官方LINE</option><option>MAIL</option><option>surveycake</option><option>電話</option><option>表單</option><option>其他</option></select></div>
+        <div class="fgr"><div class="flb">公司名稱 *</div>
+          <select id="fCompany" class="fi">
+            <option value="">-- 選擇客戶 --</option>
+            <option>ISUZU</option><option>一之軒</option><option>三井</option><option>亞洲物流</option><option>全日</option><option>八方</option>
+            <option>凱擘</option><option>勝泰運輸</option><option>又成(宏祥利)</option><option>嘉一香</option><option>大榮</option>
+            <option>新瑞宅配</option><option>新竹物流</option><option>春源鋼鐵</option><option>杏泰食品</option><option>東亞</option>
+            <option>柏霖營造</option><option>桂冠</option><option>樂清</option><option>福誼</option><option>莊頭交通</option>
+            <option>野村</option><option>金村</option><option>隆豪</option><option>順豐</option><option>龍鈐</option>
+            <option value="__new__">＋ 輸入新客戶</option>
+          </select></div>
+        <div class="fgr" id="fCompanyNewGroup" style="display:none"><div class="flb">新客戶名稱</div><input type="text" id="fCompanyNew" class="fi" placeholder="輸入新客戶名稱"></div>
+        <div class="fgr"><div class="flb">車牌</div><input type="text" id="fPlate" class="fi" placeholder="選填"></div>
+        <div class="fgr full"><div class="flb">V3.1 分類（新案件必填；舊案件未變更時保留原分類）</div><div id="fClassificationSuggestion" style="font-size:12px;color:var(--accent2);margin-top:3px">先選專案、產品與案件類型，再依實際症狀分類；追蹤類型獨立填寫。</div></div><div class="fgr"><label class="flb" for="fProject">專案</label><select id="fProject" class="fi" onchange="updateV3Project()"></select><button type="button" class="btn" onclick="toggleProjectCreate()" style="margin-top:6px">＋ 新增專案</button></div>
+<div class="fgr full" id="projectCreateBox" hidden><label class="flb" for="newProjectName">新專案名稱</label><input id="newProjectName" class="fi" maxlength="80" placeholder="輸入專案名稱"><button type="button" class="btn" id="saveProjectButton" onclick="createSharedProject()">儲存專案</button><button type="button" class="btn" onclick="toggleProjectCreate()">取消</button><div id="projectCreateMessage" role="status" aria-live="polite"></div></div>
+<div class="fgr full" id="projectClassificationStatus" role="status" style="color:var(--orange)"></div><div class="fgr"><label class="flb" for="fNewProduct">產品別</label><select id="fNewProduct" class="fi" onchange="updateV2Categories()"></select></div>
+<div class="fgr"><label class="flb" for="fCaseNature">案件類型</label><select id="fCaseNature" class="fi" onchange="updateV2Categories()"></select></div>
+<div class="fgr"><label class="flb" for="fNewCategory">問題大類</label><select id="fNewCategory" class="fi" onchange="updateV2Subcategories()"></select></div>
+<div class="fgr"><label class="flb" for="fNewSubcategory">問題次分類</label><select id="fNewSubcategory" class="fi" onchange="syncClassificationCode()"></select></div>
+<div class="fgr full" id="classificationRouting" role="status" aria-live="polite" style="font-size:12px;color:var(--accent2)"></div>
+<div class="fgr"><label class="flb" for="fClassificationCode">分類代碼</label><input id="fClassificationCode" class="fi" readonly></div>
+<div class="fgr"><label class="flb" for="fTrackingType">追蹤類型（可不選）</label><select id="fTrackingType" class="fi"></select></div>
+<div class="fgr"><label class="flb" for="fTrackingTopic">追蹤主題</label><input id="fTrackingTopic" class="fi"></div>
+<div class="fgr full"><label class="flb" for="fClassificationNote">分類備註</label><input id="fClassificationNote" class="fi"></div>
+<div class="fgr full"><label><input type="checkbox" id="fV2Confirm"> 已人工確認 V3.1 分類</label><p>以下舊分類供相容報表使用：新案件由 V3.1 產生相容值；既有案件保留原始值。</p></div>
+<div class="fgr"><div class="flb">原始產品別</div>
+          <select id="fProduct" class="fi"><option value="">-- 選擇 --</option>
+            <option>FMS-GPS(系統平台)</option><option>FMS-GPS(硬體)</option>
+            <option>FMS-DMVR(純行車視野)</option><option>FMS-DMVR(不回傳主機硬體)</option>
+            <option>FMS-冷鏈(系統平台)</option><option>FMS-冷鏈(硬體)</option><option>FMS-雷達</option>
+          </select></div>
+        <div class="fgr"><div class="flb">問題大類 *</div>
+          <select id="fCategory" class="fi" onchange="updateSub()">
+            <option>平台系統</option><option>MDVR</option><option>GPS設備</option><option>行車視野</option>
+            <option>雷達設備</option><option>帳務問題</option><option>冷鏈</option><option>溫度n/a</option><option>其他</option>
+          </select></div>
+        <div class="fgr"><div class="flb">問題次分類</div><select id="fSubcategory" class="fi" onchange="toggleSubcategoryNote()"></select></div>
+        <div class="fgr full" id="fSubcategoryNoteGroup">
+          <div class="flb">其他原因 / 補充說明</div>
+          <input type="text" id="fSubcategoryNote" class="fi" maxlength="200" placeholder="請填寫無法歸入既有分類的原因">
+        </div>
+        <div class="fgr"><div class="flb">處理狀態</div>
+          <select id="fStatus" class="fi"><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
+        <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
+        <div class="fgr"><div class="flb">負責處理人員</div>
+          <select id="fHandler" class="fi"><option value="">-- 選擇 --</option></select></div>
+        <div class="fgr"><div class="flb">保固狀態</div>
+          <select id="fWarranty" class="fi" onchange="if(this.value==='保固外')document.getElementById('fInvoice').value='待開立'"><option value="">未填</option><option>保固內</option><option>保固外</option></select></div>
+        <div class="fgr"><div class="flb">發票狀態</div>
+          <select id="fInvoice" class="fi"><option value="">未填</option><option>待開立</option><option>已開立</option><option>免開立</option></select></div>
+        <div class="fgr"><div class="flb">問卷追蹤</div>
+          <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;margin-top:8px"><input type="checkbox" id="fSurveySent"> 是否發送問卷</label>
+          <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;margin-top:8px"><input type="checkbox" id="fSurveyReplied"> 是否收到回覆</label>
+        </div>
+        <div class="fgr"><div class="flb">結案日期時間</div><input type="datetime-local" id="fCloseDate" class="fi" step="1"></div>
+        <div class="fgr full"><div class="flb">問題詳細描述</div><textarea id="fDescription" class="fi" rows="3" placeholder="客戶問題描述…"></textarea></div>
+        <div class="fgr full"><div class="flb">最終處理結果</div><textarea id="fResult" class="fi" rows="2" placeholder="處理結果…"></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeForm()">取消</button><button class="btn btn-primary" onclick="saveRecord()">儲存</button></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="mh"><div><div class="mt" id="dId"></div><div class="detail-meta" id="dMeta"></div></div><button class="mc" onclick="closeDetail()">✕</button></div>
+    <div class="mb" id="dBody"></div>
+    <div class="mf">
+      <button class="btn btn-outline" onclick="closeDetail()">關閉</button>
+      <button class="btn btn-outline" id="dNotifyBtn" style="display:none" onclick="copyCloseNotice()">📋 複製結案通知</button>
+      <button class="btn btn-outline" id="dCopyBtn" onclick="copyDetailRecord()">複製成新案件</button>
+      <button class="btn btn-outline" id="dChildBtn" onclick="createChildCase()" style="background:rgba(124,108,255,.15);border:1px solid rgba(124,108,255,.3);color:var(--purple)">🔗 衍生子案件</button>
+      <button class="btn btn-primary" id="dEditBtn">編輯此案件</button>
+    </div>
+  </div>
+</div>
+
+<script src="./客服記錄系統.config.js?v=20260922-1"></script>
+<script src="./客服記錄系統.classification-v31.js?v=20261105-order-tracking"></script>
+<script src="./客服記錄系統.classification.js?v=20261105-order-tracking"></script>
+<script src="./客服記錄系統.core.js?v=20261021-lize"></script>
+<script src="./客服記錄系統.data.js?v=20261021-lize"></script>
+<script src="./客服記錄系統.auth.js?v=20260725-2"></script>
+<script src="./客服記錄系統.form.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.list.js?v=20261021-lize"></script>
+<script src="./客服記錄系統.analytics.js?v=20261007-product-v1"></script>
+<script src="./客服記錄系統.app.js?v=20261021-lize"></script>
+<script src="./客服記錄系統.status.js?v=20260513-1"></script>
+<script src="./客服記錄系統.import.js?v=20261021-lize"></script>
+<script src="./客服記錄系統.line-import.preview.js?v=20261110b"></script>
+<script src="./客服記錄系統.todo.js?v=20260603-1"></script>
+<script src="./客服記錄系統.batch.js?v=20260513-1"></script>
+<script src="./客服記錄系統.actions.js?v=20260725-3"></script>
+<script src="./客服記錄系統.report-tools.js?v=20260928-v2"></script>
+</body>
+</html>
+
