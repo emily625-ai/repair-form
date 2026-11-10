@@ -91,9 +91,9 @@ nav button.on{background:var(--bg);color:var(--dark);font-weight:700}
 <main>
   <section id="login" class="panel hide">
     <h2 style="margin-top:0">登入</h2>
-    <p class="muted" style="font-size:13px">使用客服系統同一組帳號密碼</p>
+    <p class="muted" style="font-size:13px">輸入帳號密碼（共用帳號只要打帳號名稱，不用打 @）</p>
     <form id="loginForm">
-      <label>Email<input type="email" id="lgEmail" required autocomplete="username"></label><br>
+      <label>帳號<input type="text" id="lgEmail" required autocomplete="username" autocapitalize="off"></label><br>
       <label>密碼<input type="password" id="lgPw" required autocomplete="current-password"></label><br>
       <button class="btn" style="width:100%">登入</button>
     </form>
@@ -195,7 +195,7 @@ async function boot(){
 
 $('#loginForm').onsubmit = async e => {
   e.preventDefault();
-  const {error} = await sb.auth.signInWithPassword({email:$('#lgEmail').value.trim(), password:$('#lgPw').value});
+  const {error} = await sb.auth.signInWithPassword({email:(a => a.includes('@') ? a : a + '@fleetivity.local')($('#lgEmail').value.trim().toLowerCase()), password:$('#lgPw').value});
   if(error){ $('#lgMsg').innerHTML = '<div class="msg err">帳號或密碼錯誤</div>'; return; }
   $('#login').classList.add('hide'); boot();
 };
