@@ -389,6 +389,8 @@ textarea.fi{resize:vertical;min-height:68px;}
     <div class="line-import-shell">
       <div class="line-state-row">
         <div class="line-state-card"><div class="line-state-label">待分類</div><div class="line-state-value" id="linePendingCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">建議建案</div><div class="line-state-value" id="lineSuggestCaseCount">0</div></div>
+        <div class="line-state-card"><div class="line-state-label">待歸戶</div><div class="line-state-value" id="lineUnmappedCount">0</div></div>
         <div class="line-state-card"><div class="line-state-label">重複警示</div><div class="line-state-value" id="lineDuplicateCount">0</div></div>
         <div class="line-state-card"><div class="line-state-label">錯誤</div><div class="line-state-value" id="lineErrorCount">0</div></div>
       </div>
@@ -425,13 +427,20 @@ textarea.fi{resize:vertical;min-height:68px;}
                   <option value="archived">已封存</option>
                   <option value="all">全部</option>
                 </select>
+                <select id="lineSuggestFilter" onchange="renderLinePendingMessages()" style="width:auto">
+                  <option value="all">全部建議</option>
+                  <option value="case">建議建案</option>
+                  <option value="review">待看</option>
+                  <option value="archive">建議封存</option>
+                </select>
                 <button class="btn btn-outline btn-sm" onclick="refreshLineImportPendingRows()">重新整理 LINE 訊息</button>
+                <button class="btn btn-outline btn-sm" onclick="archiveSuggestedLineMessages()">封存全部「建議封存」</button>
               </div>
             </div>
             <div class="table-container" style="max-height:360px">
               <table class="line-preview-table">
                 <thead><tr>
-                  <th>發話者</th><th>訊息摘要</th><th>進線時間</th><th>狀態</th><th>重複警示</th><th>操作</th>
+                  <th>發話者</th><th>公司</th><th>訊息摘要</th><th>建議</th><th>進線時間</th><th>狀態</th><th>重複警示</th><th>操作</th>
                 </tr></thead>
                 <tbody id="linePendingBody"></tbody>
               </table>
@@ -628,7 +637,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <script src="./客服記錄系統.app.js?v=20261021-lize"></script>
 <script src="./客服記錄系統.status.js?v=20260513-1"></script>
 <script src="./客服記錄系統.import.js?v=20261021-lize"></script>
-<script src="./客服記錄系統.line-import.js?v=20260928-v2"></script>
+<script src="./客服記錄系統.line-import.js?v=20261110-company"></script>
 <script src="./客服記錄系統.todo.js?v=20260603-1"></script>
 <script src="./客服記錄系統.batch.js?v=20260513-1"></script>
 <script src="./客服記錄系統.actions.js?v=20260725-3"></script>

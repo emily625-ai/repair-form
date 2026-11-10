@@ -15,6 +15,18 @@ const LINE_IMPORT_WARNING_LABELS = {
 
 const LINE_SENDER_MAPPING_STORAGE_KEY = 'cs_line_sender_mappings';
 
+const LINE_SUGGEST_LABELS = { case: '建議建案', archive: '建議封存', review: '待看' };
+const LINE_COMPANY_BASIS_LABELS = {
+  group: '群組對應',
+  sender: '發話者對應',
+  conflict: '待確認',
+  plate: '車號推定',
+  local: '本機對應',
+  none: '待歸戶'
+};
+
+let lineSenderCompanyMap = {};
+let lineSenderCompanyLoaded = false;
 let lineImportBootstrapped = false;
 let lineImportStorageMode = 'local';
 let lineImportStatusFilter = 'pending';
@@ -75,6 +87,7 @@ async function refreshLineImportPendingRows(options = {}) {
   setLineImportLoading(true, '重新讀取 LINE 訊息中...');
   try {
     lineImportStatusFilter = getLineImportStatusFilter();
+    await loadLineSenderCompanyMap();
     const rows = await loadLineMessageRecords(lineImportStatusFilter);
     lineImportPendingRows = Array.isArray(rows) ? rows.map(mapLineMessageRecordToUiRow) : [];
     lineImportStorageMode = 'remote';
@@ -110,15 +123,24 @@ function mapLineMessageRecordToUiRow(row) {
   const rawMessage = row.raw_message || '';
   const displayMessage = formatLineMessagePreview(rawMessage);
   const senderId = row.sender_id || '';
+  const groupId = row.group_id || '';
+  const groupName = String(row.group_name || '').trim();
   const originalSenderName = normalizeLineSenderName(row.sender_name);
   const mappedSender = getLineSenderMapping(senderId);
+  const companyInfo = resolveLineCompany({ senderId, groupId, rawMessage, localMapping: mappedSender });
+  const displaySender = mappedSender?.contact ? `${originalSenderName}（${mappedSender.contact}）` : originalSenderName;
   return {
     id: row.id,
     source: row.source || 'line_webhook',
-    sender_name: mappedSender ? formatLineMappedSenderName(mappedSender, originalSenderName) : originalSenderName,
+    sender_name: groupName ? `${groupName}｜${displaySender}` : displaySender,
     original_sender_name: originalSenderName,
     sender_id: senderId,
-    mapped_company: mappedSender?.company || '',
+    group_id: groupId,
+    group_name: groupName,
+    mapped_company: companyInfo.company,
+    company_basis: companyInfo.basis,
+    company_note: companyInfo.note,
+    suggestion: suggestLineIntake(rawMessage),
     mapped_contact: mappedSender?.contact || '',
     raw_message: displayMessage,
     original_raw_message: rawMessage,
@@ -192,13 +214,17 @@ function renderLinePendingMessages() {
   const empty = document.getElementById('linePendingEmpty');
   setText('linePendingListTitle', getLineImportStatusLabel(lineImportStatusFilter));
   if (!tbody) return;
-  if (!lineImportPendingRows.length) {
+  const suggestFilter = getLineSuggestFilter();
+  const visibleRows = suggestFilter === 'all'
+    ? lineImportPendingRows
+    : lineImportPendingRows.filter(row => row.suggestion === suggestFilter);
+  if (!visibleRows.length) {
     tbody.innerHTML = '';
     if (empty) empty.style.display = 'block';
     return;
   }
   if (empty) empty.style.display = 'none';
-  tbody.innerHTML = lineImportPendingRows.map(row => buildLineImportRow(row)).join('');
+  tbody.innerHTML = visibleRows.map(row => buildLineImportRow(row)).join('');
 }
 
 function buildLineImportRow(row) {
@@ -211,7 +237,9 @@ function buildLineImportRow(row) {
   return `
     <tr>
       <td>${escapeHtml(row.sender_name)}</td>
+      <td>${buildLineCompanyCell(row)}</td>
       <td>${escapeHtml(messagePreview)}</td>
+      <td>${buildLineSuggestBadge(row.suggestion)}</td>
       <td>${escapeHtml(row.received_at || '-')}</td>
       <td>${buildLineStatusBadge(row.status)}</td>
       <td>${buildLineWarningBadge(row.duplicate_warning)}</td>
@@ -244,6 +272,8 @@ function buildLineWarningBadge(warning) {
 
 function updateLineImportStats() {
   setText('linePendingCount', lineImportPendingRows.filter(row => row.status === 'pending').length);
+  setText('lineSuggestCaseCount', lineImportPendingRows.filter(row => row.status === 'pending' && row.suggestion === 'case').length);
+  setText('lineUnmappedCount', lineImportPendingRows.filter(row => row.status === 'pending' && row.company_basis === 'none').length);
   setText('lineDuplicateCount', lineImportPendingRows.filter(row => row.duplicate_warning && row.duplicate_warning !== 'none').length);
   setText('lineErrorCount', lineImportPendingRows.filter(row => row.status === 'error').length);
 }
@@ -278,7 +308,7 @@ function openLineMessageDetail(id) {
         </div>
         <div class="di">
           <div class="dl">公司對應</div>
-          <div class="dv">${escapeHtml(row.mapped_company || '未設定')}</div>
+          <div class="dv">${escapeHtml(row.mapped_company || '未設定')}（${escapeHtml(LINE_COMPANY_BASIS_LABELS[row.company_basis] || '-')}）</div>
         </div>
         <div class="di">
           <div class="dl">聯絡人對應</div>
@@ -289,12 +319,16 @@ function openLineMessageDetail(id) {
           <div class="dv">${escapeHtml(row.received_at || '-')}</div>
         </div>
         <div class="di">
+          <div class="dl">建議處理</div>
+          <div class="dv">${escapeHtml(LINE_SUGGEST_LABELS[row.suggestion] || '-')}</div>
+        </div>
+        <div class="di">
           <div class="dl">建議分類</div>
           <div class="dv">${escapeHtml(formatLineClassificationSuggestion(row))}</div>
         </div>
       </div>
       <div class="line-import-actions" style="margin-bottom:14px">
-        <button class="btn btn-outline btn-sm" onclick="configureLineSenderMapping('${escapeHtml(row.id)}')">設定發話者對應</button>
+        <button class="btn btn-outline btn-sm" onclick="configureLineSenderMapping('${escapeHtml(row.id)}')">設定公司對應</button>
       </div>
       <div class="dst">訊息內容</div>
       <div class="line-detail-message">${escapeHtml(row.raw_message || '-')}</div>
@@ -616,23 +650,201 @@ function formatLineMappedSenderName(mapping, fallbackName) {
   return parts.length ? parts.join(' ') : fallbackName;
 }
 
-function configureLineSenderMapping(id) {
+async function configureLineSenderMapping(id) {
   const row = lineImportPendingRows.find(item => item.id === id);
   if (!row) return;
-  if (!row.sender_id) {
-    alert('這筆 LINE 訊息沒有 sender_id，無法建立固定對應。');
+  if (!row.sender_id && !row.group_id) {
+    alert('這筆 LINE 訊息沒有發話者或群組 ID，無法建立固定對應。');
     return;
   }
   const company = prompt('請輸入公司名稱（需與案件公司下拉選單一致）', row.mapped_company || inferLineCompanyName(row) || '');
   if (company === null) return;
-  const contact = prompt('請輸入聯絡人名稱', row.mapped_contact || '');
+  const trimmedCompany = company.trim();
+  if (!trimmedCompany) return;
+  const contact = prompt('請輸入聯絡人名稱（可留空）', row.mapped_contact || '');
   if (contact === null) return;
 
-  saveLineSenderMapping(row.sender_id, { company, contact });
-  applyLineSenderMappingToRows(row.sender_id);
+  // 有群組 ID 時預設對應整個群組：群組裡也有奇雲同仁，用人對公司容易錯
+  const useGroup = !!row.group_id && confirm(`要把整個群組「${row.group_name || row.group_id}」都對應到「${trimmedCompany}」嗎？\n按「取消」則只對應這位發話者。`);
+  const key = useGroup ? row.group_id : row.sender_id;
+  if (!key) {
+    alert('這筆訊息沒有發話者 ID，請改用群組對應。');
+    return;
+  }
+
+  if (row.sender_id) saveLineSenderMapping(row.sender_id, { company: trimmedCompany, contact });
+  const saved = await saveLineSenderCompanyRemote(key, useGroup ? 'group' : 'user', trimmedCompany,
+    useGroup ? `群組：${row.group_name || ''}` : `發話者：${row.original_sender_name || ''}`);
+
+  lineImportPendingRows = lineImportPendingRows.map(item => {
+    const original = { ...item };
+    const info = resolveLineCompany({
+      senderId: item.sender_id,
+      groupId: item.group_id,
+      rawMessage: item.original_raw_message,
+      localMapping: getLineSenderMapping(item.sender_id)
+    });
+    return { ...original, mapped_company: info.company, company_basis: info.basis, company_note: info.note,
+      mapped_contact: item.sender_id === row.sender_id ? contact.trim() : item.mapped_contact };
+  });
   renderLinePendingMessages();
+  updateLineImportStats();
   openLineMessageDetail(id);
-  showLineImportAlert('已儲存發話者對應，之後同一個 LINE sender 會自動帶出公司與聯絡人。', 'success');
+  showLineImportAlert(saved
+    ? `已儲存公司對應「${trimmedCompany}」，之後${useGroup ? '這個群組' : '這位發話者'}的訊息會自動帶出公司。`
+    : '公司對應只存在這台電腦（雲端儲存失敗），請稍後再試一次。', saved ? 'success' : 'error');
+}
+
+// ===== 公司對應（Supabase line_sender_company） =====
+async function loadLineSenderCompanyMap(force = false) {
+  if (lineSenderCompanyLoaded && !force) return lineSenderCompanyMap;
+  if (typeof sbFetch !== 'function') return lineSenderCompanyMap;
+  try {
+    const rows = await sbFetch('line_sender_company?select=sender_id,company,status,key_type,note&limit=5000');
+    const map = {};
+    (Array.isArray(rows) ? rows : []).forEach(item => {
+      if (item && item.sender_id) map[item.sender_id] = item;
+    });
+    lineSenderCompanyMap = map;
+    lineSenderCompanyLoaded = true;
+  } catch (error) {
+    console.warn('line_sender_company load failed:', error);
+  }
+  return lineSenderCompanyMap;
+}
+
+async function saveLineSenderCompanyRemote(key, keyType, company, note) {
+  if (typeof sbFetch !== 'function') return false;
+  const payload = {
+    sender_id: key,
+    key_type: keyType,
+    company,
+    status: 'confirmed',
+    source: 'manual',
+    note,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await sbFetch('line_sender_company?on_conflict=sender_id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(payload)
+    });
+    lineSenderCompanyMap[key] = payload;
+    if (typeof logActivity === 'function') {
+      await logActivity(null, 'LINE公司對應', `${keyType === 'group' ? '群組' : '發話者'} ${key} → ${company}`);
+    }
+    return true;
+  } catch (error) {
+    console.warn('line_sender_company save failed:', error);
+    return false;
+  }
+}
+
+function normalizeLinePlateKey(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+let linePlateCompanyCache = { size: -1, map: null };
+function getLinePlateCompanyMap() {
+  const list = typeof records !== 'undefined' && Array.isArray(records) ? records : [];
+  if (linePlateCompanyCache.map && linePlateCompanyCache.size === list.length) return linePlateCompanyCache.map;
+  const map = new Map();
+  list.forEach(record => {
+    const key = normalizeLinePlateKey(record && record.plate);
+    if (key.length >= 5 && record.company && !map.has(key)) map.set(key, record.company);
+  });
+  linePlateCompanyCache = { size: list.length, map };
+  return map;
+}
+
+function findLineCompanyByPlate(rawMessage) {
+  const text = normalizeLinePlateKey(rawMessage);
+  if (text.length < 5) return null;
+  for (const [plate, company] of getLinePlateCompanyMap()) {
+    if (text.includes(plate)) return { company, plate };
+  }
+  return null;
+}
+
+// 判斷順序：群組 → 發話者 → 本機舊對應 → 車號反查 → 待歸戶
+function resolveLineCompany({ senderId, groupId, rawMessage, localMapping }) {
+  const groupHit = groupId ? lineSenderCompanyMap[groupId] : null;
+  if (groupHit && groupHit.company) return { company: groupHit.company, basis: 'group', note: groupHit.note || '' };
+  const senderHit = senderId ? lineSenderCompanyMap[senderId] : null;
+  if (senderHit && senderHit.company) {
+    return { company: senderHit.company, basis: senderHit.status === 'conflict' ? 'conflict' : 'sender', note: senderHit.note || '' };
+  }
+  if (localMapping && localMapping.company) return { company: localMapping.company, basis: 'local', note: '' };
+  const plateHit = findLineCompanyByPlate(rawMessage);
+  if (plateHit) return { company: plateHit.company, basis: 'plate', note: `車號 ${plateHit.plate}` };
+  return { company: '', basis: 'none', note: '' };
+}
+
+function buildLineCompanyCell(row) {
+  if (!row.mapped_company) return '<span class="line-warning-badge line-warning-on">待歸戶</span>';
+  const basis = LINE_COMPANY_BASIS_LABELS[row.company_basis] || '';
+  const needsCheck = row.company_basis === 'conflict' || row.company_basis === 'plate';
+  return `${escapeHtml(row.mapped_company)}${needsCheck ? ` <span class="line-warning-badge line-warning-on">${escapeHtml(basis)}</span>` : ''}`;
+}
+
+// ===== 建議處理（建議建案／建議封存／待看） =====
+const LINE_COURTESY_PATTERN = /^(好的?|好喔|好唷|好滴|ok|okay|有?收到了?|謝謝|感謝|謝啦|辛苦了?|了解|瞭解|沒問題|不客氣|麻煩了?|再麻煩|早安|午安|晚安|你好|您好|嗯+|喔+|哦+|對|是的?|讚|👍|🙏|[!！。.~～、，,\s])+$/i;
+const LINE_ROUTINE_LOG_PATTERN = /^@?[^\d]{0,12}\d{3,4}(開始|結束)(丟|清運|作業|進場|倒)?[^\d]{0,8}$/;
+const LINE_CASE_KEYWORDS = /(故障|異常|不能|無法|沒有?(訊號|定位|畫面|資料|溫度|回傳|上傳)|壞|離線|斷線|不動|不亮|黑屏|藍屏|報修|維修|叫修|拆機|拆除|安裝|新裝|移機|換車|定位|鏡頭|主機|溫度|GPS|行車|影像|畫面|登入|帳號|密碼|發票|報價|雷達|監控|數據|冷凍|冷藏|顯示器|螢幕)/i;
+
+function suggestLineIntake(rawMessage) {
+  const text = String(rawMessage || '').trim();
+  if (!text) return 'review';
+  if (text.startsWith('{')) return 'review'; // 圖片／貼圖等非文字訊息：可能是報修照片，先待看
+  const compact = text.replace(/\s+/g, '');
+  if (compact.length <= 20 && LINE_COURTESY_PATTERN.test(compact)) return 'archive';
+  if (LINE_ROUTINE_LOG_PATTERN.test(compact)) return 'archive'; // 例：1400開始丟回收物、1130結束（利澤等現場作業回報）
+  if (extractLinePlate(text) || findLineCompanyByPlate(text)) return 'case';
+  if (LINE_CASE_KEYWORDS.test(text) || classifyLineMessageText(text)) return 'case';
+  return 'review';
+}
+
+function buildLineSuggestBadge(suggestion) {
+  const label = LINE_SUGGEST_LABELS[suggestion] || '-';
+  const color = suggestion === 'case' ? 'line-status-pending' : suggestion === 'archive' ? 'line-status-archived' : 'line-status-classified';
+  return `<span class="line-status-badge ${color}">${escapeHtml(label)}</span>`;
+}
+
+function getLineSuggestFilter() {
+  const select = document.getElementById('lineSuggestFilter');
+  return select ? select.value || 'all' : 'all';
+}
+
+async function archiveSuggestedLineMessages() {
+  const targets = lineImportPendingRows.filter(row => row.status === 'pending' && row.suggestion === 'archive');
+  if (!targets.length) {
+    showLineImportAlert('目前沒有「建議封存」的待分類訊息。', 'info');
+    return;
+  }
+  if (!confirm(`要把 ${targets.length} 筆「建議封存」的訊息一次封存嗎？（之後可在「已封存」找回）`)) return;
+  setLineImportLoading(true, '封存中...');
+  try {
+    const ids = targets.map(row => row.id);
+    if (lineImportStorageMode === 'remote' && typeof sbFetch === 'function') {
+      for (let i = 0; i < ids.length; i += 50) {
+        const chunk = ids.slice(i, i + 50).map(encodeURIComponent).join(',');
+        await sbFetch(`line_messages?id=in.(${chunk})`, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
+      }
+      if (typeof logActivity === 'function') await logActivity(null, 'LINE批次封存', `建議封存 ${ids.length} 筆`);
+    }
+    targets.forEach(row => { row.status = 'archived'; });
+    if (lineImportStatusFilter === 'pending') {
+      lineImportPendingRows = lineImportPendingRows.filter(row => row.status === 'pending');
+    }
+    renderLinePendingMessages();
+    updateLineImportStats();
+    showLineImportAlert(`已封存 ${ids.length} 筆客套話訊息。`, 'success');
+  } catch (error) {
+    showLineImportAlert(`批次封存失敗：${error.message || error}`, 'error');
+  } finally {
+    setLineImportLoading(false);
+  }
 }
 
 function applyLineSenderMappingToRows(senderId) {
