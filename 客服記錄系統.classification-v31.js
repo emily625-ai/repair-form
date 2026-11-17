@@ -2,7 +2,7 @@
 const V3_VERSION="v3_1_2026-10";
 const V3_PROJECTS=["FMS","利澤焚化爐","宜蘭環保局","榮福","SWIFT"];
 const V3_PRODUCTS=["GPS","行車視野","冷鏈","雷達","共通平台","產品待確認"];
-const V3_PROJECT_PRODUCTS={FMS:V3_PRODUCTS,"利澤焚化爐":["AI輔助垃圾檢查系統"]};
+const V3_PROJECT_PRODUCTS={FMS:V3_PRODUCTS,"利澤焚化爐":["AI輔助垃圾檢查系統"],SWIFT:["AI地磅查核系統"],"榮福":["廢棄物管理系統"]};
 const V3_NATURES=["故障/異常","安裝/維修作業","資料/設定異動","帳務/文件","查詢/協助","其他/待確認"];
 const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0001","product":"GPS","nature":"故障/異常","category":"GPS車機/通訊","subcategory":"GPS設備離線","status":"使用中","mergedInto":null,"project":"FMS"}),
@@ -271,7 +271,29 @@ const V3_CLASSIFICATIONS=Object.freeze([
  Object.freeze({"code":"V3-0264","project":"FMS","product":"冷鏈","nature":"帳務/文件","category":"冷鏈－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0265","project":"FMS","product":"冷鏈","nature":"查詢/協助","category":"冷鏈－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null}),
  Object.freeze({"code":"V3-0266","project":"FMS","product":"雷達","nature":"帳務/文件","category":"雷達－帳務/文件","subcategory":"設備/零配件訂購","status":"使用中","mergedInto":null}),
- Object.freeze({"code":"V3-0267","project":"FMS","product":"雷達","nature":"查詢/協助","category":"雷達－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null})
+ Object.freeze({"code":"V3-0267","project":"FMS","product":"雷達","nature":"查詢/協助","category":"雷達－查詢/操作","subcategory":"出貨/到貨進度查詢","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0268","project":"SWIFT","product":"AI地磅查核系統","nature":"故障/異常","category":"SWIFT－地磅/設備資料","subcategory":"地磅資料未回傳","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0269","project":"SWIFT","product":"AI地磅查核系統","nature":"故障/異常","category":"SWIFT－地磅/設備資料","subcategory":"地磅數值異常","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0270","project":"SWIFT","product":"AI地磅查核系統","nature":"故障/異常","category":"SWIFT－影像/辨識","subcategory":"影像/辨識資料異常","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0271","project":"SWIFT","product":"AI地磅查核系統","nature":"故障/異常","category":"SWIFT－查核/報表","subcategory":"查核結果/計算差異","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0272","project":"SWIFT","product":"AI地磅查核系統","nature":"資料/設定異動","category":"SWIFT－資料/設定","subcategory":"查核規則/參數調整","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0273","project":"SWIFT","product":"AI地磅查核系統","nature":"資料/設定異動","category":"SWIFT－資料/設定","subcategory":"資料補登/修正","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0274","project":"SWIFT","product":"AI地磅查核系統","nature":"帳務/文件","category":"SWIFT－帳務/文件","subcategory":"報價/請款/文件提供","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0275","project":"SWIFT","product":"AI地磅查核系統","nature":"查詢/協助","category":"SWIFT－查核/操作","subcategory":"查核分析說明","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0276","project":"SWIFT","product":"AI地磅查核系統","nature":"查詢/協助","category":"SWIFT－查核/操作","subcategory":"操作協助","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0277","project":"SWIFT","product":"AI地磅查核系統","nature":"查詢/協助","category":"SWIFT－處理進度","subcategory":"問題確認/會議安排","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0278","project":"SWIFT","product":"AI地磅查核系統","nature":"其他/待確認","category":"SWIFT－資訊待補","subcategory":"問題資訊不足","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0279","project":"榮福","product":"廢棄物管理系統","nature":"故障/異常","category":"榮福－平台資料/報表","subcategory":"重量/代碼/報表資料異常","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0280","project":"榮福","product":"廢棄物管理系統","nature":"故障/異常","category":"榮福－申請/文件","subcategory":"文件上傳/檢核異常","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0281","project":"榮福","product":"廢棄物管理系統","nature":"故障/異常","category":"榮福－登入/連線","subcategory":"平台無法登入/連線","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0282","project":"榮福","product":"廢棄物管理系統","nature":"資料/設定異動","category":"榮福－流程/設定","subcategory":"申請文件/檢核項目調整","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0283","project":"榮福","product":"廢棄物管理系統","nature":"資料/設定異動","category":"榮福－流程/設定","subcategory":"資料/報表規則調整","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0284","project":"榮福","product":"廢棄物管理系統","nature":"資料/設定異動","category":"榮福－平台發布","subcategory":"測試/正式平台移轉","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0285","project":"榮福","product":"廢棄物管理系統","nature":"帳務/文件","category":"榮福－專案文件","subcategory":"操作手冊/教材更新","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0286","project":"榮福","product":"廢棄物管理系統","nature":"帳務/文件","category":"榮福－專案文件","subcategory":"驗收文件確認","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0287","project":"榮福","product":"廢棄物管理系統","nature":"查詢/協助","category":"榮福－查詢/操作","subcategory":"重量/代碼/報表說明","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0288","project":"榮福","product":"廢棄物管理系統","nature":"查詢/協助","category":"榮福－查詢/操作","subcategory":"操作協助","status":"使用中","mergedInto":null}),
+ Object.freeze({"code":"V3-0289","project":"榮福","product":"廢棄物管理系統","nature":"其他/待確認","category":"榮福－資訊待補","subcategory":"問題資訊不足","status":"使用中","mergedInto":null})
 ]);
 const V3_BY_CODE=new Map(V3_CLASSIFICATIONS.map(item=>[item.code,item]));
 function v3Active(product,nature,project="FMS"){return V3_CLASSIFICATIONS.filter(item=>item.status==="使用中"&&item.project===project&&item.product===product&&(!nature||item.nature===nature));}
