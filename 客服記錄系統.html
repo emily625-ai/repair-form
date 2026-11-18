@@ -97,6 +97,7 @@ tr:hover td{background:rgba(62,74,102,.32);}
 .badge-結案{background:rgba(52,211,153,.15);color:var(--green);}
 .badge-轉派技師{background:rgba(251,191,36,.12);color:var(--yellow);}
 .badge-轉派工程師{background:rgba(167,139,250,.12);color:var(--purple);}
+.badge-待專案交接{background:rgba(167,139,250,.15);color:#c4b5fd;}
 .badge-客服處理中{background:rgba(91,140,255,.15);color:var(--accent);}
 .badge-待派工{background:rgba(251,191,36,.15);color:#fbbf24;}
 .badge-待客戶確認{background:rgba(56,189,248,.14);color:#7dd3fc;}
@@ -279,7 +280,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       <div class="toolbar-row">
         <div class="toolbar-primary-filters">
           <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜尋公司、車牌、描述…" oninput="applyFilters()"></div>
-          <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
+          <select id="filterStatus" onchange="applyFilters()"><option value="">所有狀態</option><option>結案</option><option>客服處理中</option><option>待專案交接</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>待客戶寄回</option></select>
           <label>專案 <select id="filterProject" onchange="applyFilters()"><option value="">全部</option><option>FMS</option><option value="__unset__">未填專案</option></select></label>
           <label>案件類型 <select id="filterNature" onchange="applyFilters()"></select></label>
 <label>追蹤類型 <select id="filterTracking" onchange="applyFilters()"></select></label>
@@ -316,6 +317,7 @@ textarea.fi{resize:vertical;min-height:68px;}
       <select id="batchStatus" style="padding:5px 10px;border-radius:6px;border:none;font-size:13px;background:#fff">
         <option value="">選擇新狀態…</option>
         <option value="客服處理中">客服處理中</option>
+        <option value="待專案交接">待專案交接</option>
               <option value="待派工">待派工</option>
         <option value="待客戶確認">待客戶確認</option>
         <option value="轉派技師">轉派技師</option>
@@ -475,6 +477,7 @@ textarea.fi{resize:vertical;min-height:68px;}
 <div id="statusMenu" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;min-width:130px;overflow:hidden">
   <div style="padding:6px 0">
     <div class="smItem" onclick="setStatus('客服處理中')"><span class="badge badge-客服處理中">客服處理中</span></div>
+    <div class="smItem" onclick="setStatus('待專案交接')"><span class="badge badge-待專案交接">待專案交接</span></div>
     <div class="smItem" onclick="setStatus('待派工')"><span class="badge badge-待派工">待派工</span></div>
     <div class="smItem" onclick="setStatus('待客戶確認')"><span class="badge badge-待客戶確認">待客戶確認</span></div>
     <div class="smItem" onclick="setStatus('轉派技師')"><span class="badge badge-轉派技師">轉派技師</span></div>
@@ -589,7 +592,7 @@ textarea.fi{resize:vertical;min-height:68px;}
           <input type="text" id="fSubcategoryNote" class="fi" maxlength="200" placeholder="請填寫無法歸入既有分類的原因">
         </div>
         <div class="fgr"><div class="flb">處理狀態</div>
-          <select id="fStatus" class="fi"><option>客服處理中</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
+          <select id="fStatus" class="fi"><option>客服處理中</option><option>待專案交接</option><option>待派工</option><option>待客戶確認</option><option>轉派技師</option><option>轉派工程師</option><option>結案</option><option>待客戶寄回</option></select></div>
         <div class="fgr"><div class="flb">派工日期時間</div><input type="datetime-local" id="fDispatchDate" class="fi" step="1"></div>
         <div class="fgr"><div class="flb">負責處理人員</div>
           <select id="fHandler" class="fi"><option value="">-- 選擇 --</option></select></div>
