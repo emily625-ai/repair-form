@@ -7,6 +7,11 @@ window.onload=()=>{
   updateSub();
   document.getElementById('fCompany').addEventListener('change',function(){
     document.getElementById('fCompanyNewGroup').style.display=this.value==='__new__'?'':'none';
+    const swiftCompanies=new Set(['大園','久資化工','三新','水美','立光','東泰興','長春','益利達','純聚','祥佑','揚達','騏霖','台肥','順倉','瑞建','耀鼎']);
+    if(swiftCompanies.has(this.value)){
+      const project=document.getElementById('fProject');
+      if(project.value!=='SWIFT'){project.value='SWIFT';updateV3Project();}
+    }
   });
   bindModalBackdropClose();
   if(typeof requireAuthBeforeInit==='function'){
